@@ -1,0 +1,17 @@
+[Unit]
+Description=The xmidt-issuer JWT issuer service
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=simple
+PIDFile=/run/xmidt-issuer.pid
+ExecStartPre=/usr/bin/rm -f /run/xmidt-issuer.pid
+ExecStart=/usr/bin/xmidt-issuer
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutStopSec=10
+KillMode=process
+PrivateTmp=true
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
