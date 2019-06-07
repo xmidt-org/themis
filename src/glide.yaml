@@ -1,0 +1,21 @@
+package: ""
+import:
+- package: github.com/go-kit/kit
+  version: ~0.8.0
+- package: github.com/justinas/alice
+- package: github.com/gorilla/mux
+  version: ~1.7.2
+- package: github.com/spf13/viper
+  version: ~1.4.0
+- package: github.com/spf13/pflag
+  version: ~1.0.3
+- package: gopkg.in/natefinch/lumberjack.v2
+  version: ~2.1.0
+- package: github.com/go-logfmt/logfmt
+  version: ~0.4.0
+- package: github.com/dgrijalva/jwt-go
+  version: ~3.2.0
+- package: go.uber.org/fx
+  version: ~1.9.0
+- package: go.uber.org/dig
+  version: ~1.7.0

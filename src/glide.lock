@@ -1,4 +1,24 @@
-hash: bdf5c0b43903ad8f1246f2cdfe547d87d5dcc3a4055c326109e5a2a40514e3e3
-updated: 2019-06-05T18:41:43.789625032-07:00
-imports: []
+hash: 98abc87a2f27b5bf4b43afca66f8bee78269ec3f37294bd20023453e74a948e5
+updated: 2019-06-06T17:23:27.7972632-07:00
+imports:
+- name: github.com/dgrijalva/jwt-go
+  version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
+- name: github.com/go-kit/kit
+  version: 12210fb6ace19e0496167bb3e667dcd91fa9f69b
+- name: github.com/go-logfmt/logfmt
+  version: 07c9b44f60d7ffdfb7d8efe1ad539965737836dc
+- name: github.com/gorilla/mux
+  version: ed099d42384823742bba0bf9a72b53b55c9e2e38
+- name: github.com/justinas/alice
+  version: 03f45bd4b7dad4734bc4620e46a35789349abb20
+- name: github.com/spf13/pflag
+  version: 298182f68c66c05229eb03ac171abe6e309ee79a
+- name: github.com/spf13/viper
+  version: b5bf975e5823809fb22c7644d008757f78a4259e
+- name: go.uber.org/dig
+  version: 7ff117f761a3f1b3eb521945c17a1091438eb6de
+- name: go.uber.org/fx
+  version: 3de044da969b90ad0a3e4a7867a74662f645f3f9
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
 testImports: []
