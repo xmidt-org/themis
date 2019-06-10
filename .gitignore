@@ -1,2 +1,5 @@
 vendor
 xmidt-issuer
+bin/
+lib/
+*.out
