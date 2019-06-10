@@ -1,16 +1,44 @@
-hash: 98abc87a2f27b5bf4b43afca66f8bee78269ec3f37294bd20023453e74a948e5
-updated: 2019-06-06T17:23:27.7972632-07:00
+hash: ff8c100a9588f0c303fac1c10fbf81011093dd941a3c718aa1495942546fa057
+updated: 2019-06-10T11:36:26.946679-07:00
 imports:
 - name: github.com/dgrijalva/jwt-go
   version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
+- name: github.com/fsnotify/fsnotify
+  version: c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9
 - name: github.com/go-kit/kit
   version: 12210fb6ace19e0496167bb3e667dcd91fa9f69b
 - name: github.com/go-logfmt/logfmt
   version: 07c9b44f60d7ffdfb7d8efe1ad539965737836dc
 - name: github.com/gorilla/mux
   version: ed099d42384823742bba0bf9a72b53b55c9e2e38
+- name: github.com/hashicorp/hcl
+  version: ef8a98b0bbce4a65b5aa4c368430a80ddc533168
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/printer
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
 - name: github.com/justinas/alice
   version: 03f45bd4b7dad4734bc4620e46a35789349abb20
+- name: github.com/magiconair/properties
+  version: 2c9e9502788518c97fe44e8955cd069417ee89df
+- name: github.com/mitchellh/mapstructure
+  version: 00c29f56e2386353d58c599509e8dc3801b0d716
+- name: github.com/pelletier/go-toml
+  version: 66540cf1fcd2c3aee6f6787dfa32a6ae9a870f12
+- name: github.com/spf13/afero
+  version: 63644898a8da0bc22138abf860edaf5277b6102e
+  subpackages:
+  - mem
+- name: github.com/spf13/cast
+  version: 8965335b8c7107321228e3e3702cab9832751bac
+- name: github.com/spf13/jwalterweatherman
+  version: 7c0cea34c8ece3fbeb2b27ab9b59511d360fb394
 - name: github.com/spf13/pflag
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/spf13/viper
@@ -19,6 +47,17 @@ imports:
   version: 7ff117f761a3f1b3eb521945c17a1091438eb6de
 - name: go.uber.org/fx
   version: 3de044da969b90ad0a3e4a7867a74662f645f3f9
+- name: golang.org/x/sys
+  version: 7dfd1290c7917b7ba22824b9d24954ab3002fe24
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: 7922cc490dd5a7dbaa7fd5d6196b49db59ac042f
+  subpackages:
+  - transform
+  - unicode/norm
 - name: gopkg.in/natefinch/lumberjack.v2
   version: a96e63847dc3c67d17befa69c303767e2f84e54f
+- name: gopkg.in/yaml.v2
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 testImports: []
