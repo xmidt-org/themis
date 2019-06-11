@@ -1,5 +1,9 @@
 vendor
-xmidt-issuer
+
+# Ignore build product.
+# TODO: We should not be producing build products in this directory
+src/xmidt-issuer/xmidt-issuer
+
 bin/
 lib/
 *.out
