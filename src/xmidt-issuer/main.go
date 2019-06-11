@@ -16,8 +16,22 @@ package main
 
 import (
 	"fmt"
+	"os"
+
+	"go.uber.org/fx"
+)
+
+const (
+	applicationName = "xmidt-issuer"
 )
 
 func main() {
-	fmt.Println("Hello, world.")
+	app := fx.New()
+
+	if err := app.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to start: %s", err)
+		os.Exit(1)
+	}
+
+	app.Run()
 }

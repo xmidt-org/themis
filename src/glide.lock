@@ -1,5 +1,5 @@
 hash: ff8c100a9588f0c303fac1c10fbf81011093dd941a3c718aa1495942546fa057
-updated: 2019-06-10T11:36:26.946679-07:00
+updated: 2019-06-10T17:06:59.376139-07:00
 imports:
 - name: github.com/dgrijalva/jwt-go
   version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
@@ -43,10 +43,21 @@ imports:
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/spf13/viper
   version: b5bf975e5823809fb22c7644d008757f78a4259e
+- name: go.uber.org/atomic
+  version: df976f2515e274675050de7b3f42545de80594fd
 - name: go.uber.org/dig
   version: 7ff117f761a3f1b3eb521945c17a1091438eb6de
+  subpackages:
+  - internal/digreflect
+  - internal/dot
 - name: go.uber.org/fx
   version: 3de044da969b90ad0a3e4a7867a74662f645f3f9
+  subpackages:
+  - internal/fxlog
+  - internal/fxreflect
+  - internal/lifecycle
+- name: go.uber.org/multierr
+  version: 3c4937480c32f4c13a875a1829af76c98ca3d40a
 - name: golang.org/x/sys
   version: 7dfd1290c7917b7ba22824b9d24954ab3002fe24
   subpackages:
