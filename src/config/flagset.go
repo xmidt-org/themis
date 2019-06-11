@@ -10,7 +10,7 @@ type FlagSetOptions struct {
 	Arguments       []string
 }
 
-func ProvideFlagSet(o FlagSetOptions) func() (*pflag.FlagSet, error) {
+func FlagSet(o FlagSetOptions) func() (*pflag.FlagSet, error) {
 	return func() (*pflag.FlagSet, error) {
 		fs := pflag.NewFlagSet(o.ApplicationName, pflag.ContinueOnError)
 		for _, b := range o.Builders {

@@ -16,7 +16,7 @@ type ViperOptions struct {
 	Builders        []ViperBuilder
 }
 
-func ProvideViper(o ViperOptions) func(*pflag.FlagSet) (*viper.Viper, error) {
+func Viper(o ViperOptions) func(*pflag.FlagSet) (*viper.Viper, error) {
 	return func(fs *pflag.FlagSet) (*viper.Viper, error) {
 		var (
 			v  = viper.New()

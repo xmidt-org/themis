@@ -15,6 +15,7 @@
 package main
 
 import (
+	"config"
 	"fmt"
 	"os"
 
@@ -26,7 +27,17 @@ const (
 )
 
 func main() {
-	app := fx.New()
+	app := fx.New(
+		fx.Provide(
+			config.FlagSet(config.FlagSetOptions{
+				ApplicationName: applicationName,
+				Arguments:       os.Args[1:],
+			}),
+			config.Viper(config.ViperOptions{
+				ApplicationName: applicationName,
+			}),
+		),
+	)
 
 	if err := app.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to start: %s", err)

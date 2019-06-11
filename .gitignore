@@ -3,3 +3,4 @@ xmidt-issuer
 bin/
 lib/
 *.out
+*.swp
