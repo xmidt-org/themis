@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	applicationName = "xmidt-issuer"
+	applicationName    = "xmidt-issuer"
+	applicationVersion = "0.0.0"
 )
 
 func main() {
