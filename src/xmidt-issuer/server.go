@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"xserver"
+	"xhttp/xhttpserver"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -21,20 +21,20 @@ type MainIn struct {
 
 func ProvideMain(serverKey string) func(MainIn) (*mux.Router, error) {
 	return func(in MainIn) (*mux.Router, error) {
-		var o xserver.Options
+		var o xhttpserver.Options
 		if err := in.Viper.UnmarshalKey(serverKey, &o); err != nil {
 			return nil, err
 		}
 
 		router := mux.NewRouter()
-		server, logger, err := xserver.New(in.Logger, router, o)
+		server, logger, err := xhttpserver.New(in.Logger, router, o)
 		if err != nil {
 			return nil, err
 		}
 
 		in.Lifecycle.Append(fx.Hook{
-			OnStart: xserver.OnStart(logger, server, func() { in.Shutdowner.Shutdown() }, o),
-			OnStop:  xserver.OnStop(logger, server),
+			OnStart: xhttpserver.OnStart(logger, server, func() { in.Shutdowner.Shutdown() }, o),
+			OnStop:  xhttpserver.OnStop(logger, server),
 		})
 
 		return router, nil

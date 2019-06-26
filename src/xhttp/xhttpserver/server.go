@@ -1,4 +1,4 @@
-package xserver
+package xhttpserver
 
 import (
 	"context"
