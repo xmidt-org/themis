@@ -21,3 +21,5 @@ import:
   version: ~1.7.0
 - package: github.com/prometheus/client_golang
   version: ^1.0.0
+- package: github.com/prometheus/procfs
+  version: ^0.0.3

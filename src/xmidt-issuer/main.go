@@ -23,6 +23,7 @@ import (
 	"token"
 	"xerror"
 	"xlog"
+	"xmetrics"
 
 	"github.com/go-kit/kit/log"
 
@@ -79,6 +80,7 @@ func main() {
 			key.Provide,
 			token.Provide("token"),
 			issuer.Provide("issuer"),
+			xmetrics.Provide("prometheus"),
 			ProvideMain("servers.main"),
 		),
 		fx.Invoke(
