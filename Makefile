@@ -6,7 +6,7 @@ APP          := xmidt-issuer
 FIRST_GOPATH := $(firstword $(subst :, ,$(shell go env GOPATH)))
 BINARY       := $(FIRST_GOPATH)/bin/$(APP)
 
-PROGVER = $(shell grep 'applicationVersion.*= ' src/$(APP)/$(APP).go | awk '{print $$3}' | sed -e 's/\"//g')
+PROGVER = $(shell grep 'applicationVersion.*= ' src/$(APP)/main.go | awk '{print $$3}' | sed -e 's/\"//g')
 RELEASE = 1
 
 .PHONY: glide-install
