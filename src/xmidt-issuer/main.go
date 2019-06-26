@@ -15,10 +15,19 @@
 package main
 
 import (
-	"config"
 	"fmt"
+	"issuer"
+	"key"
 	"os"
+	"random"
+	"token"
+	"xerror"
+	"xlog"
 
+	"github.com/go-kit/kit/log"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
@@ -27,21 +36,58 @@ const (
 )
 
 func main() {
+	var (
+		fs *pflag.FlagSet
+		//configFile string
+		v      *viper.Viper
+		logger log.Logger
+	)
+
+	err := xerror.Do(
+		func() (err error) {
+			fs, err = parseCommandLine(applicationName, os.Args[1:])
+			return
+		},
+		func() (err error) {
+			//configFile, err = fs.GetString(FileFlag)
+			return
+		},
+		func() (err error) {
+			//v, err = newViper(applicationName, configFile, fs)
+			v = viper.New()
+			return
+		},
+		func() (err error) {
+			logger, err = xlog.NewLogger("log", v)
+			return
+		},
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
 	app := fx.New(
+		fx.Logger(xlog.Printer{Logger: logger}),
 		fx.Provide(
-			config.FlagSet(config.FlagSetOptions{
-				ApplicationName: applicationName,
-				Arguments:       os.Args[1:],
-			}),
-			config.Viper(config.ViperOptions{
-				ApplicationName: applicationName,
-			}),
+			func() (*pflag.FlagSet, *viper.Viper, log.Logger) {
+				return fs, v, logger
+			},
+			random.Provide,
+			key.Provide,
+			token.Provide("token"),
+			issuer.Provide("issuer"),
+			ProvideMain("servers.main"),
+		),
+		fx.Invoke(
+			DefineMainRoutes,
 		),
 	)
 
 	if err := app.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to start: %s", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	app.Run()

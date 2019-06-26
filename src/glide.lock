@@ -1,5 +1,5 @@
-hash: ff8c100a9588f0c303fac1c10fbf81011093dd941a3c718aa1495942546fa057
-updated: 2019-06-10T17:06:59.376139-07:00
+hash: bc98db2576071960ad829b1014ad6fedbe5846461b41945456f054c0652c6beb
+updated: 2019-06-26T13:23:07.00344-07:00
 imports:
 - name: github.com/dgrijalva/jwt-go
   version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
@@ -7,6 +7,11 @@ imports:
   version: c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9
 - name: github.com/go-kit/kit
   version: 12210fb6ace19e0496167bb3e667dcd91fa9f69b
+  subpackages:
+  - endpoint
+  - log
+  - log/level
+  - transport/http
 - name: github.com/go-logfmt/logfmt
   version: 07c9b44f60d7ffdfb7d8efe1ad539965737836dc
 - name: github.com/gorilla/mux
@@ -25,12 +30,16 @@ imports:
   - json/token
 - name: github.com/justinas/alice
   version: 03f45bd4b7dad4734bc4620e46a35789349abb20
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
   version: 2c9e9502788518c97fe44e8955cd069417ee89df
 - name: github.com/mitchellh/mapstructure
   version: 00c29f56e2386353d58c599509e8dc3801b0d716
 - name: github.com/pelletier/go-toml
   version: 66540cf1fcd2c3aee6f6787dfa32a6ae9a870f12
+- name: github.com/prometheus/client_golang
+  version: 4ab88e80c249ed361d3299e2930427d9ac43ef8d
 - name: github.com/spf13/afero
   version: 63644898a8da0bc22138abf860edaf5277b6102e
   subpackages:

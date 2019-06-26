@@ -19,3 +19,5 @@ import:
   version: ~1.9.0
 - package: go.uber.org/dig
   version: ~1.7.0
+- package: github.com/prometheus/client_golang
+  version: ^1.0.0
