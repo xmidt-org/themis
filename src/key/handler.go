@@ -9,7 +9,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewHandler(e endpoint.Endpoint) http.Handler {
+type Handler http.Handler
+
+func NewHandler(e endpoint.Endpoint) Handler {
 	return kithttp.NewServer(
 		e,
 		func(_ context.Context, request *http.Request) (interface{}, error) {

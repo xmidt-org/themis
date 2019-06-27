@@ -3,23 +3,42 @@ package xmetrics
 import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
-func Provide(configKey string) func(*viper.Viper) (prometheus.Registerer, prometheus.Gatherer, Provider, error) {
-	return func(v *viper.Viper) (prometheus.Registerer, prometheus.Gatherer, Provider, error) {
+type ProvideOut struct {
+	fx.Out
+
+	Registerer prometheus.Registerer
+	Gatherer   prometheus.Gatherer
+	Provider   Provider
+}
+
+func Provide(configKey string) func(*viper.Viper) (ProvideOut, error) {
+	return func(v *viper.Viper) (ProvideOut, error) {
 		var o Options
 		if err := v.UnmarshalKey(configKey, &o); err != nil {
-			return nil, nil, nil, err
+			return ProvideOut{}, err
 		}
 
 		p, err := New(o)
 		if err != nil {
-			return nil, nil, nil, err
+			return ProvideOut{}, err
 		}
 
-		return p, p, p, nil
+		return ProvideOut{
+			Registerer: p,
+			Gatherer:   p,
+			Provider:   p,
+		}, nil
+	}
+}
+
+func ProvideHandler(o promhttp.HandlerOpts) func(prometheus.Gatherer) Handler {
+	return func(g prometheus.Gatherer) Handler {
+		return NewHandler(g, o)
 	}
 }
 

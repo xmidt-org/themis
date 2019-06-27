@@ -22,10 +22,13 @@ import (
 	"random"
 	"token"
 	"xerror"
+	"xhttp/xhttpserver"
 	"xlog"
 	"xmetrics"
 
 	"github.com/go-kit/kit/log"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -81,10 +84,15 @@ func main() {
 			token.Provide("token"),
 			issuer.Provide("issuer"),
 			xmetrics.Provide("prometheus"),
-			ProvideMain("servers.main"),
+			xmetrics.ProvideHandler(promhttp.HandlerOpts{}),
+			xhttpserver.Provide("servers.main"),
 		),
 		fx.Invoke(
-			DefineMainRoutes,
+			xmetrics.InvokeServer("servers.metrics", "/metrics"),
+			func(r *mux.Router, keyHandler key.Handler, issueHandler issuer.Handler) {
+				r.Handle("/issue", issueHandler).Methods("GET")
+				r.Handle("/keys/{kid}", keyHandler).Methods("GET")
+			},
 		),
 	)
 

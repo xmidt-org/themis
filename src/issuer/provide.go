@@ -1,7 +1,6 @@
 package issuer
 
 import (
-	"net/http"
 	"token"
 
 	"github.com/spf13/viper"
@@ -19,7 +18,7 @@ type Out struct {
 	fx.Out
 
 	Issuer  Issuer
-	Handler http.Handler `name:"issueHandler"`
+	Handler Handler
 }
 
 func Provide(key string) func(In) (Out, error) {

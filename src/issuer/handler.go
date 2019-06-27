@@ -8,7 +8,9 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-func NewHandler(e endpoint.Endpoint) http.Handler {
+type Handler http.Handler
+
+func NewHandler(e endpoint.Endpoint) Handler {
 	return kithttp.NewServer(
 		e,
 		func(_ context.Context, _ *http.Request) (interface{}, error) {

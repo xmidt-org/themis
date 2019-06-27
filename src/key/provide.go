@@ -2,7 +2,6 @@ package key
 
 import (
 	"io"
-	"net/http"
 
 	"go.uber.org/fx"
 )
@@ -17,7 +16,7 @@ type Out struct {
 	fx.Out
 
 	Registry Registry
-	Handler  http.Handler `name:"keyHandler"`
+	Handler  Handler
 }
 
 func Provide(in In) Out {
