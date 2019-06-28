@@ -1,10 +1,13 @@
 package xmetrics
 
 import (
+	"net/http"
+	"xhttp/xhttpserver"
+
 	"github.com/go-kit/kit/metrics"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
@@ -14,31 +17,47 @@ type ProvideOut struct {
 	Registerer prometheus.Registerer
 	Gatherer   prometheus.Gatherer
 	Registry   Registry
+	Handler    http.Handler `name:"metricsHandler"`
+	Router     *mux.Router  `name:"metricsRouter"`
 }
 
-func Provide(configKey string) func(*viper.Viper) (ProvideOut, error) {
-	return func(v *viper.Viper) (ProvideOut, error) {
-		var o Options
-		if err := v.UnmarshalKey(configKey, &o); err != nil {
+func Provide(serverConfigKey, metricsConfigKey string, ho promhttp.HandlerOpts) func(xhttpserver.ProvideIn) (ProvideOut, error) {
+	return func(serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
+		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
+		if err != nil {
 			return ProvideOut{}, err
 		}
 
-		r, err := New(o)
+		var o Options
+		if err := serverIn.Viper.UnmarshalKey(metricsConfigKey, &o); err != nil {
+			return ProvideOut{}, err
+		}
+
+		registry, err := New(o)
 		if err != nil {
 			return ProvideOut{}, err
 		}
 
 		return ProvideOut{
-			Registerer: r,
-			Gatherer:   r,
-			Registry:   r,
+			Registerer: registry,
+			Gatherer:   registry,
+			Registry:   registry,
+			Handler:    promhttp.HandlerFor(registry, ho),
+			Router:     router,
 		}, nil
 	}
 }
 
-func ProvideHandler(o promhttp.HandlerOpts) func(prometheus.Gatherer) Handler {
-	return func(g prometheus.Gatherer) Handler {
-		return NewHandler(g, o)
+type InvokeIn struct {
+	fx.In
+
+	Handler http.Handler `name:"metricsHandler"`
+	Router  *mux.Router  `name:"metricsRouter"`
+}
+
+func RunServer(path string) func(InvokeIn) {
+	return func(in InvokeIn) {
+		in.Router.Handle(path, in.Handler)
 	}
 }
 

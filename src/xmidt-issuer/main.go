@@ -22,7 +22,6 @@ import (
 	"random"
 	"token"
 	"xerror"
-	"xhttp/xhttpserver"
 	"xlog"
 	"xmetrics"
 
@@ -82,14 +81,12 @@ func main() {
 			key.Provide("servers.key"),
 			token.Provide("token"),
 			issuer.Provide("servers.issuer", "issuer"),
-			xmetrics.Provide("prometheus"),
-			xmetrics.ProvideHandler(promhttp.HandlerOpts{}),
-			xhttpserver.Provide("servers.main"),
+			xmetrics.Provide("servers.metrics", "prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
 			key.RunServer("/key/{kid}"),
 			issuer.RunServer("/issue"),
-			xmetrics.InvokeServer("servers.metrics", "/metrics"),
+			xmetrics.RunServer("/metrics"),
 		),
 	)
 
