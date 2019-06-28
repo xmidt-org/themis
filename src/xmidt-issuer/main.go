@@ -27,7 +27,6 @@ import (
 	"xmetrics"
 
 	"github.com/go-kit/kit/log"
-	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/spf13/pflag"
@@ -80,19 +79,17 @@ func main() {
 				return fs, v, logger
 			},
 			random.Provide,
-			key.Provide,
+			key.Provide("servers.key"),
 			token.Provide("token"),
-			issuer.Provide("issuer"),
+			issuer.Provide("servers.issuer", "issuer"),
 			xmetrics.Provide("prometheus"),
 			xmetrics.ProvideHandler(promhttp.HandlerOpts{}),
 			xhttpserver.Provide("servers.main"),
 		),
 		fx.Invoke(
+			key.RunServer("/key/{kid}"),
+			issuer.RunServer("/issue"),
 			xmetrics.InvokeServer("servers.metrics", "/metrics"),
-			func(r *mux.Router, keyHandler key.Handler, issueHandler issuer.Handler) {
-				r.Handle("/issue", issueHandler).Methods("GET")
-				r.Handle("/keys/{kid}", keyHandler).Methods("GET")
-			},
 		),
 	)
 

@@ -14,7 +14,7 @@ type Options struct {
 	DisableProcessCollector bool
 }
 
-type Provider interface {
+type Registry interface {
 	prometheus.Registerer
 	prometheus.Gatherer
 
@@ -24,7 +24,7 @@ type Provider interface {
 	NewSummary(prometheus.SummaryOpts, []string) (metrics.Histogram, error)
 }
 
-type provider struct {
+type registry struct {
 	prometheus.Registerer
 	prometheus.Gatherer
 
@@ -32,71 +32,71 @@ type provider struct {
 	defaultSubsystem string
 }
 
-func (p *provider) namespace(v string) string {
+func (r *registry) namespace(v string) string {
 	if len(v) > 0 {
 		return v
 	}
 
-	return p.defaultNamespace
+	return r.defaultNamespace
 }
 
-func (p *provider) subsystem(v string) string {
+func (r *registry) subsystem(v string) string {
 	if len(v) > 0 {
 		return v
 	}
 
-	return p.defaultSubsystem
+	return r.defaultSubsystem
 }
 
-func (p *provider) NewCounter(o prometheus.CounterOpts, labelNames []string) (metrics.Counter, error) {
-	o.Namespace = p.namespace(o.Namespace)
-	o.Subsystem = p.subsystem(o.Subsystem)
+func (r *registry) NewCounter(o prometheus.CounterOpts, labelNames []string) (metrics.Counter, error) {
+	o.Namespace = r.namespace(o.Namespace)
+	o.Subsystem = r.subsystem(o.Subsystem)
 
 	cv := prometheus.NewCounterVec(o, labelNames)
-	if err := p.Register(cv); err != nil {
+	if err := r.Register(cv); err != nil {
 		return nil, err
 	}
 
 	return kitprometheus.NewCounter(cv), nil
 }
 
-func (p *provider) NewGauge(o prometheus.GaugeOpts, labelNames []string) (metrics.Gauge, error) {
-	o.Namespace = p.namespace(o.Namespace)
-	o.Subsystem = p.subsystem(o.Subsystem)
+func (r *registry) NewGauge(o prometheus.GaugeOpts, labelNames []string) (metrics.Gauge, error) {
+	o.Namespace = r.namespace(o.Namespace)
+	o.Subsystem = r.subsystem(o.Subsystem)
 
 	cv := prometheus.NewGaugeVec(o, labelNames)
-	if err := p.Register(cv); err != nil {
+	if err := r.Register(cv); err != nil {
 		return nil, err
 	}
 
 	return kitprometheus.NewGauge(cv), nil
 }
 
-func (p *provider) NewHistogram(o prometheus.HistogramOpts, labelNames []string) (metrics.Histogram, error) {
-	o.Namespace = p.namespace(o.Namespace)
-	o.Subsystem = p.subsystem(o.Subsystem)
+func (r *registry) NewHistogram(o prometheus.HistogramOpts, labelNames []string) (metrics.Histogram, error) {
+	o.Namespace = r.namespace(o.Namespace)
+	o.Subsystem = r.subsystem(o.Subsystem)
 
 	cv := prometheus.NewHistogramVec(o, labelNames)
-	if err := p.Register(cv); err != nil {
+	if err := r.Register(cv); err != nil {
 		return nil, err
 	}
 
 	return kitprometheus.NewHistogram(cv), nil
 }
 
-func (p *provider) NewSummary(o prometheus.SummaryOpts, labelNames []string) (metrics.Histogram, error) {
-	o.Namespace = p.namespace(o.Namespace)
-	o.Subsystem = p.subsystem(o.Subsystem)
+func (r *registry) NewSummary(o prometheus.SummaryOpts, labelNames []string) (metrics.Histogram, error) {
+	o.Namespace = r.namespace(o.Namespace)
+	o.Subsystem = r.subsystem(o.Subsystem)
 
 	cv := prometheus.NewSummaryVec(o, labelNames)
-	if err := p.Register(cv); err != nil {
+	if err := r.Register(cv); err != nil {
 		return nil, err
 	}
 
 	return kitprometheus.NewSummary(cv), nil
 }
 
-func New(o Options) (Provider, error) {
+func New(o Options) (Registry, error) {
 	var pr *prometheus.Registry
 	if o.Pedantic {
 		pr = prometheus.NewRegistry()
@@ -117,7 +117,7 @@ func New(o Options) (Provider, error) {
 		}
 	}
 
-	return &provider{
+	return &registry{
 		Registerer:       pr,
 		Gatherer:         pr,
 		defaultNamespace: o.DefaultNamespace,

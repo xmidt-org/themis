@@ -2,39 +2,59 @@ package issuer
 
 import (
 	"token"
+	"xhttp/xhttpserver"
 
-	"github.com/spf13/viper"
+	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 )
 
-type In struct {
+type ProvideIn struct {
 	fx.In
 
 	Factory token.Factory
-	Viper   *viper.Viper
 }
 
-type Out struct {
+type ProvideOut struct {
 	fx.Out
 
 	Issuer  Issuer
 	Handler Handler
+	Router  *mux.Router `name:"issuerRouter"`
 }
 
-func Provide(key string) func(In) (Out, error) {
-	return func(in In) (Out, error) {
-		var o Options
-		if err := in.Viper.UnmarshalKey(key, &o); err != nil {
-			return Out{}, err
+func Provide(serverConfigKey, issuerConfigKey string) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
+	return func(issuerIn ProvideIn, serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
+		router, err := xhttpserver.Provide(serverConfigKey)(serverIn)
+		if err != nil {
+			return ProvideOut{}, err
 		}
 
-		i := New(in.Factory, o)
+		var o Options
+		if err := serverIn.Viper.UnmarshalKey(issuerConfigKey, &o); err != nil {
+			return ProvideOut{}, err
+		}
 
-		return Out{
+		i := New(issuerIn.Factory, o)
+
+		return ProvideOut{
 			Issuer: i,
 			Handler: NewHandler(
 				NewEndpoint(i),
 			),
+			Router: router,
 		}, nil
+	}
+}
+
+type InvokeIn struct {
+	fx.In
+
+	Handler Handler
+	Router  *mux.Router `name:"issuerRouter"`
+}
+
+func RunServer(path string) func(in InvokeIn) {
+	return func(in InvokeIn) {
+		in.Router.Handle(path, in.Handler)
 	}
 }
