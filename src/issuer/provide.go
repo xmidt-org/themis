@@ -24,7 +24,7 @@ type ProvideOut struct {
 
 func Provide(serverConfigKey, issuerConfigKey string) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
 	return func(issuerIn ProvideIn, serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
-		router, err := xhttpserver.Provide(serverConfigKey)(serverIn)
+		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
 		if err != nil {
 			return ProvideOut{}, err
 		}
