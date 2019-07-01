@@ -105,8 +105,10 @@ func OnStart(logger log.Logger, s Interface, onExit func(), o Options) func(cont
 
 			var err error
 			if len(o.CertificateFile) > 0 && len(o.KeyFile) > 0 {
+				logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting TLS")
 				err = s.ServeTLS(l, o.CertificateFile, o.KeyFile)
 			} else {
+				logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting non-TLS")
 				err = s.Serve(l)
 			}
 
