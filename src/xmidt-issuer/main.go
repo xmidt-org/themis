@@ -20,8 +20,8 @@ import (
 	"key"
 	"os"
 	"random"
+	"strings"
 	"token"
-	"xerror"
 	"xlog"
 	"xmetrics"
 
@@ -38,36 +38,54 @@ const (
 	applicationVersion = "0.0.0"
 )
 
-func main() {
+func initViper(name string, arguments []string) (*pflag.FlagSet, *viper.Viper, error) {
 	var (
-		fs *pflag.FlagSet
-		//configFile string
-		v      *viper.Viper
-		logger log.Logger
+		fs   = pflag.NewFlagSet(name, pflag.ContinueOnError)
+		file = fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
+		dev  = fs.BoolP("dev", "", false, "development node")
 	)
 
-	err := xerror.Do(
-		func() (err error) {
-			fs, err = parseCommandLine(applicationName, os.Args[1:])
-			return
-		},
-		func() (err error) {
-			//configFile, err = fs.GetString(FileFlag)
-			return
-		},
-		func() (err error) {
-			//v, err = newViper(applicationName, configFile, fs)
-			v = viper.New()
-			return
-		},
-		func() (err error) {
-			logger, err = xlog.NewLogger("log", v)
-			return
-		},
-	)
+	if err := fs.Parse(arguments); err != nil {
+		return nil, nil, err
+	}
 
+	v := viper.New()
+	switch {
+	case *dev:
+		v.SetConfigType("yaml")
+		if err := v.ReadConfig(strings.NewReader(devMode)); err != nil {
+			return nil, nil, err
+		}
+
+	case len(*file) > 0:
+		v.SetConfigFile(*file)
+		if err := v.ReadInConfig(); err != nil {
+			return nil, nil, err
+		}
+
+	default:
+		v.SetConfigName(name)
+		v.AddConfigPath(".")
+		v.AddConfigPath(fmt.Sprintf("$HOME/.%s", name))
+		v.AddConfigPath(fmt.Sprintf("/etc/%s", name))
+		if err := v.ReadInConfig(); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return fs, v, nil
+}
+
+func main() {
+	fs, v, err := initViper(applicationName, os.Args[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(os.Stderr, "Unable to initialize viper: %s", err)
+		os.Exit(1)
+	}
+
+	logger, err := xlog.Unmarshal("log", v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to initialize logging: %s", err)
 		os.Exit(1)
 	}
 

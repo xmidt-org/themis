@@ -92,7 +92,7 @@ func Level(v string) (level.Value, error) {
 	}
 }
 
-func FromOptions(o Options) (log.Logger, error) {
+func New(o Options) (log.Logger, error) {
 	if len(o.File) == 0 || o.File == StdoutFile {
 		return Default(), nil
 	}
@@ -136,11 +136,11 @@ func Default() log.Logger {
 	return defaultLogger
 }
 
-func NewLogger(key string, v *viper.Viper) (log.Logger, error) {
+func Unmarshal(key string, v *viper.Viper) (log.Logger, error) {
 	var o Options
 	if err := v.UnmarshalKey(key, &o); err != nil {
 		return nil, err
 	}
 
-	return FromOptions(o)
+	return New(o)
 }
