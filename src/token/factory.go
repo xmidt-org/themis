@@ -112,7 +112,7 @@ func parseDuration(v string) (time.Duration, error) {
 // The token's key pair is registered with the given key Registry.
 func NewFactory(n random.Noncer, kr key.Registry, d Descriptor) (Factory, error) {
 	method, err := parseAlg(d.Alg)
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 
