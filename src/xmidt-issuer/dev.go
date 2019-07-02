@@ -26,6 +26,9 @@ token:
     trust: 1000
     sub: "client:supplied"
     aud: XMiDT
+    capabilities:
+      -
+        x1:issuer:test:.*:all
   key:
     kid: development
     type: rsa
