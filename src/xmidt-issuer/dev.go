@@ -21,6 +21,11 @@ servers:
 token:
   alg: RS256
   nonce: true
+  claims:
+    partner-id: comcast
+    trust: 1000
+    sub: "client:supplied"
+    aud: XMiDT
   key:
     kid: development
     type: rsa
