@@ -19,12 +19,12 @@ servers:
     disableHTTPKeepAlives: true
 
 token:
-  alg: RS512
+  alg: RS256
   nonce: true
   key:
     kid: development
     type: rsa
-    bits: 512
+    bits: 1024
 
 log:
   file: stdout
