@@ -43,6 +43,7 @@ func initViper(name string, arguments []string) (*pflag.FlagSet, *viper.Viper, e
 		fs   = pflag.NewFlagSet(name, pflag.ContinueOnError)
 		file = fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
 		dev  = fs.BoolP("dev", "", false, "development node")
+		iss  = fs.StringP("iss", "", "", "the name of the issuer to put into claims.  Overrides configuration.")
 	)
 
 	if err := fs.Parse(arguments); err != nil {
@@ -73,12 +74,18 @@ func initViper(name string, arguments []string) (*pflag.FlagSet, *viper.Viper, e
 		}
 	}
 
+	if len(*iss) > 0 {
+		v.Set("issuer.claims.iss", *iss)
+	}
+
 	return fs, v, nil
 }
 
 func main() {
 	fs, v, err := initViper(applicationName, os.Args[1:])
-	if err != nil {
+	if err == pflag.ErrHelp {
+		os.Exit(0)
+	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to initialize viper: %s", err)
 		os.Exit(1)
 	}
