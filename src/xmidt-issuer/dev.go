@@ -26,6 +26,10 @@ token:
     type: rsa
     bits: 1024
 
+issuer:
+  claims:
+    iss: development
+
 log:
   file: stdout
   level: DEBUG
