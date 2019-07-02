@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/justinas/alice"
 )
 
 const (
@@ -42,6 +43,8 @@ type Options struct {
 
 	DisableTCPKeepAlives bool
 	TCPKeepAlivePeriod   string
+
+	Header map[string]string
 }
 
 // Interface is the expected behavior of a server
@@ -84,6 +87,28 @@ func NewListener(ctx context.Context, lcfg net.ListenConfig, o Options) (net.Lis
 	}
 
 	return l, nil
+}
+
+func NewChain(logger log.Logger, o Options) alice.Chain {
+	constructors := []alice.Constructor{
+		xlog.NewConstructor(logger),
+	}
+
+	if len(o.Header) > 0 {
+		constructors = append(
+			constructors,
+			func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+					h := response.Header()
+					for k, v := range o.Header {
+						h.Set(k, v)
+					}
+				})
+			},
+		)
+	}
+
+	return alice.New(constructors...)
 }
 
 // OnStart produces a closure that will start the given server appropriately

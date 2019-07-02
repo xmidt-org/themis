@@ -1,5 +1,5 @@
-hash: 7473e96ad4470c3be6fc1358065884893159825b29d65ee57caf34c007f06ddc
-updated: 2019-06-26T13:31:04.151297-07:00
+hash: 25b3d2f3883c0d631c18e5cdf1c0e06a5fa8a5f3bc67f046dba5eb7d44926c86
+updated: 2019-07-02T10:32:29.014806-05:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -15,6 +15,9 @@ imports:
   - endpoint
   - log
   - log/level
+  - metrics
+  - metrics/internal/lv
+  - metrics/prometheus
   - transport/http
 - name: github.com/go-logfmt/logfmt
   version: 07c9b44f60d7ffdfb7d8efe1ad539965737836dc
@@ -23,7 +26,7 @@ imports:
   subpackages:
   - proto
 - name: github.com/gorilla/mux
-  version: ed099d42384823742bba0bf9a72b53b55c9e2e38
+  version: 00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15
 - name: github.com/hashicorp/hcl
   version: ef8a98b0bbce4a65b5aa4c368430a80ddc533168
   subpackages:
@@ -55,6 +58,7 @@ imports:
   subpackages:
   - prometheus
   - prometheus/internal
+  - prometheus/promhttp
 - name: github.com/prometheus/client_model
   version: 99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c
   subpackages:
@@ -81,6 +85,8 @@ imports:
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/spf13/viper
   version: b5bf975e5823809fb22c7644d008757f78a4259e
+- name: github.com/stretchr/testify
+  version: ffdc059bfe9ce6a4e144ba849dbedead332c6053
 - name: go.uber.org/atomic
   version: df976f2515e274675050de7b3f42545de80594fd
 - name: go.uber.org/dig

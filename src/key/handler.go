@@ -3,8 +3,10 @@ package key
 import (
 	"context"
 	"net/http"
+	"xlog"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/log/level"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 )
@@ -14,11 +16,17 @@ type Handler http.Handler
 func NewHandler(e endpoint.Endpoint) Handler {
 	return kithttp.NewServer(
 		e,
-		func(_ context.Context, request *http.Request) (interface{}, error) {
+		func(ctx context.Context, request *http.Request) (interface{}, error) {
 			kid, ok := mux.Vars(request)["kid"]
 			if !ok {
 				return nil, ErrKeyNotFound
 			}
+
+			xlog.Get(ctx).Log(
+				level.Key(), level.InfoValue(),
+				xlog.MessageKey(), "key request",
+				"kid", kid,
+			)
 
 			return kid, nil
 		},
