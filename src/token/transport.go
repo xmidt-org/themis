@@ -62,8 +62,25 @@ func BuildRequest(hr *http.Request, b ...RequestBuilder) (*Request, error) {
 	return tr, nil
 }
 
+func NewBuilders(d Descriptor) []RequestBuilder {
+	var rbs []RequestBuilder
+	for header, claim := range d.HeaderClaims {
+		rbs = append(rbs, HeaderClaim(header, claim))
+	}
+
+	for parameter, claim := range d.ParameterClaims {
+		rbs = append(rbs, ParameterClaim(parameter, claim))
+	}
+
+	return rbs
+}
+
 func DecodeRequest(b ...RequestBuilder) func(context.Context, *http.Request) (interface{}, error) {
 	return func(_ context.Context, hr *http.Request) (interface{}, error) {
+		if err := hr.ParseForm(); err != nil {
+			return nil, err
+		}
+
 		tr, err := BuildRequest(hr, b...)
 		if err != nil {
 			return nil, err

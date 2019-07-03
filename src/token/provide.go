@@ -41,6 +41,8 @@ func Provide(serverConfigKey, tokenConfigKey string, b ...RequestBuilder) func(P
 			return ProvideOut{}, err
 		}
 
+		b = append(b, NewBuilders(d)...)
+
 		return ProvideOut{
 			Factory: f,
 			Handler: NewHandler(

@@ -100,6 +100,12 @@ type Descriptor struct {
 	//
 	// If unset, then now nbf claim is issued.
 	NotBeforeDelta string
+
+	// HeaderClaims maps HTTP headers onto claims in the issued tokens
+	HeaderClaims map[string]string
+
+	// ParameterClaims maps query and form parameters onto claims in issued tokens
+	ParameterClaims map[string]string
 }
 
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only

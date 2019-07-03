@@ -24,6 +24,14 @@ token:
   nonce: true
   notBeforeDelta: -15s
   duration: 24h
+  headerClaims:
+    X-Midt-Mac-Address: mac
+    X-Midt-Serial-Number: serial
+    X-Midt-Uuid: uuid
+  parameterClaims:
+    mac: mac
+    serial: serial
+    uuid: uuid
   claims:
     iss: development
     partner-id: comcast
