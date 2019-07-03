@@ -22,6 +22,8 @@ servers:
 token:
   alg: RS256
   nonce: true
+  notBeforeDelta: -15s
+  duration: 24h
   claims:
     partner-id: comcast
     trust: 1000

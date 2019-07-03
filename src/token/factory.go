@@ -29,9 +29,10 @@ type factory struct {
 	// pair is an atomic value so that future updates can implement key rotation
 	pair atomic.Value
 
-	now      func() time.Time
-	duration time.Duration
-	noncer   random.Noncer
+	now            func() time.Time
+	noncer         random.Noncer
+	duration       time.Duration
+	notBeforeDelta *time.Duration
 }
 
 func (f *factory) NewToken(r Request) (string, error) {
@@ -49,11 +50,14 @@ func (f *factory) NewToken(r Request) (string, error) {
 		pair = f.pair.Load().(key.Pair)
 	)
 
-	merged["kid"] = pair.KID()
 	merged["iat"] = now.Unix()
 
 	if f.duration > 0 {
-		merged["exp"] = now.Add(f.duration).UTC().Unix()
+		merged["exp"] = now.Add(f.duration).Unix()
+	}
+
+	if f.notBeforeDelta != nil {
+		merged["nbf"] = now.Add(*f.notBeforeDelta).Unix()
 	}
 
 	if f.noncer != nil {
@@ -66,6 +70,7 @@ func (f *factory) NewToken(r Request) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(f.method, merged)
+	token.Header["kid"] = pair.KID()
 	return token.SignedString(pair.Sign())
 }
 
@@ -88,44 +93,47 @@ type Descriptor struct {
 	// Nonce indicates whether a nonce (jti) should be applied to each token emitted
 	// by this factory.
 	Nonce bool
-}
 
-func parseAlg(alg string) (jwt.SigningMethod, error) {
-	method := jwt.GetSigningMethod(alg)
-	if method == nil {
-		return nil, fmt.Errorf("Unrecognized signing method: %s", alg)
-	}
-
-	return method, nil
-}
-
-func parseDuration(v string) (time.Duration, error) {
-	if len(v) > 0 {
-		return time.ParseDuration(v)
-	}
-
-	return 0, nil
+	// NotBeforeDelta is a golang duration that determines the nbf field.  If set, this field
+	// is parsed and added to the current time at the moment a token is issued.  The result
+	// is set as an nbf claim.  Note that the duration may be zero or negative.
+	//
+	// If unset, then now nbf claim is issued.
+	NotBeforeDelta string
 }
 
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only
 // if d.Nonce is true.  Alternatively, supplying a nil Noncer will disable nonce creation altogether.
 // The token's key pair is registered with the given key Registry.
 func NewFactory(n random.Noncer, kr key.Registry, d Descriptor) (Factory, error) {
-	method, err := parseAlg(d.Alg)
-	if err != nil {
-		return nil, err
-	}
-
-	duration, err := parseDuration(d.Duration)
-	if err != nil {
-		return nil, err
-	}
-
 	f := &factory{
-		method:   method,
-		claims:   make(map[string]interface{}, len(d.Claims)),
-		now:      time.Now,
-		duration: duration,
+		claims: make(map[string]interface{}, len(d.Claims)),
+		now:    time.Now,
+	}
+
+	if len(d.Alg) == 0 {
+		d.Alg = "RS256"
+	}
+
+	var err error
+	f.method = jwt.GetSigningMethod(d.Alg)
+	if f.method == nil {
+		return nil, fmt.Errorf("No such signing method: %s", d.Alg)
+	}
+
+	if len(d.Duration) > 0 {
+		f.duration, err = time.ParseDuration(d.Duration)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(d.NotBeforeDelta) > 0 {
+		f.notBeforeDelta = new(time.Duration)
+		*f.notBeforeDelta, err = time.ParseDuration(d.NotBeforeDelta)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if d.Nonce {
