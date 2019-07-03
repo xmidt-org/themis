@@ -25,6 +25,7 @@ token:
   notBeforeDelta: -15s
   duration: 24h
   claims:
+    iss: development
     partner-id: comcast
     trust: 1000
     sub: "client:supplied"
@@ -36,10 +37,6 @@ token:
     kid: development
     type: rsa
     bits: 1024
-
-issuer:
-  claims:
-    iss: development
 
 log:
   file: stdout

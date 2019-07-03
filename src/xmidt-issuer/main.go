@@ -16,7 +16,6 @@ package main
 
 import (
 	"fmt"
-	"issuer"
 	"key"
 	"os"
 	"random"
@@ -104,13 +103,12 @@ func main() {
 			},
 			random.Provide,
 			key.Provide("servers.key"),
-			token.Provide("token"),
-			issuer.Provide("servers.issuer", "issuer"),
+			token.Provide("servers.issuer", "token"),
 			xmetrics.Provide("servers.metrics", "prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
 			key.RunServer("/key/{kid}"),
-			issuer.RunServer("/issue"),
+			token.RunServer("/issue"),
 			xmetrics.RunServer("/metrics"),
 		),
 	)

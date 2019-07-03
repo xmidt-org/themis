@@ -19,7 +19,7 @@ type Request struct {
 // Factory is a creation strategy for signed JWT tokens
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token
-	NewToken(Request) (string, error)
+	NewToken(*Request) (string, error)
 }
 
 type factory struct {
@@ -35,7 +35,7 @@ type factory struct {
 	notBeforeDelta *time.Duration
 }
 
-func (f *factory) NewToken(r Request) (string, error) {
+func (f *factory) NewToken(r *Request) (string, error) {
 	merged := make(jwt.MapClaims, len(f.claims)+len(r.Claims))
 	for k, v := range f.claims {
 		merged[k] = v
