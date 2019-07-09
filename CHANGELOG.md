@@ -7,13 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ## [v0.0.0]
+- Added dev mode
+- Implemented uber/fx style provders
 
-
-
-### Added
-- Initial creation
-
-### Changed
--
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD
