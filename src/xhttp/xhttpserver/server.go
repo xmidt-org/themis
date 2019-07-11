@@ -2,7 +2,10 @@ package xhttpserver
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -21,17 +24,29 @@ const (
 )
 
 var (
-	ErrNoAddress = errors.New("A server bind address must be specified")
+	ErrNoAddress                      = errors.New("A server bind address must be specified")
+	ErrTlsCertificateRequired         = errors.New("Both a certificateFile and keyFile are required")
+	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
 
 func AddressKey() interface{} {
 	return addressKey
 }
 
+type Tls struct {
+	CertificateFile         string
+	KeyFile                 string
+	ClientCACertificateFile string
+	ServerName              string
+	NextProtos              []string
+	MinVersion              uint16
+	MaxVersion              uint16
+}
+
 type Options struct {
-	Address               string
-	CertificateFile       string
-	KeyFile               string
+	Address string
+	Tls     *Tls
+
 	LogConnectionState    bool
 	DisableHTTPKeepAlives bool
 	MaxHeaderBytes        int
@@ -59,15 +74,75 @@ type tcpKeepAliveListener struct {
 	period time.Duration
 }
 
+func NewTlsConfig(t *Tls) (*tls.Config, error) {
+	if t == nil {
+		return nil, nil
+	}
+
+	if len(t.CertificateFile) == 0 || len(t.KeyFile) == 0 {
+		return nil, ErrTlsCertificateRequired
+	}
+
+	var nextProtos []string
+	if len(t.NextProtos) > 0 {
+		for _, np := range t.NextProtos {
+			nextProtos = append(nextProtos, np)
+		}
+	} else {
+		// assume http/1.1 by default
+		nextProtos = append(nextProtos, "http/1.1")
+	}
+
+	tc := &tls.Config{
+		MinVersion: t.MinVersion,
+		MaxVersion: t.MaxVersion,
+		ServerName: t.ServerName,
+		NextProtos: nextProtos,
+	}
+
+	if cert, err := tls.LoadX509KeyPair(t.CertificateFile, t.KeyFile); err != nil {
+		return nil, err
+	} else {
+		tc.Certificates = []tls.Certificate{cert}
+	}
+
+	if len(t.ClientCACertificateFile) > 0 {
+		caCert, err := ioutil.ReadFile(t.ClientCACertificateFile)
+		if err != nil {
+			return nil, err
+		}
+
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, ErrUnableToAddClientCACertificate
+		}
+
+		tc.ClientCAs = caCertPool
+		tc.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
+	tc.BuildNameToCertificate()
+	return tc, nil
+}
+
 func NewListener(ctx context.Context, lcfg net.ListenConfig, o Options) (net.Listener, error) {
 	address := o.Address
 	if len(address) == 0 {
 		address = ":http"
 	}
 
+	tc, err := NewTlsConfig(o.Tls)
+	if err != nil {
+		return nil, err
+	}
+
 	l, err := lcfg.Listen(ctx, "tcp", address)
 	if err != nil {
 		return nil, err
+	}
+
+	if tc != nil {
+		l = tls.NewListener(l, tc)
 	}
 
 	if !o.DisableTCPKeepAlives {
@@ -128,14 +203,8 @@ func OnStart(logger log.Logger, s Interface, onExit func(), o Options) func(cont
 				defer onExit()
 			}
 
-			var err error
-			if len(o.CertificateFile) > 0 && len(o.KeyFile) > 0 {
-				logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting TLS")
-				err = s.ServeTLS(l, o.CertificateFile, o.KeyFile)
-			} else {
-				logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting non-TLS")
-				err = s.Serve(l)
-			}
+			logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting server")
+			err := s.Serve(l)
 
 			logger.Log(
 				level.Key(), level.ErrorValue(),
