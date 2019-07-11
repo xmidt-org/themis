@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"fmt"
 	"key"
 	"random"
@@ -13,13 +14,19 @@ import (
 // Request is a token creation request.  Clients can pass in arbitrary claims, typically things like "iss",
 // to merge and override anything set on the factory via configuration.
 type Request struct {
+	// Claims holds the extra claims to add to tokens.  These claims will override any configured claims in a Factory,
+	// but will not override time-based claims such as nbf or exp.
 	Claims map[string]interface{}
+
+	// Meta holds metadata about the request, usually garnered from the original HTTP request.  This
+	// metadata is available to lower levels of infrastructure used by the Factory.
+	Meta map[string]interface{}
 }
 
 // Factory is a creation strategy for signed JWT tokens
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token
-	NewToken(*Request) (string, error)
+	NewToken(context.Context, *Request) (string, error)
 }
 
 type factory struct {
@@ -35,7 +42,7 @@ type factory struct {
 	notBeforeDelta *time.Duration
 }
 
-func (f *factory) NewToken(r *Request) (string, error) {
+func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 	merged := make(jwt.MapClaims, len(f.claims)+len(r.Claims))
 	for k, v := range f.claims {
 		merged[k] = v
@@ -106,6 +113,12 @@ type Descriptor struct {
 
 	// ParameterClaims maps query and form parameters onto claims in issued tokens
 	ParameterClaims map[string]string
+
+	// MetaHeaders maps HTTP headers onto metadata in token requests
+	MetaHeaders map[string]string
+
+	// MetaParameters maps HTTP parameters onto metadata in token requests
+	MetaParameters map[string]string
 }
 
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only

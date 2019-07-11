@@ -48,9 +48,38 @@ func VariableClaim(variable, claim string) RequestBuilder {
 	}
 }
 
+func MetaHeader(header, key string) RequestBuilder {
+	return func(hr *http.Request, tr *Request) error {
+		v := hr.Header.Get(header)
+		if len(v) > 0 {
+			tr.Meta[key] = v
+		}
+
+		return nil
+	}
+}
+
+func MetaParameter(parameter, key string) RequestBuilder {
+	return func(hr *http.Request, tr *Request) error {
+		v := hr.Form.Get(parameter)
+		if len(v) > 0 {
+			tr.Meta[key] = v
+			return nil
+		}
+
+		v = hr.PostForm.Get(parameter)
+		if len(v) > 0 {
+			tr.Meta[key] = v
+		}
+
+		return nil
+	}
+}
+
 func BuildRequest(hr *http.Request, b ...RequestBuilder) (*Request, error) {
 	tr := &Request{
 		Claims: make(map[string]interface{}),
+		Meta:   make(map[string]interface{}),
 	}
 
 	for _, f := range b {
@@ -70,6 +99,14 @@ func NewBuilders(d Descriptor) []RequestBuilder {
 
 	for parameter, claim := range d.ParameterClaims {
 		rbs = append(rbs, ParameterClaim(parameter, claim))
+	}
+
+	for header, key := range d.MetaHeaders {
+		rbs = append(rbs, MetaHeader(header, key))
+	}
+
+	for parameter, key := range d.MetaParameters {
+		rbs = append(rbs, MetaParameter(parameter, key))
 	}
 
 	return rbs

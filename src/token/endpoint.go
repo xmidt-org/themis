@@ -7,7 +7,7 @@ import (
 )
 
 func NewEndpoint(f Factory) endpoint.Endpoint {
-	return func(_ context.Context, v interface{}) (interface{}, error) {
-		return f.NewToken(v.(*Request))
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		return f.NewToken(ctx, v.(*Request))
 	}
 }
