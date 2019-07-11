@@ -26,10 +26,6 @@ type Request struct {
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token
 	NewToken(context.Context, *Request) (string, error)
-
-	// NewClaims returns the claims that this factory would produce in a token,
-	// given a specific Request.
-	NewClaims(context.Context, *Request) (map[string]interface{}, error)
 }
 
 type factory struct {
@@ -41,26 +37,17 @@ type factory struct {
 }
 
 func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
-	claims, err := f.NewClaims(ctx, r)
-	if err != nil {
-		return "", err
-	}
-
-	token := jwt.NewWithClaims(f.method, jwt.MapClaims(claims))
-	pair := f.pair.Load().(key.Pair)
-	token.Header["kid"] = pair.KID()
-	return token.SignedString(pair.Sign())
-}
-
-func (f *factory) NewClaims(ctx context.Context, r *Request) (map[string]interface{}, error) {
 	merged := make(map[string]interface{}, len(r.Claims))
 	for _, c := range f.claimers {
 		if err := c.Append(ctx, r, merged); err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
-	return merged, nil
+	token := jwt.NewWithClaims(f.method, jwt.MapClaims(merged))
+	pair := f.pair.Load().(key.Pair)
+	token.Header["kid"] = pair.KID()
+	return token.SignedString(pair.Sign())
 }
 
 // RemoteClaims describes a remote HTTP endpoint that can produce claims given the
@@ -145,7 +132,7 @@ func NewFactory(n random.Noncer, kr key.Registry, d Descriptor) (Factory, error)
 			return nil, err
 		}
 
-		f.claimers = append(f.claimers, rc)
+		f.claimers = append(Claimers{rc}, f.claimers...)
 	}
 
 	pair, err := kr.Register(d.Key)
