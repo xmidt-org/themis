@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Dev mode
 - Uber/fx style provders
 - MTLS support
+- Remote claims support
 
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD
