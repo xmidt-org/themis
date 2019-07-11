@@ -24,7 +24,7 @@ type ProvideOut struct {
 	Router  *mux.Router `name:"tokenRouter"`
 }
 
-func Provide(serverConfigKey, tokenConfigKey string, b ...RequestBuilder) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
+func Provide(serverConfigKey, tokenConfigKey string, b ...TokenRequestBuilder) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
 	return func(in ProvideIn, serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
 		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
 		if err != nil {
@@ -41,12 +41,12 @@ func Provide(serverConfigKey, tokenConfigKey string, b ...RequestBuilder) func(P
 			return ProvideOut{}, err
 		}
 
-		b = append(b, NewBuilders(d)...)
+		b = append(b, NewTokenRequestBuilders(d)...)
 
 		return ProvideOut{
 			Factory: f,
 			Handler: NewHandler(
-				NewEndpoint(f),
+				NewServerEndpoint(f),
 				b...,
 			),
 			Router: router,

@@ -9,10 +9,10 @@ import (
 
 type Handler http.Handler
 
-func NewHandler(e endpoint.Endpoint, b ...RequestBuilder) Handler {
+func NewHandler(e endpoint.Endpoint, b ...TokenRequestBuilder) Handler {
 	return kithttp.NewServer(
 		e,
-		DecodeRequest(b...),
-		EncodeResponse,
+		DecodeServerRequest(b...),
+		EncodeServerResponse,
 	)
 }

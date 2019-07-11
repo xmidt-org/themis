@@ -6,7 +6,6 @@ import (
 	"key"
 	"random"
 	"sync/atomic"
-	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -27,58 +26,48 @@ type Request struct {
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token
 	NewToken(context.Context, *Request) (string, error)
+
+	// NewClaims returns the claims that this factory would produce in a token,
+	// given a specific Request.
+	NewClaims(context.Context, *Request) (map[string]interface{}, error)
 }
 
 type factory struct {
-	method jwt.SigningMethod
-	claims map[string]interface{}
+	method   jwt.SigningMethod
+	claimers Claimers
 
 	// pair is an atomic value so that future updates can implement key rotation
 	pair atomic.Value
-
-	now            func() time.Time
-	noncer         random.Noncer
-	duration       time.Duration
-	notBeforeDelta *time.Duration
 }
 
 func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
-	merged := make(jwt.MapClaims, len(f.claims)+len(r.Claims))
-	for k, v := range f.claims {
-		merged[k] = v
+	claims, err := f.NewClaims(ctx, r)
+	if err != nil {
+		return "", err
 	}
 
-	for k, v := range r.Claims {
-		merged[k] = v
-	}
-
-	var (
-		now  = f.now().UTC()
-		pair = f.pair.Load().(key.Pair)
-	)
-
-	merged["iat"] = now.Unix()
-
-	if f.duration > 0 {
-		merged["exp"] = now.Add(f.duration).Unix()
-	}
-
-	if f.notBeforeDelta != nil {
-		merged["nbf"] = now.Add(*f.notBeforeDelta).Unix()
-	}
-
-	if f.noncer != nil {
-		nonce, err := f.noncer.Nonce()
-		if err != nil {
-			return "", err
-		}
-
-		merged["jti"] = nonce
-	}
-
-	token := jwt.NewWithClaims(f.method, merged)
+	token := jwt.NewWithClaims(f.method, jwt.MapClaims(claims))
+	pair := f.pair.Load().(key.Pair)
 	token.Header["kid"] = pair.KID()
 	return token.SignedString(pair.Sign())
+}
+
+func (f *factory) NewClaims(ctx context.Context, r *Request) (map[string]interface{}, error) {
+	merged := make(map[string]interface{}, len(r.Claims))
+	for _, c := range f.claimers {
+		if err := c.Append(ctx, r, merged); err != nil {
+			return nil, err
+		}
+	}
+
+	return merged, nil
+}
+
+// RemoteClaims describes a remote HTTP endpoint that can produce claims given the
+// metadata from a token request.
+type RemoteClaims struct {
+	Method string
+	URL    string
 }
 
 // Descriptor holds the configurable information for a token Factory
@@ -119,44 +108,44 @@ type Descriptor struct {
 
 	// MetaParameters maps HTTP parameters onto metadata in token requests
 	MetaParameters map[string]string
+
+	// Remote specifies an optional external system that takes metadata from a token request
+	// and returns a set of claims to be merged into tokens returned by the Factory.  Returned
+	// claims from the remote system do not override claims configured on the Factory.
+	Remote *RemoteClaims
 }
 
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only
 // if d.Nonce is true.  Alternatively, supplying a nil Noncer will disable nonce creation altogether.
 // The token's key pair is registered with the given key Registry.
 func NewFactory(n random.Noncer, kr key.Registry, d Descriptor) (Factory, error) {
-	f := &factory{
-		claims: make(map[string]interface{}, len(d.Claims)),
-		now:    time.Now,
+	lc, err := newLocalClaimer(n, d)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(d.Alg) == 0 {
 		d.Alg = "RS256"
 	}
 
-	var err error
-	f.method = jwt.GetSigningMethod(d.Alg)
+	f := &factory{
+		method: jwt.GetSigningMethod(d.Alg),
+		claimers: Claimers{
+			lc,
+		},
+	}
+
 	if f.method == nil {
 		return nil, fmt.Errorf("No such signing method: %s", d.Alg)
 	}
 
-	if len(d.Duration) > 0 {
-		f.duration, err = time.ParseDuration(d.Duration)
+	if d.Remote != nil {
+		rc, err := newRemoteClaimer(d.Remote)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	if len(d.NotBeforeDelta) > 0 {
-		f.notBeforeDelta = new(time.Duration)
-		*f.notBeforeDelta, err = time.ParseDuration(d.NotBeforeDelta)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if d.Nonce {
-		f.noncer = n
+		f.claimers = append(f.claimers, rc)
 	}
 
 	pair, err := kr.Register(d.Key)
@@ -165,9 +154,6 @@ func NewFactory(n random.Noncer, kr key.Registry, d Descriptor) (Factory, error)
 	}
 
 	f.pair.Store(pair)
-	for k, v := range d.Claims {
-		f.claims[k] = v
-	}
 
 	return f, nil
 }

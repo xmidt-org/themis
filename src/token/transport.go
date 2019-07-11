@@ -7,9 +7,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RequestBuilder func(*http.Request, *Request) error
+type TokenRequestBuilder func(*http.Request, *Request) error
 
-func HeaderClaim(header, claim string) RequestBuilder {
+func HeaderClaim(header, claim string) TokenRequestBuilder {
 	return func(hr *http.Request, tr *Request) error {
 		v := hr.Header.Get(header)
 		if len(v) > 0 {
@@ -20,7 +20,7 @@ func HeaderClaim(header, claim string) RequestBuilder {
 	}
 }
 
-func ParameterClaim(parameter, claim string) RequestBuilder {
+func ParameterClaim(parameter, claim string) TokenRequestBuilder {
 	return func(hr *http.Request, tr *Request) error {
 		v := hr.Form.Get(parameter)
 		if len(v) > 0 {
@@ -37,7 +37,7 @@ func ParameterClaim(parameter, claim string) RequestBuilder {
 	}
 }
 
-func VariableClaim(variable, claim string) RequestBuilder {
+func VariableClaim(variable, claim string) TokenRequestBuilder {
 	return func(hr *http.Request, tr *Request) error {
 		v := mux.Vars(hr)[variable]
 		if len(v) > 0 {
@@ -48,7 +48,7 @@ func VariableClaim(variable, claim string) RequestBuilder {
 	}
 }
 
-func MetaHeader(header, key string) RequestBuilder {
+func MetaHeader(header, key string) TokenRequestBuilder {
 	return func(hr *http.Request, tr *Request) error {
 		v := hr.Header.Get(header)
 		if len(v) > 0 {
@@ -59,7 +59,7 @@ func MetaHeader(header, key string) RequestBuilder {
 	}
 }
 
-func MetaParameter(parameter, key string) RequestBuilder {
+func MetaParameter(parameter, key string) TokenRequestBuilder {
 	return func(hr *http.Request, tr *Request) error {
 		v := hr.Form.Get(parameter)
 		if len(v) > 0 {
@@ -76,7 +76,7 @@ func MetaParameter(parameter, key string) RequestBuilder {
 	}
 }
 
-func BuildRequest(hr *http.Request, b ...RequestBuilder) (*Request, error) {
+func BuildRequest(hr *http.Request, b ...TokenRequestBuilder) (*Request, error) {
 	tr := &Request{
 		Claims: make(map[string]interface{}),
 		Meta:   make(map[string]interface{}),
@@ -91,8 +91,8 @@ func BuildRequest(hr *http.Request, b ...RequestBuilder) (*Request, error) {
 	return tr, nil
 }
 
-func NewBuilders(d Descriptor) []RequestBuilder {
-	var rbs []RequestBuilder
+func NewTokenRequestBuilders(d Descriptor) []TokenRequestBuilder {
+	var rbs []TokenRequestBuilder
 	for header, claim := range d.HeaderClaims {
 		rbs = append(rbs, HeaderClaim(header, claim))
 	}
@@ -112,7 +112,7 @@ func NewBuilders(d Descriptor) []RequestBuilder {
 	return rbs
 }
 
-func DecodeRequest(b ...RequestBuilder) func(context.Context, *http.Request) (interface{}, error) {
+func DecodeServerRequest(b ...TokenRequestBuilder) func(context.Context, *http.Request) (interface{}, error) {
 	return func(_ context.Context, hr *http.Request) (interface{}, error) {
 		if err := hr.ParseForm(); err != nil {
 			return nil, err
@@ -127,7 +127,7 @@ func DecodeRequest(b ...RequestBuilder) func(context.Context, *http.Request) (in
 	}
 }
 
-func EncodeResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
+func EncodeServerResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
 	response.Header().Set("Content-Type", "application/jose")
 	_, err := response.Write([]byte(value.(string)))
 	return err
