@@ -1,17 +1,15 @@
 package token
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"random"
 	"time"
+
+	"github.com/go-kit/kit/endpoint"
+	kithttp "github.com/go-kit/kit/transport/http"
 )
 
 var (
@@ -104,63 +102,16 @@ type httpClient interface {
 }
 
 type remoteClaimer struct {
-	method string
-	url    string
-	client httpClient
+	e endpoint.Endpoint
 }
 
 func (rc *remoteClaimer) Append(ctx context.Context, r *Request, c map[string]interface{}) error {
-	method := rc.method
-	if len(method) == 0 {
-		method = http.MethodGet
-	}
-
-	client := rc.client
-	if client == nil {
-		client = http.DefaultClient
-	}
-
-	var body *bytes.Buffer
-	if len(r.Meta) > 0 {
-		meta, err := json.Marshal(r.Meta)
-		if err != nil {
-			return err
-		}
-
-		body = bytes.NewBuffer(meta)
-	}
-
-	hr, err := http.NewRequest(method, rc.url, body)
+	result, err := rc.e(ctx, r.Meta)
 	if err != nil {
 		return err
 	}
 
-	response, err := client.Do(hr.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		io.Copy(ioutil.Discard, response.Body)
-		response.Body.Close()
-	}()
-
-	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return fmt.Errorf("Remote claims system returned status %d", response.StatusCode)
-	}
-
-	responseBody, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	var claims map[string]interface{}
-	err = json.Unmarshal(responseBody, &claims)
-	if err != nil {
-		return err
-	}
-
-	for k, v := range claims {
+	for k, v := range result.(map[string]interface{}) {
 		c[k] = v
 	}
 
@@ -176,21 +127,27 @@ func newRemoteClaimer(r *RemoteClaims) (*remoteClaimer, error) {
 		return nil, ErrRemoteURLRequired
 	}
 
-	if _, err := url.Parse(r.URL); err != nil {
+	url, err := url.Parse(r.URL)
+	if err != nil {
 		return nil, err
 	}
 
-	rc := &remoteClaimer{
-		method: r.Method,
-		url:    r.URL,
-		client: new(http.Client),
+	method := r.Method
+	if len(method) == 0 {
+		method = http.MethodPost
 	}
 
-	if len(rc.method) == 0 {
-		rc.method = http.MethodPost
-	}
+	c := kithttp.NewClient(
+		method,
+		url,
+		kithttp.EncodeJSONRequest,
+		DecodeRemoteClaimsResponse,
+		kithttp.SetClient(new(http.Client)),
+	)
 
-	return rc, nil
+	return &remoteClaimer{
+		e: c.Endpoint(),
+	}, nil
 }
 
 type Claimers []Claimer

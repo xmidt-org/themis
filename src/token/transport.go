@@ -2,6 +2,8 @@ package token
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -131,4 +133,18 @@ func EncodeServerResponse(_ context.Context, response http.ResponseWriter, value
 	response.Header().Set("Content-Type", "application/jose")
 	_, err := response.Write([]byte(value.(string)))
 	return err
+}
+
+func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (interface{}, error) {
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var claims map[string]interface{}
+	if err := json.Unmarshal(body, &claims); err != nil {
+		return nil, err
+	}
+
+	return claims, nil
 }
