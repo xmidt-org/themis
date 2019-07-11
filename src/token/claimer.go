@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -139,7 +140,11 @@ func (rc *remoteClaimer) Append(ctx context.Context, r *Request, c map[string]in
 		return err
 	}
 
-	defer response.Body.Close()
+	defer func() {
+		io.Copy(ioutil.Discard, response.Body)
+		response.Body.Close()
+	}()
+
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		return fmt.Errorf("Remote claims system returned status %d", response.StatusCode)
 	}
@@ -157,18 +162,6 @@ func (rc *remoteClaimer) Append(ctx context.Context, r *Request, c map[string]in
 
 	for k, v := range claims {
 		c[k] = v
-	}
-
-	return nil
-}
-
-type Claimers []Claimer
-
-func (cs Claimers) Append(ctx context.Context, r *Request, c map[string]interface{}) error {
-	for _, e := range cs {
-		if err := e.Append(ctx, r, c); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -198,4 +191,16 @@ func newRemoteClaimer(r *RemoteClaims) (*remoteClaimer, error) {
 	}
 
 	return rc, nil
+}
+
+type Claimers []Claimer
+
+func (cs Claimers) Append(ctx context.Context, r *Request, c map[string]interface{}) error {
+	for _, e := range cs {
+		if err := e.Append(ctx, r, c); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
