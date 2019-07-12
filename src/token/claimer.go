@@ -101,6 +101,8 @@ type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// remoteClaimer invokes a remote system to obtain claims.  The metadata from a token request
+// is passed as the payload.
 type remoteClaimer struct {
 	e endpoint.Endpoint
 }
