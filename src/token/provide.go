@@ -3,66 +3,46 @@ package token
 import (
 	"key"
 	"random"
-	"xhttp/xhttpserver"
 
-	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
-type ProvideIn struct {
+type TokenIn struct {
 	fx.In
 
 	Noncer random.Noncer
 	Keys   key.Registry
+	Viper  *viper.Viper
 }
 
-type ProvideOut struct {
+type TokenOut struct {
 	fx.Out
 
 	Factory Factory
 	Handler Handler
-	Router  *mux.Router `name:"tokenRouter"`
 }
 
-func Provide(serverConfigKey, tokenConfigKey string, b ...TokenRequestBuilder) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
-	return func(in ProvideIn, serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
-		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
-		if err != nil {
-			return ProvideOut{}, err
-		}
-
+func Provide(configKey string, b ...TokenRequestBuilder) func(TokenIn) (TokenOut, error) {
+	return func(in TokenIn) (TokenOut, error) {
 		var d Descriptor
-		if err := serverIn.Viper.UnmarshalKey(tokenConfigKey, &d); err != nil {
-			return ProvideOut{}, err
+		if err := in.Viper.UnmarshalKey(configKey, &d); err != nil {
+			return TokenOut{}, err
 		}
 
 		f, err := NewFactory(in.Noncer, in.Keys, d)
 		if err != nil {
-			return ProvideOut{}, err
+			return TokenOut{}, err
 		}
 
 		b = append(b, NewTokenRequestBuilders(d)...)
 
-		return ProvideOut{
+		return TokenOut{
 			Factory: f,
 			Handler: NewHandler(
 				NewServerEndpoint(f),
 				b...,
 			),
-			Router: router,
 		}, nil
-	}
-}
-
-type InvokeIn struct {
-	fx.In
-
-	Handler Handler
-	Router  *mux.Router `name:"tokenRouter"`
-}
-
-func RunServer(path string) func(in InvokeIn) {
-	return func(in InvokeIn) {
-		in.Router.Handle(path, in.Handler)
 	}
 }

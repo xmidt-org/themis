@@ -1,63 +1,46 @@
 package xmetrics
 
 import (
-	"net/http"
-	"xhttp/xhttpserver"
-
 	"github.com/go-kit/kit/metrics"
-	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
-type ProvideOut struct {
+type MetricsIn struct {
+	fx.In
+
+	Viper *viper.Viper
+}
+
+type MetricsOut struct {
 	fx.Out
 
 	Registerer prometheus.Registerer
 	Gatherer   prometheus.Gatherer
 	Registry   Registry
-	Handler    http.Handler `name:"metricsHandler"`
-	Router     *mux.Router  `name:"metricsRouter"`
+	Handler    Handler
 }
 
-func Provide(serverConfigKey, metricsConfigKey string, ho promhttp.HandlerOpts) func(xhttpserver.ProvideIn) (ProvideOut, error) {
-	return func(serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
-		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
-		if err != nil {
-			return ProvideOut{}, err
-		}
-
+func Provide(configKey string, ho promhttp.HandlerOpts) func(MetricsIn) (MetricsOut, error) {
+	return func(in MetricsIn) (MetricsOut, error) {
 		var o Options
-		if err := serverIn.Viper.UnmarshalKey(metricsConfigKey, &o); err != nil {
-			return ProvideOut{}, err
+		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+			return MetricsOut{}, err
 		}
 
 		registry, err := New(o)
 		if err != nil {
-			return ProvideOut{}, err
+			return MetricsOut{}, err
 		}
 
-		return ProvideOut{
+		return MetricsOut{
 			Registerer: registry,
 			Gatherer:   registry,
 			Registry:   registry,
 			Handler:    promhttp.HandlerFor(registry, ho),
-			Router:     router,
 		}, nil
-	}
-}
-
-type InvokeIn struct {
-	fx.In
-
-	Handler http.Handler `name:"metricsHandler"`
-	Router  *mux.Router  `name:"metricsRouter"`
-}
-
-func RunServer(path string) func(InvokeIn) {
-	return func(in InvokeIn) {
-		in.Router.Handle(path, in.Handler)
 	}
 }
 

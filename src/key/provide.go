@@ -2,54 +2,30 @@ package key
 
 import (
 	"io"
-	"xhttp/xhttpserver"
 
-	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 )
 
-type ProvideIn struct {
+type KeyIn struct {
 	fx.In
 
 	Random io.Reader
 }
 
-type ProvideOut struct {
+type KeyOut struct {
 	fx.Out
 
 	Registry Registry
 	Handler  Handler
-	Router   *mux.Router `name:"keyRouter"`
 }
 
-func Provide(serverConfigKey string) func(ProvideIn, xhttpserver.ProvideIn) (ProvideOut, error) {
-	return func(keyIn ProvideIn, serverIn xhttpserver.ProvideIn) (ProvideOut, error) {
-		router, err := xhttpserver.Unmarshal(serverConfigKey, serverIn)
-		if err != nil {
-			return ProvideOut{}, err
-		}
+func Provide(in KeyIn) KeyOut {
+	registry := NewRegistry(in.Random)
 
-		registry := NewRegistry(keyIn.Random)
-
-		return ProvideOut{
-			Registry: registry,
-			Handler: NewHandler(
-				NewEndpoint(registry),
-			),
-			Router: router,
-		}, nil
-	}
-}
-
-type InvokeIn struct {
-	fx.In
-
-	Handler Handler
-	Router  *mux.Router `name:"keyRouter"`
-}
-
-func RunServer(path string) func(InvokeIn) {
-	return func(in InvokeIn) {
-		in.Router.Handle(path, in.Handler)
+	return KeyOut{
+		Registry: registry,
+		Handler: NewHandler(
+			NewEndpoint(registry),
+		),
 	}
 }

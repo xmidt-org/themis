@@ -7,9 +7,11 @@ import (
 	"go.uber.org/fx"
 )
 
-// ProvideIn holds the set of dependencies required to create an HTTP server in the context
+// ServerIn holds the set of dependencies required to create an HTTP server in the context
 // of a uber/fx application.
-type ProvideIn struct {
+//
+// This struct is typically embedded in other fx.In structs so that Unmarshal can be invoked.
+type ServerIn struct {
 	fx.In
 
 	Logger     log.Logger
@@ -22,17 +24,17 @@ type ProvideIn struct {
 // binds it to the fx.App lifecycle, and returns a gorilla/mux router that can be used to
 // define handler routes for the server.
 //
-// This function is useful when server creation needs to be embedded in other packages.
-func Unmarshal(configKey string, in ProvideIn) (*mux.Router, error) {
+// This function is useful for writing server invocation code for other packages, typically the main package.
+func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
 	var o Options
 	if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	router := mux.NewRouter()
 	server, logger, err := New(in.Logger, router, o)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	in.Lifecycle.Append(fx.Hook{
@@ -40,13 +42,5 @@ func Unmarshal(configKey string, in ProvideIn) (*mux.Router, error) {
 		OnStop:  OnStop(logger, server),
 	})
 
-	return router, nil
-}
-
-// Provide returns a closure that invokes Unmarshal as part of an fx.Provide option.  This function
-// is useful when directly providing a server to an fx.App.
-func Provide(configKey string) func(ProvideIn) (*mux.Router, error) {
-	return func(in ProvideIn) (*mux.Router, error) {
-		return Unmarshal(configKey, in)
-	}
+	return router, logger, nil
 }

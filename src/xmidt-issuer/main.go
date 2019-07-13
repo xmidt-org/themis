@@ -103,19 +103,19 @@ func main() {
 				return fs, v, logger
 			},
 			random.Provide,
-			key.Provide("servers.key"),
-			token.Provide("servers.issuer", "token"),
+			key.Provide,
+			token.Provide("token"),
 			xloghttp.Provide(
 				xloghttp.Header("X-Midt-Mac-Address"),
 				xloghttp.Header("X-Midt-Serial-Number"),
 				xloghttp.Header("X-Midt-Uuid"),
 			),
-			xmetrics.Provide("servers.metrics", "prometheus", promhttp.HandlerOpts{}),
+			xmetrics.Provide("prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
-			key.RunServer("/key/{kid}"),
-			token.RunServer("/issue"),
-			xmetrics.RunServer("/metrics"),
+			RunKeyServer("servers.key"),
+			RunIssuerServer("servers.issuer"),
+			RunMetricsServer("servers.metrics"),
 		),
 	)
 
