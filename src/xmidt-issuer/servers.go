@@ -16,7 +16,7 @@ import (
 type CommonIn struct {
 	fx.In
 
-	LoggerParameterBuilders []xloghttp.ParameterBuilder
+	LoggerParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
 	ResponseHeaders         xhttp.ResponseHeaders
 }
 
@@ -35,8 +35,8 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/key/{kid}", in.Handler)
 				router.Use(
-					mux.MiddlewareFunc(in.ResponseHeaders),
-					mux.MiddlewareFunc(xloghttp.NewConstructor(l, in.LoggerParameterBuilders...)),
+					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					in.ResponseHeaders.Then,
 				)
 
 				return nil
@@ -49,7 +49,8 @@ type IssuerServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	Handler token.Handler
+	ParseForm xhttp.ParseForm
+	Handler   token.Handler
 }
 
 func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
@@ -60,8 +61,9 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/issue", in.Handler)
 				router.Use(
-					mux.MiddlewareFunc(in.ResponseHeaders),
-					mux.MiddlewareFunc(xloghttp.NewConstructor(l, in.LoggerParameterBuilders...)),
+					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					in.ParseForm.Then,
+					in.ResponseHeaders.Then,
 				)
 
 				return nil
@@ -85,8 +87,8 @@ func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/metrics", in.Handler)
 				router.Use(
-					mux.MiddlewareFunc(in.ResponseHeaders),
-					mux.MiddlewareFunc(xloghttp.NewConstructor(l, in.LoggerParameterBuilders...)),
+					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					in.ResponseHeaders.Then,
 				)
 
 				return nil

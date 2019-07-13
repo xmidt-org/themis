@@ -113,6 +113,7 @@ func main() {
 					xloghttp.Header("X-Midt-Uuid"),
 				}
 			},
+			xhttp.ProvideParseForm,
 			xhttp.ProvideResponseHeaders("responseHeaders"),
 			xmetrics.Provide("prometheus", promhttp.HandlerOpts{}),
 		),

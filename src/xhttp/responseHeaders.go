@@ -7,26 +7,24 @@ import (
 	"go.uber.org/fx"
 )
 
-type ResponseHeaders func(http.Handler) http.Handler
+type ResponseHeaders struct {
+	Headers http.Header
+}
 
-// NewResponseHeaders produces an Alice-style constructor that sets static response headers on
-// every response.
-func NewResponseHeaders(h http.Header) ResponseHeaders {
-	if len(h) == 0 {
-		return func(next http.Handler) http.Handler {
-			return next
-		}
+func (rh ResponseHeaders) Then(next http.Handler) http.Handler {
+	if len(rh.Headers) == 0 {
+		return next
 	}
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-			for name, values := range h {
-				response.Header()[name] = values
+	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		for name, values := range rh.Headers {
+			for _, value := range values {
+				response.Header().Add(name, value)
 			}
+		}
 
-			next.ServeHTTP(response, request)
-		})
-	}
+		next.ServeHTTP(response, request)
+	})
 }
 
 type ResponseHeadersIn struct {
@@ -39,7 +37,11 @@ func ProvideResponseHeaders(configKey string) func(ResponseHeadersIn) (ResponseH
 	return func(in ResponseHeadersIn) (ResponseHeaders, error) {
 		var o map[string]string
 		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
-			return nil, err
+			return ResponseHeaders{}, err
+		}
+
+		if len(o) == 0 {
+			return ResponseHeaders{}, nil
 		}
 
 		h := make(http.Header, len(o))
@@ -47,6 +49,6 @@ func ProvideResponseHeaders(configKey string) func(ResponseHeadersIn) (ResponseH
 			h.Set(k, v)
 		}
 
-		return NewResponseHeaders(h), nil
+		return ResponseHeaders{Headers: h}, nil
 	}
 }

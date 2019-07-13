@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
 )
 
 type ParameterBuilder func(*http.Request, []interface{}) []interface{}
@@ -69,32 +68,37 @@ func Variable(name string) ParameterBuilder {
 	}
 }
 
-func WithRequest(original *http.Request, l log.Logger, b []ParameterBuilder) *http.Request {
-	var parameters []interface{}
-	for _, f := range b {
-		parameters = f(original, parameters)
-	}
+func WithRequest(original *http.Request, l log.Logger, b ...ParameterBuilder) *http.Request {
+	if len(b) > 0 {
+		var parameters []interface{}
+		for _, f := range b {
+			parameters = f(original, parameters)
+		}
 
-	ctx := xlog.With(
-		original.Context(),
-		log.WithPrefix(
+		l = log.WithPrefix(
 			l,
 			parameters...,
+		)
+	}
+
+	return original.WithContext(
+		xlog.With(
+			original.Context(),
+			l,
 		),
 	)
-
-	return original.WithContext(ctx)
 }
 
-type Constructor alice.Constructor
+type Logging struct {
+	Base     log.Logger
+	Builders []ParameterBuilder
+}
 
-func NewConstructor(l log.Logger, b ...ParameterBuilder) Constructor {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-			next.ServeHTTP(
-				response,
-				WithRequest(request, l, b),
-			)
-		})
-	}
+func (l Logging) Then(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		next.ServeHTTP(
+			response,
+			WithRequest(request, l.Base, l.Builders...),
+		)
+	})
 }

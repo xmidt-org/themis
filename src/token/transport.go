@@ -116,10 +116,6 @@ func NewTokenRequestBuilders(d Descriptor) []TokenRequestBuilder {
 
 func DecodeServerRequest(b ...TokenRequestBuilder) func(context.Context, *http.Request) (interface{}, error) {
 	return func(_ context.Context, hr *http.Request) (interface{}, error) {
-		if err := hr.ParseForm(); err != nil {
-			return nil, err
-		}
-
 		tr, err := BuildRequest(hr, b...)
 		if err != nil {
 			return nil, err

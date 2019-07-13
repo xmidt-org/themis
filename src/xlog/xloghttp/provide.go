@@ -8,19 +8,13 @@ import (
 type ProvideIn struct {
 	fx.In
 
-	Logger log.Logger
+	Base     log.Logger
+	Builders []ParameterBuilder
 }
 
-type ProvideOut struct {
-	fx.Out
-
-	Constructor Constructor
-}
-
-func Provide(b ...ParameterBuilder) func(ProvideIn) ProvideOut {
-	return func(in ProvideIn) ProvideOut {
-		return ProvideOut{
-			Constructor: NewConstructor(in.Logger, b...),
-		}
+func Provide(in ProvideIn) Logging {
+	return Logging{
+		Base:     in.Base,
+		Builders: in.Builders,
 	}
 }
