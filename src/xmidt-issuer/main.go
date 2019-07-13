@@ -21,6 +21,7 @@ import (
 	"random"
 	"strings"
 	"token"
+	"xhttp"
 	"xlog"
 	"xlog/xloghttp"
 	"xmetrics"
@@ -105,11 +106,14 @@ func main() {
 			random.Provide,
 			key.Provide,
 			token.Provide("token"),
-			xloghttp.Provide(
-				xloghttp.Header("X-Midt-Mac-Address"),
-				xloghttp.Header("X-Midt-Serial-Number"),
-				xloghttp.Header("X-Midt-Uuid"),
-			),
+			func() []xloghttp.ParameterBuilder {
+				return []xloghttp.ParameterBuilder{
+					xloghttp.Header("X-Midt-Mac-Address"),
+					xloghttp.Header("X-Midt-Serial-Number"),
+					xloghttp.Header("X-Midt-Uuid"),
+				}
+			},
+			xhttp.ProvideResponseHeaders("responseHeaders"),
 			xmetrics.Provide("prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(

@@ -19,6 +19,10 @@ servers:
     logConnectionState: true
     disableHTTPKeepAlives: true
 
+responseHeaders:
+  X-Midt-Server: issuer
+  X-Midt-Version: development
+
 token:
   alg: RS256
   nonce: true

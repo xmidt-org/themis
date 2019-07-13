@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - MTLS support
 - Remote claims support
 - Request logging
-- Server logging
+- Integrated server logging
 
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD
