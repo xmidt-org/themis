@@ -18,6 +18,7 @@ import (
 
 const (
 	addressKey = "address"
+	serverKey  = "server"
 
 	defaultTCPKeepAlivePeriod time.Duration = 3 * time.Minute // the value used internally by net/http
 )
@@ -32,6 +33,10 @@ func AddressKey() interface{} {
 	return addressKey
 }
 
+func ServerKey() interface{} {
+	return serverKey
+}
+
 type Tls struct {
 	CertificateFile         string
 	KeyFile                 string
@@ -43,6 +48,7 @@ type Tls struct {
 }
 
 type Options struct {
+	Name    string
 	Address string
 	Tls     *Tls
 
@@ -279,5 +285,5 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 		s.SetKeepAlivesEnabled(false)
 	}
 
-	return s, log.WithPrefix(base, AddressKey(), o.Address), nil
+	return s, log.WithPrefix(base, ServerKey(), o.Name, AddressKey(), o.Address), nil
 }

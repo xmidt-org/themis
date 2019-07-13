@@ -31,6 +31,10 @@ func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
 		return nil, nil, err
 	}
 
+	if len(o.Name) == 0 {
+		o.Name = configKey
+	}
+
 	router := mux.NewRouter()
 	server, logger, err := New(in.Logger, router, o)
 	if err != nil {
