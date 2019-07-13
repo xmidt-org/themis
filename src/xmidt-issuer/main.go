@@ -22,6 +22,7 @@ import (
 	"strings"
 	"token"
 	"xlog"
+	"xlog/xloghttp"
 	"xmetrics"
 
 	"github.com/go-kit/kit/log"
@@ -104,6 +105,11 @@ func main() {
 			random.Provide,
 			key.Provide("servers.key"),
 			token.Provide("servers.issuer", "token"),
+			xloghttp.Provide(
+				xloghttp.Header("X-Midt-Mac-Address"),
+				xloghttp.Header("X-Midt-Serial-Number"),
+				xloghttp.Header("X-Midt-Uuid"),
+			),
 			xmetrics.Provide("servers.metrics", "prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
