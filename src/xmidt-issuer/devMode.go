@@ -28,7 +28,7 @@ token:
   nonce: true
   notBeforeDelta: -15s
   duration: 24h
-  requestClaims:
+  claims:
     mac:
       header: X-Midt-Mac-Address
       parameter: mac
@@ -41,15 +41,33 @@ token:
       header: X-Midt-Uuid
       parameter: uuid
       required: true
-  claims:
-    iss: development
-    partner-id: comcast
-    trust: 1000
-    sub: "client:supplied"
-    aud: XMiDT
+    iss:
+      value: "development"
+    partner-id:
+      value: "comcast"
+    trust:
+      value: 1000
+    sub:
+      value: "client-supplied"
+    aud:
+      value: "XMiDT"
     capabilities:
-      -
-        x1:issuer:test:.*:all
+      value:
+        -
+          x1:issuer:test:.*:all
+  metadata:
+    mac:
+      header: X-Midt-Mac-Address
+      parameter: mac
+      required: true
+    serial:
+      header: X-Midt-Serial-Number
+      parameter: serial
+      required: true
+    uuid:
+      header: X-Midt-Uuid
+      parameter: uuid
+      required: true
   key:
     kid: development
     type: rsa

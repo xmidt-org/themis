@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	ErrRemoteURLRequired = errors.New("A URL for the remote claimer is required")
+	ErrRemoteURLRequired  = errors.New("A URL for the remote claimer is required")
+	ErrClaimValueRequired = errors.New("A value is required for static claims")
 )
 
 // Claimer represents a strategy for obtaining claims, typically through configuration
@@ -22,79 +23,63 @@ type Claimer interface {
 	Append(context.Context, *Request, map[string]interface{}) error
 }
 
-// localClaimer is a Claimer strategy that constructs some claims based on internal configuration
-type localClaimer struct {
-	claims map[string]interface{}
+// requestClaimer is a Claimer that copies the Request.Claims
+type requestClaimer struct{}
 
-	now            func() time.Time
-	noncer         random.Noncer
-	duration       time.Duration
-	notBeforeDelta *time.Duration
-}
-
-func (lc *localClaimer) Append(_ context.Context, r *Request, c map[string]interface{}) error {
-	for k, v := range lc.claims {
-		c[k] = v
-	}
-
+func (rc requestClaimer) Append(_ context.Context, r *Request, target map[string]interface{}) error {
 	for k, v := range r.Claims {
-		c[k] = v
-	}
-
-	now := lc.now().UTC()
-	c["iat"] = now.Unix()
-
-	if lc.duration > 0 {
-		c["exp"] = now.Add(lc.duration).Unix()
-	}
-
-	if lc.notBeforeDelta != nil {
-		c["nbf"] = now.Add(*lc.notBeforeDelta).Unix()
-	}
-
-	if lc.noncer != nil {
-		nonce, err := lc.noncer.Nonce()
-		if err != nil {
-			return err
-		}
-
-		c["jti"] = nonce
+		target[k] = v
 	}
 
 	return nil
 }
 
-func newLocalClaimer(n random.Noncer, d Descriptor) (*localClaimer, error) {
-	lc := &localClaimer{
-		claims: make(map[string]interface{}, len(d.Claims)),
-		now:    time.Now,
+// staticClaimer is a Claimer that simply appends a constant set of claims
+type staticClaimer map[string]interface{}
+
+func (sc staticClaimer) Append(_ context.Context, r *Request, target map[string]interface{}) error {
+	for k, v := range sc {
+		target[k] = v
 	}
 
-	for k, v := range d.Claims {
-		lc.claims[k] = v
+	return nil
+}
+
+// timeClaimer is a Claimer which handles time-based claims
+type timeClaimer struct {
+	now            func() time.Time
+	duration       time.Duration
+	notBeforeDelta *time.Duration
+}
+
+func (tc *timeClaimer) Append(_ context.Context, r *Request, target map[string]interface{}) error {
+	now := tc.now().UTC()
+	target["iat"] = now.Unix()
+
+	if tc.duration > 0 {
+		target["exp"] = now.Add(tc.duration).Unix()
 	}
 
-	var err error
-	if len(d.Duration) > 0 {
-		lc.duration, err = time.ParseDuration(d.Duration)
-		if err != nil {
-			return nil, err
-		}
+	if tc.notBeforeDelta != nil {
+		target["nbf"] = now.Add(*tc.notBeforeDelta).Unix()
 	}
 
-	if len(d.NotBeforeDelta) > 0 {
-		lc.notBeforeDelta = new(time.Duration)
-		*lc.notBeforeDelta, err = time.ParseDuration(d.NotBeforeDelta)
-		if err != nil {
-			return nil, err
-		}
+	return nil
+}
+
+// nonceClaimer is a Claimer that appends a nonce (jti) claim
+type nonceClaimer struct {
+	n random.Noncer
+}
+
+func (nc nonceClaimer) Append(_ context.Context, r *Request, target map[string]interface{}) error {
+	nonce, err := nc.n.Nonce()
+	if err != nil {
+		return err
 	}
 
-	if d.Nonce {
-		lc.noncer = n
-	}
-
-	return lc, nil
+	target["jti"] = nonce
+	return nil
 }
 
 type httpClient interface {
@@ -103,24 +88,22 @@ type httpClient interface {
 
 // remoteClaimer invokes a remote system to obtain claims.  The metadata from a token request
 // is passed as the payload.
-type remoteClaimer struct {
-	e endpoint.Endpoint
-}
+type remoteClaimer endpoint.Endpoint
 
-func (rc *remoteClaimer) Append(ctx context.Context, r *Request, c map[string]interface{}) error {
-	result, err := rc.e(ctx, r.Meta)
+func (rc remoteClaimer) Append(ctx context.Context, r *Request, target map[string]interface{}) error {
+	result, err := rc(ctx, r.Metadata)
 	if err != nil {
 		return err
 	}
 
 	for k, v := range result.(map[string]interface{}) {
-		c[k] = v
+		target[k] = v
 	}
 
 	return nil
 }
 
-func newRemoteClaimer(r *RemoteClaims) (*remoteClaimer, error) {
+func newRemoteClaimer(r *RemoteClaims) (remoteClaimer, error) {
 	if r == nil {
 		return nil, nil
 	}
@@ -147,19 +130,80 @@ func newRemoteClaimer(r *RemoteClaims) (*remoteClaimer, error) {
 		kithttp.SetClient(new(http.Client)),
 	)
 
-	return &remoteClaimer{
-		e: c.Endpoint(),
-	}, nil
+	return remoteClaimer(c.Endpoint()), nil
 }
 
+// Claimers represents a set of Claimer strategies that are invoked in sequence.  A Claimers
+// is an aggregate Claimer strategy.
 type Claimers []Claimer
 
-func (cs Claimers) Append(ctx context.Context, r *Request, c map[string]interface{}) error {
+func (cs Claimers) Append(ctx context.Context, r *Request, target map[string]interface{}) error {
 	for _, e := range cs {
-		if err := e.Append(ctx, r, c); err != nil {
+		if err := e.Append(ctx, r, target); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// NewClaimers produces a slice of Claimer strategies that produces the basic claims
+// defined in the Options.  HTTP-based claims are skipped by this function.
+func NewClaimers(n random.Noncer, o Options) (Claimers, error) {
+	var (
+		claimers      = Claimers{requestClaimer{}}
+		staticClaimer = make(staticClaimer)
+		timeClaimer   = &timeClaimer{
+			now: time.Now,
+		}
+	)
+
+	if o.Remote != nil {
+		remoteClaimer, err := newRemoteClaimer(o.Remote)
+		if err != nil {
+			return nil, err
+		}
+
+		claimers = append(claimers, remoteClaimer)
+	}
+
+	for name, value := range o.Claims {
+		if value.IsHttp() {
+			continue
+		}
+
+		if value.Value == nil {
+			return nil, ErrClaimValueRequired
+		}
+
+		staticClaimer[name] = value.Value
+	}
+
+	if len(staticClaimer) > 0 {
+		claimers = append(claimers, staticClaimer)
+	}
+
+	if o.Nonce && n != nil {
+		claimers = append(claimers, nonceClaimer{n: n})
+	}
+
+	if len(o.Duration) > 0 {
+		var err error
+		timeClaimer.duration, err = time.ParseDuration(o.Duration)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(o.NotBeforeDelta) > 0 {
+		var err error
+		timeClaimer.notBeforeDelta = new(time.Duration)
+		*timeClaimer.notBeforeDelta, err = time.ParseDuration(o.NotBeforeDelta)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	claimers = append(claimers, timeClaimer)
+	return claimers, nil
 }

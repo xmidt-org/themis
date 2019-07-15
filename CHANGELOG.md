@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Remote claims support
 - Request logging
 - Integrated server logging
+- Full support for claims specified in requests
 
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD

@@ -19,25 +19,32 @@ type TokenIn struct {
 type TokenOut struct {
 	fx.Out
 
+	Claimer Claimer
 	Factory Factory
 	Handler Handler
 }
 
-func Provide(configKey string, b ...TokenRequestBuilder) func(TokenIn) (TokenOut, error) {
+func Provide(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, error) {
 	return func(in TokenIn) (TokenOut, error) {
-		var d Descriptor
-		if err := in.Viper.UnmarshalKey(configKey, &d); err != nil {
+		var o Options
+		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
 			return TokenOut{}, err
 		}
 
-		f, err := NewFactory(in.Noncer, in.Keys, d)
+		c, err := NewClaimers(in.Noncer, o)
 		if err != nil {
 			return TokenOut{}, err
 		}
 
-		b = append(b, NewTokenRequestBuilders(d)...)
+		f, err := NewFactory(c, in.Keys, o)
+		if err != nil {
+			return TokenOut{}, err
+		}
+
+		b = append(b, NewTokenRequestBuilders(o)...)
 
 		return TokenOut{
+			Claimer: c,
 			Factory: f,
 			Handler: NewHandler(
 				NewServerEndpoint(f),
