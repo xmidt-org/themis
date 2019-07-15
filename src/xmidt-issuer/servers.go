@@ -33,7 +33,7 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			serverConfigKey,
 			in.ServerIn,
 			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/key/{kid}", in.Handler)
+				router.Handle("/key/{kid}", in.Handler).Methods("GET")
 				router.Use(
 					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
 					in.ResponseHeaders.Then,
@@ -59,7 +59,7 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			serverConfigKey,
 			in.ServerIn,
 			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/issue", in.Handler)
+				router.Handle("/issue", in.Handler).Methods("GET")
 				router.Use(
 					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
 					in.ParseForm.Then,
@@ -85,7 +85,7 @@ func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
 			serverConfigKey,
 			in.ServerIn,
 			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/metrics", in.Handler)
+				router.Handle("/metrics", in.Handler).Methods("GET")
 				router.Use(
 					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
 					in.ResponseHeaders.Then,
