@@ -2,7 +2,7 @@ package main
 
 const (
 	// devMode is the YAML configuration parsed by Viper when the server is run with the dev mode flag
-	devMode = `---
+	devMode = `
 servers:
   key:
     address: :8080
