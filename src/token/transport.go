@@ -1,163 +1,193 @@
 package token
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"xhttp"
 
 	"github.com/gorilla/mux"
 )
 
 var (
-	ErrNoHttp = errors.New("At least one of header, parameter, or variable must be specified")
+	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
+	ErrMetadataNeedsHttp  = errors.New("Metadata requires either header/parameter or variable to be set")
 )
 
-type RequestBuilder func(*http.Request, *Request) error
-
-type missingValueError struct {
-	name  string
-	value *Value
+// RequestBuilder is a strategy for building a token factory Request from an HTTP request
+type RequestBuilder interface {
+	Build(*http.Request, *Request) error
 }
 
-func (mve *missingValueError) Error() string {
-	var output bytes.Buffer
-	output.WriteString("Missing value '")
-	output.WriteString(mve.name)
-	output.WriteString("' from")
+type RequestBuilderFunc func(*http.Request, *Request) error
 
-	first := true
-	if len(mve.value.Header) > 0 {
-		output.WriteString(" header '")
-		output.WriteString(mve.value.Header)
-		output.WriteString("'")
-		first = false
-	}
-
-	if len(mve.value.Parameter) > 0 {
-		if !first {
-			output.WriteString(" or")
-		}
-
-		output.WriteString(" parameter '")
-		output.WriteString(mve.value.Parameter)
-		output.WriteString("'")
-		first = false
-	}
-
-	if len(mve.value.Variable) > 0 {
-		if !first {
-			output.WriteString(" or")
-		}
-
-		output.WriteString(" variable '")
-		output.WriteString(mve.value.Variable)
-		output.WriteString("'")
-		first = false
-	}
-
-	return output.String()
+func (rbf RequestBuilderFunc) Build(original *http.Request, tr *Request) error {
+	return rbf(original, tr)
 }
 
-func (mve *missingValueError) StatusCode() int {
-	return http.StatusBadRequest
+// RequestBuilders represents a set of RequestBuilder strategies that can be invoked in sequence
+type RequestBuilders []RequestBuilder
+
+func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
+	for _, rb := range rbs {
+		if err := rb.Build(original, tr); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func extractValue(original *http.Request, value *Value) (interface{}, bool) {
-	if len(value.Header) > 0 {
-		hv := original.Header.Get(value.Header)
-		if len(hv) > 0 {
-			return hv, true
-		}
-	}
-
-	if len(value.Parameter) > 0 {
-		pv := original.Form[value.Parameter]
-		if len(pv) > 0 {
-			return pv[0], true
-		}
-	}
-
-	if len(value.Variable) > 0 {
-		vv := mux.Vars(original)[value.Variable]
-		if len(vv) > 0 {
-			return vv, true
-		}
-	}
-
-	return nil, false
+func claimsSetter(key string, value interface{}, tr *Request) {
+	tr.Claims[key] = value
 }
 
-func NewClaimBuilder(name string, value Value) (RequestBuilder, error) {
-	if !value.IsHttp() {
-		return nil, ErrNoHttp
-	}
+func metadataSetter(key string, value interface{}, tr *Request) {
+	tr.Metadata[key] = value
+}
 
-	mve := missingValueError{name: name, value: &value}
-	return func(original *http.Request, tr *Request) error {
-		if v, ok := extractValue(original, &value); ok {
-			tr.Claims[name] = v
+type headerParameterRequestBuilder struct {
+	key       string
+	header    string
+	parameter string
+	required  bool
+	setter    func(string, interface{}, *Request)
+}
+
+func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Request) error {
+	if len(hprb.header) > 0 {
+		value := original.Header[hprb.header]
+		if len(value) > 0 {
+			hprb.setter(hprb.key, value[0], tr)
 			return nil
 		}
-
-		return &mve
-	}, nil
-}
-
-func NewMetadataBuilder(name string, value Value) (RequestBuilder, error) {
-	if !value.IsHttp() {
-		return nil, ErrNoHttp
 	}
 
-	mve := missingValueError{name: name, value: &value}
-	return func(original *http.Request, tr *Request) error {
-		if v, ok := extractValue(original, &value); ok {
-			tr.Metadata[name] = v
+	if len(hprb.parameter) > 0 {
+		value := original.Form[hprb.parameter]
+		if len(value) > 0 {
+			hprb.setter(hprb.key, value[0], tr)
 			return nil
 		}
+	}
 
-		return &mve
-	}, nil
+	if hprb.required {
+		return xhttp.MissingValueError{
+			Header:    hprb.header,
+			Parameter: hprb.parameter,
+		}
+	}
+
+	return nil
 }
 
-func NewTokenRequestBuilders(o Options) []RequestBuilder {
-	var builders []RequestBuilder
+type variableRequestBuilder struct {
+	key      string
+	variable string
+	required bool
+	setter   func(string, interface{}, *Request)
+}
 
+func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) error {
+	value := mux.Vars(original)[vrb.variable]
+	if len(value) > 0 {
+		vrb.setter(vrb.key, value[0], tr)
+		return nil
+	}
+
+	if vrb.required {
+		return xhttp.MissingVariableError{Variable: vrb.variable}
+	}
+
+	return nil
+}
+
+// NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
+// and metadata that are HTTP-based are included in the results.  Claims and metadata that are statically
+// assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
+func NewRequestBuilders(o Options) (RequestBuilders, error) {
+	var rb RequestBuilders
 	for name, value := range o.Claims {
-		if b, err := NewClaimBuilder(name, value); err == nil {
-			builders = append(builders, b)
+		if len(value.Header) > 0 || len(value.Parameter) > 0 {
+			if len(value.Variable) > 0 {
+				return nil, ErrVariableNotAllowed
+			}
+
+			rb = append(rb,
+				headerParameterRequestBuilder{
+					key:       name,
+					header:    http.CanonicalHeaderKey(value.Header),
+					parameter: value.Parameter,
+					required:  value.Required,
+					setter:    claimsSetter,
+				},
+			)
+		} else if len(value.Variable) > 0 {
+			rb = append(rb,
+				variableRequestBuilder{
+					key:      name,
+					variable: value.Variable,
+					required: value.Required,
+					setter:   claimsSetter,
+				},
+			)
 		}
+
+		// for claims, just skip anything that isn't an HTTP-derived value
 	}
 
 	for name, value := range o.Metadata {
-		if b, err := NewMetadataBuilder(name, value); err == nil {
-			builders = append(builders, b)
+		if len(value.Header) > 0 || len(value.Parameter) > 0 {
+			if len(value.Variable) > 0 {
+				return nil, ErrVariableNotAllowed
+			}
+
+			rb = append(rb,
+				headerParameterRequestBuilder{
+					key:       name,
+					header:    http.CanonicalHeaderKey(value.Header),
+					parameter: value.Parameter,
+					required:  value.Required,
+					setter:    metadataSetter,
+				},
+			)
+		} else if len(value.Variable) > 0 {
+			rb = append(rb,
+				variableRequestBuilder{
+					key:      name,
+					variable: value.Variable,
+					required: value.Required,
+					setter:   metadataSetter,
+				},
+			)
+		} else {
+			// metadata MUST come from an HTTP request
+			return nil, ErrMetadataNeedsHttp
 		}
 	}
 
-	return builders
+	return rb, nil
 }
 
-func BuildRequest(hr *http.Request, b []RequestBuilder) (*Request, error) {
+// BuildRequest applies a sequence of RequestBuilder instances to produce a token factory Request
+func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) {
 	tr := &Request{
 		Claims:   make(map[string]interface{}),
 		Metadata: make(map[string]interface{}),
 	}
 
-	for _, f := range b {
-		if err := f(hr, tr); err != nil {
-			return nil, err
-		}
+	if err := rb.Build(original, tr); err != nil {
+		return nil, err
 	}
 
 	return tr, nil
 }
 
-func DecodeServerRequest(b ...RequestBuilder) func(context.Context, *http.Request) (interface{}, error) {
+func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
 	return func(_ context.Context, hr *http.Request) (interface{}, error) {
-		tr, err := BuildRequest(hr, b)
+		tr, err := BuildRequest(hr, rb)
 		if err != nil {
 			return nil, err
 		}

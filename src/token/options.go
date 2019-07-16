@@ -27,11 +27,6 @@ type Value struct {
 	Value interface{}
 }
 
-// IsHTTP tests if this Value is obtained from an HTTP request, as opposed to being statically configured
-func (v Value) IsHttp() bool {
-	return len(v.Header) != 0 || len(v.Parameter) != 0 || len(v.Variable) != 0
-}
-
 // Options holds the configurable information for a token Factory
 type Options struct {
 	// Alg is the required JWT signing algorithm to use

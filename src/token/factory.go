@@ -32,8 +32,8 @@ type Factory interface {
 }
 
 type factory struct {
-	method  jwt.SigningMethod
-	claimer Claimer
+	method       jwt.SigningMethod
+	claimBuilder ClaimBuilder
 
 	// pair is an atomic value so that future updates can implement key rotation
 	pair atomic.Value
@@ -41,7 +41,7 @@ type factory struct {
 
 func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 	merged := make(map[string]interface{}, len(r.Claims))
-	if err := f.claimer.Append(ctx, r, merged); err != nil {
+	if err := f.claimBuilder.Append(ctx, r, merged); err != nil {
 		return "", err
 	}
 
@@ -54,14 +54,14 @@ func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only
 // if d.Nonce is true.  Alternatively, supplying a nil Noncer will disable nonce creation altogether.
 // The token's key pair is registered with the given key Registry.
-func NewFactory(c Claimer, kr key.Registry, o Options) (Factory, error) {
+func NewFactory(cb ClaimBuilder, kr key.Registry, o Options) (Factory, error) {
 	if len(o.Alg) == 0 {
 		o.Alg = DefaultAlg
 	}
 
 	f := &factory{
-		method:  jwt.GetSigningMethod(o.Alg),
-		claimer: c,
+		method:       jwt.GetSigningMethod(o.Alg),
+		claimBuilder: cb,
 	}
 
 	if f.method == nil {

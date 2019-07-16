@@ -33,7 +33,7 @@ type ResponseHeadersIn struct {
 	Viper *viper.Viper
 }
 
-func ProvideResponseHeaders(configKey string) func(ResponseHeadersIn) (ResponseHeaders, error) {
+func UnmarshalResponseHeaders(configKey string) func(ResponseHeadersIn) (ResponseHeaders, error) {
 	return func(in ResponseHeadersIn) (ResponseHeaders, error) {
 		var o map[string]string
 		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {

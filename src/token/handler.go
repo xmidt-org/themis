@@ -7,12 +7,22 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-type Handler http.Handler
+type IssueHandler http.Handler
 
-func NewHandler(e endpoint.Endpoint, b ...RequestBuilder) Handler {
+func NewIssueHandler(e endpoint.Endpoint, rb RequestBuilders) IssueHandler {
 	return kithttp.NewServer(
 		e,
-		DecodeServerRequest(b...),
+		DecodeServerRequest(rb),
+		EncodeServerResponse,
+	)
+}
+
+type ClaimsHandler http.Handler
+
+func NewClaimsHandler(e endpoint.Endpoint, rb RequestBuilders) ClaimsHandler {
+	return kithttp.NewServer(
+		e,
+		DecodeServerRequest(rb),
 		EncodeServerResponse,
 	)
 }

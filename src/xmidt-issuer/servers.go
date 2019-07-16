@@ -49,8 +49,8 @@ type IssuerServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	ParseForm xhttp.ParseForm
-	Handler   token.Handler
+	ParseForm    xhttp.ParseForm
+	IssueHandler token.IssueHandler
 }
 
 func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
@@ -59,7 +59,7 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			serverConfigKey,
 			in.ServerIn,
 			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/issue", in.Handler).Methods("GET")
+				router.Handle("/issue", in.IssueHandler).Methods("GET")
 				router.Use(
 					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
 					in.ParseForm.Then,

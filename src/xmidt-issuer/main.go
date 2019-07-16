@@ -105,7 +105,7 @@ func main() {
 			},
 			random.Provide,
 			key.Provide,
-			token.Provide("token"),
+			token.Unmarshal("token"),
 			func() []xloghttp.ParameterBuilder {
 				return []xloghttp.ParameterBuilder{
 					xloghttp.Header("X-Midt-Mac-Address"),
@@ -114,8 +114,8 @@ func main() {
 				}
 			},
 			xhttp.ProvideParseForm,
-			xhttp.ProvideResponseHeaders("responseHeaders"),
-			xmetrics.Provide("prometheus", promhttp.HandlerOpts{}),
+			xhttp.UnmarshalResponseHeaders("responseHeaders"),
+			xmetrics.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
 			RunKeyServer("servers.key"),
