@@ -57,6 +57,11 @@ type IssuerServerIn struct {
 
 func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 	return func(in IssuerServerIn) error {
+		if !in.Viper.IsSet(serverConfigKey) {
+			in.Logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "issuer server not configured")
+			return nil
+		}
+
 		return xhttpserver.Run(
 			serverConfigKey,
 			in.ServerIn,

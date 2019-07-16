@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Full support for claims specified in requests
 - Optional claims server that simply returns a JSON payload of the claims
 - Time-based claims can be disabled
+- Both the issue and claims servers can be disabled
 
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD
