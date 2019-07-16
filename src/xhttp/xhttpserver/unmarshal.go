@@ -1,11 +1,21 @@
 package xhttpserver
 
 import (
+	"fmt"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
+
+type ServerNotConfiguredError struct {
+	ConfigKey string
+}
+
+func (snce ServerNotConfiguredError) Error() string {
+	return fmt.Sprintf("No server configured with key %s", snce.ConfigKey)
+}
 
 // ServerIn holds the set of dependencies required to create an HTTP server in the context
 // of a uber/fx application.
@@ -26,6 +36,10 @@ type ServerIn struct {
 //
 // This function is useful for writing server invocation code for other packages, typically the main package.
 func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
+	if !in.Viper.IsSet(configKey) {
+		return nil, nil, ServerNotConfiguredError{ConfigKey: configKey}
+	}
+
 	var o Options
 	if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
 		return nil, nil, err

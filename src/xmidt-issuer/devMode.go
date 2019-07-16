@@ -24,9 +24,19 @@ servers:
     logConnectionState: true
     disableHTTPKeepAlives: true
 
+  health:
+    address: :8084
+    logConnectionState: true
+    disableHTTPKeepAlives: true
+
 responseHeaders:
   X-Midt-Server: issuer
   X-Midt-Version: development
+
+health:
+  disableLogging: false
+  custom:
+    server: development
 
 token:
   alg: RS256

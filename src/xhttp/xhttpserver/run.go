@@ -24,3 +24,14 @@ func Run(configKey string, in ServerIn, b ...RouterBuilder) error {
 
 	return nil
 }
+
+// Optional accepts an error from Run and returns nil if that error indicates the server is
+// simply not configured, or the original error otherwise.  Wrapping a call to Run in this method
+// allows a server to be optionally available via configuration.
+func Optional(err error) error {
+	if _, ok := err.(ServerNotConfiguredError); ok {
+		return nil
+	}
+
+	return err
+}

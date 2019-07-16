@@ -1,5 +1,5 @@
-hash: 25b3d2f3883c0d631c18e5cdf1c0e06a5fa8a5f3bc67f046dba5eb7d44926c86
-updated: 2019-07-02T10:32:29.014806-05:00
+hash: b373d9c2c98f7bdaba46157ca1fde4dea71fc84c51a4472fb2fafde7a130cb21
+updated: 2019-07-16T11:22:37.371511-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -39,6 +39,10 @@ imports:
   - json/parser
   - json/scanner
   - json/token
+- name: github.com/InVisionApp/go-health
+  version: 06e1878ab5a8acf6e841861c6cbfcc4d3036add0
+- name: github.com/InVisionApp/go-logger
+  version: 753dc5832ddec755df724992c1c3b0f7a288e0aa
 - name: github.com/justinas/alice
   version: 03f45bd4b7dad4734bc4620e46a35789349abb20
 - name: github.com/kr/logfmt
@@ -87,6 +91,9 @@ imports:
   version: b5bf975e5823809fb22c7644d008757f78a4259e
 - name: github.com/stretchr/testify
   version: ffdc059bfe9ce6a4e144ba849dbedead332c6053
+  subpackages:
+  - assert
+  - require
 - name: go.uber.org/atomic
   version: df976f2515e274675050de7b3f42545de80594fd
 - name: go.uber.org/dig
@@ -116,4 +123,12 @@ imports:
   version: a96e63847dc3c67d17befa69c303767e2f84e54f
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib

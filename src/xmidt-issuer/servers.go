@@ -3,14 +3,13 @@ package main
 import (
 	"key"
 	"token"
+	"xhealth"
 	"xhttp"
 	"xhttp/xhttpserver"
-	"xlog"
 	"xlog/xloghttp"
 	"xmetrics"
 
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 )
@@ -57,24 +56,21 @@ type IssuerServerIn struct {
 
 func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 	return func(in IssuerServerIn) error {
-		if !in.Viper.IsSet(serverConfigKey) {
-			in.Logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "issuer server not configured")
-			return nil
-		}
+		return xhttpserver.Optional(
+			xhttpserver.Run(
+				serverConfigKey,
+				in.ServerIn,
+				func(router *mux.Router, l log.Logger) error {
+					router.Handle("/issue", in.IssueHandler).Methods("GET")
+					router.Use(
+						xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+						in.ParseForm.Then,
+						in.ResponseHeaders.Then,
+					)
 
-		return xhttpserver.Run(
-			serverConfigKey,
-			in.ServerIn,
-			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/issue", in.IssueHandler).Methods("GET")
-				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-					in.ParseForm.Then,
-					in.ResponseHeaders.Then,
-				)
-
-				return nil
-			},
+					return nil
+				},
+			),
 		)
 	}
 }
@@ -89,24 +85,21 @@ type ClaimsServerIn struct {
 
 func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 	return func(in ClaimsServerIn) error {
-		if !in.Viper.IsSet(serverConfigKey) {
-			in.Logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "claims server not configured")
-			return nil
-		}
+		return xhttpserver.Optional(
+			xhttpserver.Run(
+				serverConfigKey,
+				in.ServerIn,
+				func(router *mux.Router, l log.Logger) error {
+					router.Handle("/claims", in.ClaimsHandler).Methods("GET")
+					router.Use(
+						xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+						in.ParseForm.Then,
+						in.ResponseHeaders.Then,
+					)
 
-		return xhttpserver.Run(
-			serverConfigKey,
-			in.ServerIn,
-			func(router *mux.Router, l log.Logger) error {
-				router.Handle("/claims", in.ClaimsHandler).Methods("GET")
-				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-					in.ParseForm.Then,
-					in.ResponseHeaders.Then,
-				)
-
-				return nil
-			},
+					return nil
+				},
+			),
 		)
 	}
 }
@@ -125,6 +118,31 @@ func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
 			in.ServerIn,
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/metrics", in.Handler).Methods("GET")
+				router.Use(
+					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+					in.ResponseHeaders.Then,
+				)
+
+				return nil
+			},
+		)
+	}
+}
+
+type HealthServerIn struct {
+	xhttpserver.ServerIn
+	CommonIn
+
+	Handler xhealth.Handler
+}
+
+func RunHealthServer(serverConfigKey string) func(HealthServerIn) error {
+	return func(in HealthServerIn) error {
+		return xhttpserver.Run(
+			serverConfigKey,
+			in.ServerIn,
+			func(router *mux.Router, l log.Logger) error {
+				router.Handle("/health", in.Handler).Methods("GET")
 				router.Use(
 					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
 					in.ResponseHeaders.Then,

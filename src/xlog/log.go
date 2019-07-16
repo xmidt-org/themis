@@ -8,8 +8,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
-
-	"github.com/spf13/viper"
 )
 
 const (
@@ -134,13 +132,4 @@ var defaultLogger = log.WithPrefix(
 
 func Default() log.Logger {
 	return defaultLogger
-}
-
-func Unmarshal(key string, v *viper.Viper) (log.Logger, error) {
-	var o Options
-	if err := v.UnmarshalKey(key, &o); err != nil {
-		return nil, err
-	}
-
-	return New(o)
 }

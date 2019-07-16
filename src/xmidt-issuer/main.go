@@ -21,6 +21,7 @@ import (
 	"random"
 	"strings"
 	"token"
+	"xhealth"
 	"xhttp"
 	"xlog"
 	"xlog/xloghttp"
@@ -103,6 +104,7 @@ func main() {
 			func() (*pflag.FlagSet, *viper.Viper, log.Logger) {
 				return fs, v, logger
 			},
+			xhealth.Unmarshal("health"),
 			random.Provide,
 			key.Provide,
 			token.Unmarshal("token"),
@@ -122,6 +124,7 @@ func main() {
 			RunIssuerServer("servers.issuer"),
 			RunClaimsServer("servers.claims"),
 			RunMetricsServer("servers.metrics"),
+			RunHealthServer("servers.health"),
 		),
 	)
 
