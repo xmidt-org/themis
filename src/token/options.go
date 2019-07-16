@@ -42,13 +42,17 @@ type Options struct {
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
 	Metadata map[string]Value
 
-	// Duration specifies how long the token should be valid for.  An exp claim is set
-	// using this duration from the current time if this field is positive.
-	Duration string
-
 	// Nonce indicates whether a nonce (jti) should be applied to each token emitted
 	// by this factory.
 	Nonce bool
+
+	// DisableTime completely disables all time-based claims, such as iat.  Setting this to true
+	// causes Duration and NotBeforeDelta to be ignored.
+	DisableTime bool
+
+	// Duration specifies how long the token should be valid for.  An exp claim is set
+	// using this duration from the current time if this field is positive.
+	Duration string
 
 	// NotBeforeDelta is a golang duration that determines the nbf field.  If set, this field
 	// is parsed and added to the current time at the moment a token is issued.  The result

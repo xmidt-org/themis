@@ -158,11 +158,9 @@ func newRemoteClaimBuilder(r *RemoteClaims) (remoteClaimBuilder, error) {
 // used in configuration a token Factory.  It can be used as a standalone service component with an endpoint.
 func NewClaimBuilders(n random.Noncer, o Options) (ClaimBuilders, error) {
 	var (
+		// at a minimum, the claims from the request will be copied
 		builders           = ClaimBuilders{requestClaimBuilder{}}
 		staticClaimBuilder = make(staticClaimBuilder)
-		timeClaimBuilder   = &timeClaimBuilder{
-			now: time.Now,
-		}
 	)
 
 	if o.Remote != nil {
@@ -195,23 +193,30 @@ func NewClaimBuilders(n random.Noncer, o Options) (ClaimBuilders, error) {
 		builders = append(builders, nonceClaimBuilder{n: n})
 	}
 
-	if len(o.Duration) > 0 {
-		var err error
-		timeClaimBuilder.duration, err = time.ParseDuration(o.Duration)
-		if err != nil {
-			return nil, err
+	if !o.DisableTime {
+		timeClaimBuilder := &timeClaimBuilder{
+			now: time.Now,
 		}
+
+		if len(o.Duration) > 0 {
+			var err error
+			timeClaimBuilder.duration, err = time.ParseDuration(o.Duration)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if len(o.NotBeforeDelta) > 0 {
+			var err error
+			timeClaimBuilder.notBeforeDelta = new(time.Duration)
+			*timeClaimBuilder.notBeforeDelta, err = time.ParseDuration(o.NotBeforeDelta)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		builders = append(builders, timeClaimBuilder)
 	}
 
-	if len(o.NotBeforeDelta) > 0 {
-		var err error
-		timeClaimBuilder.notBeforeDelta = new(time.Duration)
-		*timeClaimBuilder.notBeforeDelta, err = time.ParseDuration(o.NotBeforeDelta)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	builders = append(builders, timeClaimBuilder)
 	return builders, nil
 }
