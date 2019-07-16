@@ -19,9 +19,10 @@ type TokenIn struct {
 type TokenOut struct {
 	fx.Out
 
-	ClaimBuilder ClaimBuilder
-	Factory      Factory
-	IssueHandler IssueHandler
+	ClaimBuilder  ClaimBuilder
+	Factory       Factory
+	IssueHandler  IssueHandler
+	ClaimsHandler ClaimsHandler
 }
 
 // Unmarshal returns an uber/fx style factory that produces the relevant components for
@@ -54,6 +55,10 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			Factory:      f,
 			IssueHandler: NewIssueHandler(
 				NewIssueEndpoint(f),
+				rb,
+			),
+			ClaimsHandler: NewClaimsHandler(
+				NewClaimsEndpoint(cb),
 				rb,
 			),
 		}, nil

@@ -120,6 +120,7 @@ func main() {
 		fx.Invoke(
 			RunKeyServer("servers.key"),
 			RunIssuerServer("servers.issuer"),
+			RunClaimsServer("servers.claims"),
 			RunMetricsServer("servers.metrics"),
 		),
 	)

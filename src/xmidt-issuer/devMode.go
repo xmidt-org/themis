@@ -14,8 +14,13 @@ servers:
     logConnectionState: true
     disableHTTPKeepAlives: true
 
-  metrics:
+  claims:
     address: :8082
+    logConnectionState: true
+    disableHTTPKeepAlives: true
+
+  metrics:
+    address: :8083
     logConnectionState: true
     disableHTTPKeepAlives: true
 

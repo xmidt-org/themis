@@ -196,7 +196,7 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 	}
 }
 
-func EncodeServerResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
+func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
 	response.Header().Set("Content-Type", "application/jose")
 	_, err := response.Write([]byte(value.(string)))
 	return err

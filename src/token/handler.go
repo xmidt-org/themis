@@ -13,7 +13,7 @@ func NewIssueHandler(e endpoint.Endpoint, rb RequestBuilders) IssueHandler {
 	return kithttp.NewServer(
 		e,
 		DecodeServerRequest(rb),
-		EncodeServerResponse,
+		EncodeIssueResponse,
 	)
 }
 
@@ -23,6 +23,6 @@ func NewClaimsHandler(e endpoint.Endpoint, rb RequestBuilders) ClaimsHandler {
 	return kithttp.NewServer(
 		e,
 		DecodeServerRequest(rb),
-		EncodeServerResponse,
+		kithttp.EncodeJSONResponse,
 	)
 }

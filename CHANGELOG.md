@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Request logging
 - Integrated server logging
 - Full support for claims specified in requests
+- Optional claims server that simply returns a JSON payload of the claims
 
 
 [Unreleased]: https://github.com/Comcast/xmidt-issuer/compare/0.0.0...HEAD
