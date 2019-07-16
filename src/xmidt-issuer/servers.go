@@ -18,8 +18,8 @@ import (
 type CommonIn struct {
 	fx.In
 
-	LoggerParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
-	ResponseHeaders         xhttp.ResponseHeaders
+	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
+	ResponseHeaders   xhttp.ResponseHeaders
 }
 
 type KeyServerIn struct {
@@ -37,7 +37,7 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/key/{kid}", in.Handler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
 					in.ResponseHeaders.Then,
 				)
 
@@ -68,7 +68,7 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/issue", in.IssueHandler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
 					in.ParseForm.Then,
 					in.ResponseHeaders.Then,
 				)
@@ -100,7 +100,7 @@ func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/claims", in.ClaimsHandler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
 					in.ParseForm.Then,
 					in.ResponseHeaders.Then,
 				)
@@ -126,7 +126,7 @@ func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/metrics", in.Handler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.LoggerParameterBuilders}.Then,
+					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
 					in.ResponseHeaders.Then,
 				)
 
