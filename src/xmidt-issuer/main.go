@@ -23,6 +23,7 @@ import (
 	"token"
 	"xhealth"
 	"xhttp"
+	"xhttp/xhttpclient"
 	"xlog"
 	"xlog/xloghttp"
 	"xmetrics"
@@ -105,6 +106,7 @@ func main() {
 				return fs, v, logger
 			},
 			xhealth.Unmarshal("health"),
+			xhttpclient.Unmarshal("client"),
 			random.Provide,
 			key.Provide,
 			token.Unmarshal("token"),

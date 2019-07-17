@@ -237,34 +237,10 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 	}
 
 	err := xerror.Do(
-		func() (err error) {
-			if len(o.IdleTimeout) > 0 {
-				s.IdleTimeout, err = time.ParseDuration(o.IdleTimeout)
-			}
-
-			return
-		},
-		func() (err error) {
-			if len(o.ReadHeaderTimeout) > 0 {
-				s.ReadHeaderTimeout, err = time.ParseDuration(o.ReadHeaderTimeout)
-			}
-
-			return
-		},
-		func() (err error) {
-			if len(o.ReadTimeout) > 0 {
-				s.ReadTimeout, err = time.ParseDuration(o.ReadTimeout)
-			}
-
-			return
-		},
-		func() (err error) {
-			if len(o.WriteTimeout) > 0 {
-				s.WriteTimeout, err = time.ParseDuration(o.WriteTimeout)
-			}
-
-			return
-		},
+		xerror.TryOptionalDuration(o.IdleTimeout, &s.IdleTimeout),
+		xerror.TryOptionalDuration(o.ReadHeaderTimeout, &s.ReadHeaderTimeout),
+		xerror.TryOptionalDuration(o.ReadTimeout, &s.ReadTimeout),
+		xerror.TryOptionalDuration(o.WriteTimeout, &s.WriteTimeout),
 	)
 
 	if err != nil {
