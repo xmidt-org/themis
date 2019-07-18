@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net"
 	"net/http"
+
+	kithttp "github.com/go-kit/kit/transport/http"
 )
 
 var (
@@ -19,18 +21,18 @@ var (
 // Implementations always implement the optional interfaces.  In cases where the underlying
 // http.ResponseWriter does not implement that interface, e.g. http.Pusher, either an error
 // is returned or the method is a no-op.
+//
+// This interface implements go-kit's StatusCoder to allow client code to narrowly cast to
+// the desired type.
 type TrackingWriter interface {
 	http.ResponseWriter
 	http.Hijacker
 	http.Pusher
 	http.Flusher
+	kithttp.StatusCoder
 
 	// Hijacked returns true if the underlying network connection has been hijacked
 	Hijacked() bool
-
-	// StatusCode returns the HTTP response code that was written using WriteHeader.
-	// If WriteHeader was not called, http.StatusOK is returned.
-	StatusCode() int
 
 	// BytesWritten returns the total bytes written to the response body via Write.
 	BytesWritten() int

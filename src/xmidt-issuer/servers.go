@@ -7,7 +7,7 @@ import (
 	"xhttp"
 	"xhttp/xhttpserver"
 	"xlog/xloghttp"
-	"xmetrics"
+	"xmetrics/xmetricshttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -108,7 +108,7 @@ type MetricsServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	Handler xmetrics.Handler
+	Handler xmetricshttp.Handler
 }
 
 func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {

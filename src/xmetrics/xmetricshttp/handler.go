@@ -1,4 +1,4 @@
-package xmetrics
+package xmetricshttp
 
 import (
 	"net/http"

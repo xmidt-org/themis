@@ -26,7 +26,7 @@ import (
 	"xhttp/xhttpclient"
 	"xlog"
 	"xlog/xloghttp"
-	"xmetrics"
+	"xmetrics/xmetricshttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -119,7 +119,7 @@ func main() {
 			},
 			xhttp.ProvideParseForm,
 			xhttp.UnmarshalResponseHeaders("responseHeaders"),
-			xmetrics.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 		),
 		fx.Invoke(
 			RunKeyServer("servers.key"),

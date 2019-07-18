@@ -2,7 +2,6 @@ package xmetrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
@@ -19,10 +18,12 @@ type MetricsOut struct {
 	Registerer prometheus.Registerer
 	Gatherer   prometheus.Gatherer
 	Registry   Registry
-	Handler    Handler
 }
 
-func Unmarshal(configKey string, ho promhttp.HandlerOpts) func(MetricsIn) (MetricsOut, error) {
+// Unmarshal produces an uber/fx provider that bootstraps a prometheus-based metrics environment.
+// No HTTP initialization is done by this package.  To obtain a prometheus handler, use xmetricshttp.Unmarshal,
+// which invokes this method in addition to the HTTP initialization.
+func Unmarshal(configKey string) func(MetricsIn) (MetricsOut, error) {
 	return func(in MetricsIn) (MetricsOut, error) {
 		var o Options
 		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
@@ -38,7 +39,6 @@ func Unmarshal(configKey string, ho promhttp.HandlerOpts) func(MetricsIn) (Metri
 			Registerer: registry,
 			Gatherer:   registry,
 			Registry:   registry,
-			Handler:    promhttp.HandlerFor(registry, ho),
 		}, nil
 	}
 }
