@@ -18,7 +18,7 @@ type CommonIn struct {
 	fx.In
 
 	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
-	ResponseHeaders   xhttp.ResponseHeaders
+	Middleware        []mux.MiddlewareFunc
 }
 
 type KeyServerIn struct {
@@ -36,8 +36,12 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/key/{kid}", in.Handler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-					in.ResponseHeaders.Then,
+					append(
+						[]mux.MiddlewareFunc{
+							xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+						},
+						in.Middleware...,
+					)...,
 				)
 
 				return nil
@@ -63,9 +67,12 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 				func(router *mux.Router, l log.Logger) error {
 					router.Handle("/issue", in.IssueHandler).Methods("GET")
 					router.Use(
-						xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-						in.ParseForm.Then,
-						in.ResponseHeaders.Then,
+						append(
+							[]mux.MiddlewareFunc{
+								xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+							},
+							in.Middleware...,
+						)...,
 					)
 
 					return nil
@@ -92,9 +99,12 @@ func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 				func(router *mux.Router, l log.Logger) error {
 					router.Handle("/claims", in.ClaimsHandler).Methods("GET")
 					router.Use(
-						xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-						in.ParseForm.Then,
-						in.ResponseHeaders.Then,
+						append(
+							[]mux.MiddlewareFunc{
+								xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+							},
+							in.Middleware...,
+						)...,
 					)
 
 					return nil
@@ -108,7 +118,9 @@ type MetricsServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	Handler xmetricshttp.Handler
+	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
+	ResponseHeaders   xhttp.ResponseHeaders
+	Handler           xmetricshttp.Handler
 }
 
 func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
@@ -144,8 +156,12 @@ func RunHealthServer(serverConfigKey string) func(HealthServerIn) error {
 			func(router *mux.Router, l log.Logger) error {
 				router.Handle("/health", in.Handler).Methods("GET")
 				router.Use(
-					xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
-					in.ResponseHeaders.Then,
+					append(
+						[]mux.MiddlewareFunc{
+							xloghttp.Logging{Base: l, Builders: in.ParameterBuilders}.Then,
+						},
+						in.Middleware...,
+					)...,
 				)
 
 				return nil

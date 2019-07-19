@@ -120,7 +120,9 @@ func main() {
 			xhttp.ProvideParseForm,
 			xhttp.UnmarshalResponseHeaders("responseHeaders"),
 			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+			provideMiddleware,
 		),
+		provideMetrics(),
 		fx.Invoke(
 			RunKeyServer("servers.key"),
 			RunIssuerServer("servers.issuer"),

@@ -41,11 +41,13 @@ type TrackingWriter interface {
 // NewTrackingWriter decorates an existing response writer and allows visibility
 // into certain items written to the response.
 func NewTrackingWriter(next http.ResponseWriter) TrackingWriter {
-	delegate := &trackingWriter{
-		next: next,
+	if tr, ok := next.(TrackingWriter); ok {
+		return tr
 	}
 
-	return delegate
+	return &trackingWriter{
+		next: next,
+	}
 }
 
 type trackingWriter struct {

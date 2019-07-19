@@ -38,6 +38,10 @@ health:
   custom:
     server: development
 
+prometheus:
+  defaultNamespace: xmidt
+  defaultSubsystem: issuer
+
 token:
   alg: RS256
   nonce: true
