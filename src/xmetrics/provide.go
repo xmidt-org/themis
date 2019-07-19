@@ -6,6 +6,8 @@ import (
 	"go.uber.org/fx"
 )
 
+// ProvideCounter emits an uber/fx component of type metrics.Counter using the unqualified name specified
+// in the options struct.
 func ProvideCounter(o prometheus.CounterOpts, labelNames ...string) fx.Annotated {
 	return fx.Annotated{
 		Name: o.Name,
@@ -15,6 +17,8 @@ func ProvideCounter(o prometheus.CounterOpts, labelNames ...string) fx.Annotated
 	}
 }
 
+// ProvideGauge emits an uber/fx component of type metrics.Gauge using the unqualified name specified
+// in the options struct.
 func ProvideGauge(o prometheus.GaugeOpts, labelNames ...string) fx.Annotated {
 	return fx.Annotated{
 		Name: o.Name,
@@ -24,6 +28,8 @@ func ProvideGauge(o prometheus.GaugeOpts, labelNames ...string) fx.Annotated {
 	}
 }
 
+// ProvideHistogram emits an uber/fx component of type metrics.Histogram using the unqualified name specified
+// in the options struct.
 func ProvideHistogram(o prometheus.HistogramOpts, labelNames ...string) fx.Annotated {
 	return fx.Annotated{
 		Name: o.Name,
@@ -33,6 +39,8 @@ func ProvideHistogram(o prometheus.HistogramOpts, labelNames ...string) fx.Annot
 	}
 }
 
+// ProvideHistogram emits an uber/fx component of type metrics.Histogram using the unqualified name specified
+// in the options struct.  Note that go-kit does not have a separate summary metric type.
 func ProvideSummary(o prometheus.SummaryOpts, labelNames ...string) fx.Annotated {
 	return fx.Annotated{
 		Name: o.Name,
