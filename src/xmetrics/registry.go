@@ -6,24 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Adder is a strategy for adding a value to a metric.  This interface is implemented
-// by a variety of metrics infrastructures.
-type Adder interface {
-	Add(float64)
-}
-
-// Setter is a strategy for setting a value on a metric.  This interface is implemented
-// by a variety of metrics infrastructures.
-type Setter interface {
-	Set(float64)
-}
-
-// Observer is a strategy for observing a value on a metric.  This interface is implemented
-// by a variety of metrics infrastructures.
-type Observer interface {
-	Observe(float64)
-}
-
+// Options defines the configuration options for bootstrapping a prometheus-based metrics environment
+// within an uber/fx App backed by Viper configuration.
 type Options struct {
 	DefaultNamespace        string
 	DefaultSubsystem        string
@@ -32,6 +16,8 @@ type Options struct {
 	DisableProcessCollector bool
 }
 
+// Registry is the central interface of this package.  It implements the appropriate prometheus interfaces
+// and supplies factory methods that return go-kit metrics types.
 type Registry interface {
 	prometheus.Registerer
 	prometheus.Gatherer
