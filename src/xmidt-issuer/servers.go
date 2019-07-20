@@ -16,6 +16,7 @@ type CommonIn struct {
 	fx.In
 	ServerMetricsIn
 
+	ParseForm         xhttp.ParseForm
 	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
 }
 
@@ -63,6 +64,7 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 				ur.Router.Use(xhttpserver.TrackWriter)
 				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
+				ur.Router.Use(in.ParseForm.Then)
 
 				return nil
 			},
@@ -90,6 +92,7 @@ func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 				ur.Router.Use(xhttpserver.TrackWriter)
 				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
+				ur.Router.Use(in.ParseForm.Then)
 
 				return nil
 			},
