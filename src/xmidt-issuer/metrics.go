@@ -1,72 +1,77 @@
 package main
 
 import (
+	"xhttp/xhttpserver"
 	"xmetrics"
 	"xmetrics/xmetricshttp"
 
-	"github.com/go-kit/kit/metrics"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/fx"
 )
+
+// ServerLabel is the metric label for which internal server (key, claims, etc) a metric is for
+const ServerLabel = "server"
 
 type ServerMetricsIn struct {
 	fx.In
 
-	RequestCount    metrics.Counter   `name:"server_request_count"`
-	RequestDuration metrics.Histogram `name:"server_request_duration_seconds"`
-	InFlight        metrics.Gauge     `name:"server_requests_in_flight"`
+	RequestCount    *prometheus.CounterVec   `name:"server_request_count"`
+	RequestDuration *prometheus.HistogramVec `name:"server_request_duration_seconds"`
+	InFlight        *prometheus.GaugeVec     `name:"server_requests_in_flight"`
 }
 
-type InstrumentHandlerOut struct {
-	fx.Out
+// metricsMiddleware is a helper function that creates a chain of middleware for gorilla/mux given
+// the common serverside metrics
+func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux.MiddlewareFunc {
+	curryLabel := prometheus.Labels{
+		ServerLabel: ur.Name,
+	}
 
-	RequestCount    xmetricshttp.InstrumentHandlerCounter
-	RequestDuration xmetricshttp.InstrumentHandlerDuration
-	InFlight        xmetricshttp.InstrumentHandlerInFlight
+	return []mux.MiddlewareFunc{
+		xmetricshttp.InstrumentHandlerCounter{
+			Reporter: xmetricshttp.NewCounterVecReporter(in.RequestCount.MustCurryWith(curryLabel)),
+			Labeller: xmetricshttp.StandardLabeller{},
+		}.Then,
+		xmetricshttp.InstrumentHandlerDuration{
+			Reporter: xmetricshttp.NewObserverVecReporter(in.RequestDuration.MustCurryWith(curryLabel)),
+			Labeller: xmetricshttp.StandardLabeller{},
+		}.Then,
+		xmetricshttp.InstrumentHandlerInFlight{
+			Reporter: xmetricshttp.NewGaugeVecAdderReporter(in.InFlight.MustCurryWith(curryLabel)),
+		}.Then,
+	}
 }
 
 // provideMetrics builds the various metrics components needed by the issuer
 func provideMetrics() fx.Option {
 	return fx.Provide(
-		xmetrics.ProvideCounter(
+		xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+		xmetrics.ProvideCounterVec(
 			prometheus.CounterOpts{
 				Name: "server_request_count",
 				Help: "total HTTP requests made to servers",
 			},
 			xmetricshttp.CodeLabel,
 			xmetricshttp.MethodLabel,
+			ServerLabel,
 		),
-		xmetrics.ProvideHistogram(
+		xmetrics.ProvideHistogramVec(
 			prometheus.HistogramOpts{
 				Name: "server_request_duration_seconds",
 				Help: "tracks server request durations in seconds",
 			},
 			xmetricshttp.CodeLabel,
 			xmetricshttp.MethodLabel,
+			ServerLabel,
 		),
-		xmetrics.ProvideGauge(
+		xmetrics.ProvideGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "server_requests_in_flight",
 				Help: "tracks the current number of server requests currently being processed",
 			},
-			xmetricshttp.CodeLabel,
-			xmetricshttp.MethodLabel,
+			ServerLabel,
 		),
-		func(in ServerMetricsIn) InstrumentHandlerOut {
-			return InstrumentHandlerOut{
-				RequestCount: xmetricshttp.InstrumentHandlerCounter{
-					Reporter: xmetricshttp.NewCounterReporter(in.RequestCount),
-					Labeller: xmetricshttp.StandardLabeller{},
-				},
-				RequestDuration: xmetricshttp.InstrumentHandlerDuration{
-					Reporter: xmetricshttp.NewHistogramReporter(in.RequestDuration),
-					Labeller: xmetricshttp.StandardLabeller{},
-				},
-				InFlight: xmetricshttp.InstrumentHandlerInFlight{
-					Reporter: xmetricshttp.NewGaugeReporter(in.InFlight, true),
-					Labeller: xmetricshttp.StandardLabeller{},
-				},
-			}
-		},
 	)
 }

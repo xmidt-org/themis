@@ -1,37 +1,45 @@
 package xhttpserver
 
 import (
-	"github.com/go-kit/kit/log"
-	"github.com/gorilla/mux"
+	"xlog"
+
+	"github.com/go-kit/kit/log/level"
 )
 
-type RouterBuilder func(*mux.Router, log.Logger) error
+// RunBuilder is a strategy for building up routes and other infrastructure related to an http.Server
+type RunBuilder func(UnmarshalResult) error
 
 // Run is meant to be used in an fx.Invoke option.  This function uses Unmarshal to setup
 // an HTTP server from configuration, then uses zero or more builders to configure the *mux.Router
 // for that server.
-func Run(configKey string, in ServerIn, b ...RouterBuilder) error {
-	router, logger, err := Unmarshal(configKey, in)
+func Run(configKey string, in ServerIn, b ...RunBuilder) (UnmarshalResult, error) {
+	result, err := Unmarshal(configKey, in)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	for _, f := range b {
-		if err := f(router, logger); err != nil {
-			return err
+		if err := f(result); err != nil {
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
-// Optional accepts an error from Run and returns nil if that error indicates the server is
-// simply not configured, or the original error otherwise.  Wrapping a call to Run in this method
-// allows a server to be optionally available via configuration.
-func Optional(err error) error {
+// Optional is similar to run, but permits the configuration key to be missing.  In that event,
+// no server is started and an information log message is output.
+func Optional(configKey string, in ServerIn, b ...RunBuilder) (UnmarshalResult, error) {
+	result, err := Run(configKey, in, b...)
 	if _, ok := err.(ServerNotConfiguredError); ok {
-		return nil
+		in.Logger.Log(
+			level.Key(), level.InfoValue(),
+			xlog.MessageKey(), "server not configured",
+			ServerKey(), result.Name,
+		)
+
+		return result, nil
 	}
 
-	return err
+	return result, err
 }

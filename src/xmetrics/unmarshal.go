@@ -17,6 +17,7 @@ type MetricsOut struct {
 
 	Registerer prometheus.Registerer
 	Gatherer   prometheus.Gatherer
+	Factory    Factory
 	Registry   Registry
 }
 
@@ -38,6 +39,7 @@ func Unmarshal(configKey string) func(MetricsIn) (MetricsOut, error) {
 		return MetricsOut{
 			Registerer: registry,
 			Gatherer:   registry,
+			Factory:    registry,
 			Registry:   registry,
 		}, nil
 	}

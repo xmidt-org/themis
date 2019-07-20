@@ -26,10 +26,8 @@ import (
 	"xhttp/xhttpclient"
 	"xlog"
 	"xlog/xloghttp"
-	"xmetrics/xmetricshttp"
 
 	"github.com/go-kit/kit/log"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -119,7 +117,6 @@ func main() {
 			},
 			xhttp.ProvideParseForm,
 			xhttp.UnmarshalResponseHeaders("responseHeaders"),
-			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			provideMiddleware,
 		),
 		provideMetrics(),

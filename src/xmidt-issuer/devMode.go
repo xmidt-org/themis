@@ -21,12 +21,10 @@ servers:
 
   metrics:
     address: :8083
-    logConnectionState: true
     disableHTTPKeepAlives: true
 
   health:
     address: :8084
-    logConnectionState: true
     disableHTTPKeepAlives: true
 
 responseHeaders:
@@ -41,6 +39,8 @@ health:
 prometheus:
   defaultNamespace: xmidt
   defaultSubsystem: issuer
+  constLabels:
+    development: "true"
 
 token:
   alg: RS256

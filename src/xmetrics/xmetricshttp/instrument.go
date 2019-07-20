@@ -3,6 +3,7 @@ package xmetricshttp
 import (
 	"net/http"
 	"time"
+	"xmetrics"
 )
 
 // InstrumentHandlerCounter provides a simple count metric of HTTP transactions
@@ -23,10 +24,9 @@ func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		next.ServeHTTP(response, request)
-		ihc.Reporter.Report(
-			labeller.ServerLabels(response, request, nil),
-			1.0,
-		)
+		var l xmetrics.Labels
+		labeller.ServerLabels(response, request, &l)
+		ihc.Reporter.Report(&l, 1.0)
 	})
 }
 
@@ -57,17 +57,15 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		start := now()
 		next.ServeHTTP(response, request)
-		ihd.Reporter.Report(
-			labeller.ServerLabels(response, request, nil),
-			float64(now().Sub(start)),
-		)
+		var l xmetrics.Labels
+		labeller.ServerLabels(response, request, &l)
+		ihd.Reporter.Report(&l, float64(now().Sub(start)))
 	})
 }
 
 // InstrumentHandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
 type InstrumentHandlerInFlight struct {
 	Reporter SetterReporter
-	Labeller ServerLabeller
 }
 
 func (ihif InstrumentHandlerInFlight) Then(next http.Handler) http.Handler {
@@ -75,15 +73,9 @@ func (ihif InstrumentHandlerInFlight) Then(next http.Handler) http.Handler {
 		return next
 	}
 
-	labeller := ihif.Labeller
-	if labeller == nil {
-		labeller = EmptyLabeller{}
-	}
-
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		lvs := labeller.ServerLabels(response, request, nil)
-		defer ihif.Reporter.Report(lvs, -1.0)
-		ihif.Reporter.Report(lvs, 1.0)
+		defer ihif.Reporter.Report(nil, -1.0)
+		ihif.Reporter.Report(nil, 1.0)
 		next.ServeHTTP(response, request)
 	})
 }
@@ -114,10 +106,9 @@ func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.Roun
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
 		response, err := next.RoundTrip(request)
 		if err == nil {
-			irtc.Reporter.Report(
-				labeller.ClientLabels(response, request, nil),
-				1.0,
-			)
+			var l xmetrics.Labels
+			labeller.ClientLabels(response, request, &l)
+			irtc.Reporter.Report(&l, 1.0)
 		}
 
 		return response, err
@@ -151,10 +142,9 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 		start := now()
 		response, err := next.RoundTrip(request)
 		if err == nil {
-			irtd.Reporter.Report(
-				labeller.ClientLabels(response, request, nil),
-				float64(now().Sub(start)),
-			)
+			var l xmetrics.Labels
+			labeller.ClientLabels(response, request, &l)
+			irtd.Reporter.Report(&l, float64(now().Sub(start)))
 		}
 
 		return response, err

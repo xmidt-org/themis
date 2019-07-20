@@ -30,19 +30,37 @@ type ServerIn struct {
 	Lifecycle  fx.Lifecycle
 }
 
+// UnmarshalResult is the result of unmarshalling a server and binding it to the container lifecycle
+type UnmarshalResult struct {
+	// Name is the label applied to this server in logging.  It will either be set via configuration
+	// or default to the configuration key.
+	Name string
+
+	// Logger is the go-kit logger enriched with server information, such as the bind address
+	Logger log.Logger
+
+	// Router is the gorilla/mux router used as the handler for this server, which can be used
+	// to build handler routes.
+	Router *mux.Router
+}
+
 // Unmarshal reads an Options struct at the given viper key, creates an HTTP server instance,
 // binds it to the fx.App lifecycle, and returns a gorilla/mux router that can be used to
 // define handler routes for the server.
 //
 // This function is useful for writing server invocation code for other packages, typically the main package.
-func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
+// It is not intended for direct use as an uber/fx provider.
+//
+// Even when returning an error, this function always returns an UnmarshalResult with at least the server name
+// set to something that can be output for information and debugging.
+func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 	if !in.Viper.IsSet(configKey) {
-		return nil, nil, ServerNotConfiguredError{ConfigKey: configKey}
+		return UnmarshalResult{Name: configKey}, ServerNotConfiguredError{ConfigKey: configKey}
 	}
 
 	var o Options
 	if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
-		return nil, nil, err
+		return UnmarshalResult{Name: configKey}, err
 	}
 
 	if len(o.Name) == 0 {
@@ -52,7 +70,7 @@ func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
 	router := mux.NewRouter()
 	server, logger, err := New(in.Logger, router, o)
 	if err != nil {
-		return nil, nil, err
+		return UnmarshalResult{Name: o.Name}, err
 	}
 
 	in.Lifecycle.Append(fx.Hook{
@@ -60,5 +78,9 @@ func Unmarshal(configKey string, in ServerIn) (*mux.Router, log.Logger, error) {
 		OnStop:  OnStop(logger, server),
 	})
 
-	return router, logger, nil
+	return UnmarshalResult{
+		Name:   o.Name,
+		Logger: logger,
+		Router: router,
+	}, nil
 }
