@@ -27,6 +27,10 @@ servers:
     address: :8084
     disableHTTPKeepAlives: true
 
+  pprof:
+    address: :8085
+    disableHTTPKeepAlives: true
+
 responseHeaders:
   X-Midt-Server: issuer
   X-Midt-Version: development

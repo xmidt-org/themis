@@ -24,6 +24,7 @@ import (
 	"xhealth"
 	"xhttp"
 	"xhttp/xhttpclient"
+	"xhttp/xhttpserver"
 	"xlog"
 	"xlog/xloghttp"
 
@@ -126,6 +127,7 @@ func main() {
 			RunClaimsServer("servers.claims"),
 			RunMetricsServer("servers.metrics"),
 			RunHealthServer("servers.health"),
+			xhttpserver.InvokeOptional("servers.pprof", xhttpserver.AddPprofRoutes),
 		),
 	)
 
