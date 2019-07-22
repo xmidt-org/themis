@@ -8,7 +8,7 @@ import (
 
 // InstrumentHandlerCounter provides a simple count metric of HTTP transactions
 type InstrumentHandlerCounter struct {
-	Reporter AdderReporter
+	Reporter xmetrics.AdderReporter
 	Labeller ServerLabeller
 }
 
@@ -32,7 +32,7 @@ func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
 
 // InstrumentHandlerDuration provides request duration metrics
 type InstrumentHandlerDuration struct {
-	Reporter ObserverReporter
+	Reporter xmetrics.ObserverReporter
 	Labeller ServerLabeller
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
@@ -65,7 +65,7 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 
 // InstrumentHandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
 type InstrumentHandlerInFlight struct {
-	Reporter SetterReporter
+	Reporter xmetrics.SetterReporter
 }
 
 func (ihif InstrumentHandlerInFlight) Then(next http.Handler) http.Handler {
@@ -89,7 +89,7 @@ func (rtf RoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, er
 
 // InstrumentRoundTripperCounter provides a simple counting metric for clients executing HTTP transactions
 type InstrumentRoundTripperCounter struct {
-	Reporter AdderReporter
+	Reporter xmetrics.AdderReporter
 	Labeller ClientLabeller
 }
 
@@ -116,7 +116,7 @@ func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.Roun
 }
 
 type InstrumentRoundTripperDuration struct {
-	Reporter ObserverReporter
+	Reporter xmetrics.ObserverReporter
 	Labeller ClientLabeller
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
@@ -154,7 +154,7 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 // InstrumentHandlerInFlight provides a gauge of how many in-flight HTTP transactions a client has initiated.
 // No labeller is used here, as the reporter must be invoked before the transaction executes to produce a response.
 type InstrumentRoundTripperInFlight struct {
-	Reporter SetterReporter
+	Reporter xmetrics.SetterReporter
 }
 
 func (irtif InstrumentRoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper {

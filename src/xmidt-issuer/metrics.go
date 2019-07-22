@@ -31,15 +31,21 @@ func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux
 
 	return []mux.MiddlewareFunc{
 		xmetricshttp.InstrumentHandlerCounter{
-			Reporter: xmetricshttp.NewCounterVecReporter(in.RequestCount.MustCurryWith(curryLabel)),
-			Labeller: xmetricshttp.StandardLabeller{},
+			Reporter: xmetrics.NewCounterVecReporter(in.RequestCount.MustCurryWith(curryLabel)),
+			Labeller: xmetricshttp.ServerLabellers{
+				xmetricshttp.CodeLabeller{},
+				xmetricshttp.MethodLabeller{},
+			},
 		}.Then,
 		xmetricshttp.InstrumentHandlerDuration{
-			Reporter: xmetricshttp.NewObserverVecReporter(in.RequestDuration.MustCurryWith(curryLabel)),
-			Labeller: xmetricshttp.StandardLabeller{},
+			Reporter: xmetrics.NewObserverVecReporter(in.RequestDuration.MustCurryWith(curryLabel)),
+			Labeller: xmetricshttp.ServerLabellers{
+				xmetricshttp.CodeLabeller{},
+				xmetricshttp.MethodLabeller{},
+			},
 		}.Then,
 		xmetricshttp.InstrumentHandlerInFlight{
-			Reporter: xmetricshttp.NewGaugeVecAdderReporter(in.InFlight.MustCurryWith(curryLabel)),
+			Reporter: xmetrics.NewGaugeVecAdderReporter(in.InFlight.MustCurryWith(curryLabel)),
 		}.Then,
 	}
 }
@@ -53,8 +59,8 @@ func provideMetrics() fx.Option {
 				Name: "server_request_count",
 				Help: "total HTTP requests made to servers",
 			},
-			xmetricshttp.CodeLabel,
-			xmetricshttp.MethodLabel,
+			xmetricshttp.DefaultCodeLabel,
+			xmetricshttp.DefaultMethodLabel,
 			ServerLabel,
 		),
 		xmetrics.ProvideHistogramVec(
@@ -62,8 +68,8 @@ func provideMetrics() fx.Option {
 				Name: "server_request_duration_seconds",
 				Help: "tracks server request durations in seconds",
 			},
-			xmetricshttp.CodeLabel,
-			xmetricshttp.MethodLabel,
+			xmetricshttp.DefaultCodeLabel,
+			xmetricshttp.DefaultMethodLabel,
 			ServerLabel,
 		),
 		xmetrics.ProvideGaugeVec(
