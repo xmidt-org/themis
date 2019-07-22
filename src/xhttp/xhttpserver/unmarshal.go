@@ -2,6 +2,7 @@ package xhttpserver
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -64,7 +65,12 @@ func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 	}
 
 	if len(o.Name) == 0 {
-		o.Name = configKey
+		defaultName := configKey
+		if i := strings.LastIndexByte(defaultName, '.'); i >= 0 {
+			defaultName = configKey[i+1:]
+		}
+
+		o.Name = defaultName
 	}
 
 	router := mux.NewRouter()
