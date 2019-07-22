@@ -37,6 +37,10 @@ type InstrumentHandlerDuration struct {
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
 	Now func() time.Time
+
+	// Units is the time unit to report the metric in.  If unset, time.Millisecond is used.  Any of the
+	// time duration constants can be used here, e.g. time.Second or time.Minute.
+	Units time.Duration
 }
 
 func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
@@ -54,12 +58,20 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 		now = time.Now
 	}
 
+	units := ihd.Units
+	if units <= 0 {
+		units = time.Millisecond
+	}
+
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		start := now()
 		next.ServeHTTP(response, request)
 		var l xmetrics.Labels
 		labeller.ServerLabels(response, request, &l)
-		ihd.Reporter.Report(&l, float64(now().Sub(start)))
+		ihd.Reporter.Report(
+			&l,
+			float64(now().Sub(start)/units),
+		)
 	})
 }
 
@@ -121,6 +133,10 @@ type InstrumentRoundTripperDuration struct {
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
 	Now func() time.Time
+
+	// Units is the time unit to report the metric in.  If unset, time.Millisecond is used.  Any of the
+	// time duration constants can be used here, e.g. time.Second or time.Minute.
+	Units time.Duration
 }
 
 func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper {
@@ -138,13 +154,21 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 		labeller = EmptyLabeller{}
 	}
 
+	units := irtd.Units
+	if units <= 0 {
+		units = time.Millisecond
+	}
+
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
 		start := now()
 		response, err := next.RoundTrip(request)
 		if err == nil {
 			var l xmetrics.Labels
 			labeller.ClientLabels(response, request, &l)
-			irtd.Reporter.Report(&l, float64(now().Sub(start)))
+			irtd.Reporter.Report(
+				&l,
+				float64(now().Sub(start)/units),
+			)
 		}
 
 		return response, err

@@ -18,7 +18,7 @@ type ServerMetricsIn struct {
 	fx.In
 
 	RequestCount    *prometheus.CounterVec   `name:"server_request_count"`
-	RequestDuration *prometheus.HistogramVec `name:"server_request_duration_seconds"`
+	RequestDuration *prometheus.HistogramVec `name:"server_request_duration_ms"`
 	InFlight        *prometheus.GaugeVec     `name:"server_requests_in_flight"`
 }
 
@@ -65,8 +65,8 @@ func provideMetrics() fx.Option {
 		),
 		xmetrics.ProvideHistogramVec(
 			prometheus.HistogramOpts{
-				Name: "server_request_duration_seconds",
-				Help: "tracks server request durations in seconds",
+				Name: "server_request_duration_ms",
+				Help: "tracks server request durations in milliseconds",
 			},
 			xmetricshttp.DefaultCodeLabel,
 			xmetricshttp.DefaultMethodLabel,
