@@ -6,17 +6,14 @@ const (
 servers:
   key:
     address: :8080
-    logConnectionState: true
     disableHTTPKeepAlives: true
 
   issuer:
     address: :8081
-    logConnectionState: true
     disableHTTPKeepAlives: true
 
   claims:
     address: :8082
-    logConnectionState: true
     disableHTTPKeepAlives: true
 
   metrics:

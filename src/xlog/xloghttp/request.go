@@ -9,76 +9,72 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type ParameterBuilder func(*http.Request, []interface{}) []interface{}
-
-func Method(original *http.Request, parameters []interface{}) []interface{} {
-	return append(
-		parameters,
-		"requestMethod",
-		original.Method,
-	)
+// Parameters is a simple builder for logging key/value pairs
+type Parameters struct {
+	p []interface{}
 }
 
-func URI(original *http.Request, parameters []interface{}) []interface{} {
-	return append(
-		parameters,
-		"requestURI",
-		original.RequestURI,
-	)
+func (p *Parameters) Add(key, value interface{}) *Parameters {
+	p.p = append(p.p, key, value)
+	return p
 }
 
-func RemoteAddress(original *http.Request, parameters []interface{}) []interface{} {
-	return append(
-		parameters,
-		"remoteAddr",
-		original.RemoteAddr,
-	)
+func (p *Parameters) Use(base log.Logger) log.Logger {
+	if len(p.p) > 0 {
+		return log.With(base, p.p...)
+	}
+
+	return base
 }
 
+// ParameterBuilder appends logging key/value pairs to be used with a contextual request logger
+type ParameterBuilder func(*http.Request, *Parameters)
+
+// Method is a ParameterBuilder that adds the HTTP request method as a logging key/value pair
+func Method(original *http.Request, p *Parameters) {
+	p.Add("requestMethod", original.Method)
+}
+
+// URI is a ParameterBuilder that adds the HTTP request URI as a logging key/value pair
+func URI(original *http.Request, p *Parameters) {
+	p.Add("requestURI", original.RequestURI)
+}
+
+// RemoteAddress is a ParameterBuilder that adds the HTTP remote address as a logging key/value pair
+func RemoteAddress(original *http.Request, p *Parameters) {
+	p.Add("remoteAddr", original.RemoteAddr)
+}
+
+// Header returns a ParameterBuilder that appends the given HTTP header as a key/value pair
 func Header(name string) ParameterBuilder {
-	return func(original *http.Request, parameters []interface{}) []interface{} {
-		value := original.Header.Get(name)
-		return append(
-			parameters,
-			name,
-			value,
-		)
+	return func(original *http.Request, p *Parameters) {
+		p.Add(name, original.Header.Get(name))
 	}
 }
 
+// Parameter returns a ParameterBuilder that appends the given HTTP query or form parameter as a key/value pair
 func Parameter(name string) ParameterBuilder {
-	return func(original *http.Request, parameters []interface{}) []interface{} {
-		values := original.Form[name]
-		return append(
-			parameters,
-			name,
-			strings.Join(values, ","),
-		)
+	return func(original *http.Request, p *Parameters) {
+		p.Add(name, strings.Join(original.Form[name], ","))
 	}
 }
 
+// Variable returns a ParameterBuilder that appends the given gorilla/mux path variable as a key/value pair
 func Variable(name string) ParameterBuilder {
-	return func(original *http.Request, parameters []interface{}) []interface{} {
-		value := mux.Vars(original)[name]
-		return append(
-			parameters,
-			name,
-			value,
-		)
+	return func(original *http.Request, p *Parameters) {
+		p.Add(name, mux.Vars(original)[name])
 	}
 }
 
+// WithRequest produces a new http.Request with a contextual logger bound to the context.
 func WithRequest(original *http.Request, l log.Logger, b ...ParameterBuilder) *http.Request {
 	if len(b) > 0 {
-		var parameters []interface{}
+		var p Parameters
 		for _, f := range b {
-			parameters = f(original, parameters)
+			f(original, &p)
 		}
 
-		l = log.WithPrefix(
-			l,
-			parameters...,
-		)
+		l = p.Use(l)
 	}
 
 	return original.WithContext(
@@ -89,6 +85,7 @@ func WithRequest(original *http.Request, l log.Logger, b ...ParameterBuilder) *h
 	)
 }
 
+// Logging provides an Alice-style decorator that attaches a contextual logger to requests
 type Logging struct {
 	Base     log.Logger
 	Builders []ParameterBuilder

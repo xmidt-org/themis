@@ -1,7 +1,6 @@
 package main
 
 import (
-	"xhttp"
 	"xhttp/xhttpserver"
 	"xmetrics/xmetricshttp"
 
@@ -12,7 +11,7 @@ import (
 type MiddlewareIn struct {
 	fx.In
 
-	ResponseHeaders xhttp.ResponseHeaders
+	ResponseHeaders xhttpserver.ResponseHeaders
 
 	RequestCount    xmetricshttp.InstrumentHandlerCounter
 	RequestDuration xmetricshttp.InstrumentHandlerDuration

@@ -22,7 +22,6 @@ import (
 	"strings"
 	"token"
 	"xhealth"
-	"xhttp"
 	"xhttp/xhttpclient"
 	"xhttp/xhttpserver"
 	"xlog"
@@ -116,8 +115,8 @@ func main() {
 					xloghttp.Header("X-Midt-Uuid"),
 				}
 			},
-			xhttp.ProvideParseForm,
-			xhttp.UnmarshalResponseHeaders("responseHeaders"),
+			xhttpserver.ProvideParseForm,
+			xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
 			provideMiddleware,
 		),
 		provideMetrics(),

@@ -4,7 +4,6 @@ import (
 	"key"
 	"token"
 	"xhealth"
-	"xhttp"
 	"xhttp/xhttpserver"
 	"xlog/xloghttp"
 	"xmetrics/xmetricshttp"
@@ -16,7 +15,7 @@ type CommonIn struct {
 	fx.In
 	ServerMetricsIn
 
-	ParseForm         xhttp.ParseForm
+	ParseForm         xhttpserver.ParseForm
 	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
 }
 
@@ -50,7 +49,7 @@ type IssuerServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	ParseForm    xhttp.ParseForm
+	ParseForm    xhttpserver.ParseForm
 	IssueHandler token.IssueHandler
 }
 
@@ -78,7 +77,7 @@ type ClaimsServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	ParseForm     xhttp.ParseForm
+	ParseForm     xhttpserver.ParseForm
 	ClaimsHandler token.ClaimsHandler
 }
 
@@ -107,7 +106,7 @@ type MetricsServerIn struct {
 	CommonIn
 
 	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
-	ResponseHeaders   xhttp.ResponseHeaders
+	ResponseHeaders   xhttpserver.ResponseHeaders
 	Handler           xmetricshttp.Handler
 }
 
