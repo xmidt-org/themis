@@ -2,9 +2,11 @@ package xhealth
 
 import (
 	"context"
+	"xlog"
 
 	health "github.com/InVisionApp/go-health"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 )
 
 // Options holds the available configuration options for the health infrastructure
@@ -27,15 +29,25 @@ func New(logger log.Logger, listener health.IStatusListener, o Options) (health.
 }
 
 // OnStart returns an uber/fx Lifecycle hook for startup
-func OnStart(h health.IHealth) func(context.Context) error {
+func OnStart(logger log.Logger, h health.IHealth) func(context.Context) error {
 	return func(_ context.Context) error {
+		logger.Log(
+			level.Key(), level.InfoValue(),
+			xlog.MessageKey(), "health service starting",
+		)
+
 		return h.Start()
 	}
 }
 
 // OnStop returns an uber/fx Lifecycle hook for shutdown
-func OnStop(h health.IHealth) func(context.Context) error {
+func OnStop(logger log.Logger, h health.IHealth) func(context.Context) error {
 	return func(_ context.Context) error {
+		logger.Log(
+			level.Key(), level.InfoValue(),
+			xlog.MessageKey(), "health service stopping",
+		)
+
 		return h.Stop()
 	}
 }

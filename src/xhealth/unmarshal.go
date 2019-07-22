@@ -39,8 +39,8 @@ func Unmarshal(configKey string) func(HealthIn) (HealthOut, error) {
 		}
 
 		in.Lifecycle.Append(fx.Hook{
-			OnStart: OnStart(h),
-			OnStop:  OnStop(h),
+			OnStart: OnStart(in.Logger, h),
+			OnStop:  OnStop(in.Logger, h),
 		})
 
 		return HealthOut{
