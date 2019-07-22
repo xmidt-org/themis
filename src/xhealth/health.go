@@ -48,6 +48,16 @@ func OnStop(logger log.Logger, h health.IHealth) func(context.Context) error {
 			xlog.MessageKey(), "health service stopping",
 		)
 
-		return h.Stop()
+		err := h.Stop()
+		if err == health.ErrAlreadyStopped {
+			logger.Log(
+				level.Key(), level.InfoValue(),
+				xlog.MessageKey(), "health service already stopped or not running",
+			)
+
+			return nil
+		}
+
+		return err
 	}
 }
