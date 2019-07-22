@@ -1,4 +1,4 @@
-package xlog
+package xloghttp
 
 import (
 	"net"

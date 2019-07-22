@@ -11,6 +11,7 @@ import (
 	"time"
 	"xerror"
 	"xlog"
+	"xlog/xloghttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -226,7 +227,7 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 
 		Handler:        h,
 		MaxHeaderBytes: o.MaxHeaderBytes,
-		ErrorLog: xlog.NewErrorLog(
+		ErrorLog: xloghttp.NewErrorLog(
 			o.Address,
 			log.WithPrefix(
 				base,
@@ -248,7 +249,7 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 	}
 
 	if o.LogConnectionState {
-		s.ConnState = xlog.NewConnStateLogger(
+		s.ConnState = xloghttp.NewConnStateLogger(
 			log.WithPrefix(
 				base,
 				level.Key(), level.DebugValue(),
