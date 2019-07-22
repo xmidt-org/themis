@@ -1,4 +1,4 @@
-package xhttp
+package xhttpserver
 
 import (
 	"net/http"

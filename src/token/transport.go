@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"xhttp"
+	"xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
 )
@@ -74,7 +74,7 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 	}
 
 	if hprb.required {
-		return xhttp.MissingValueError{
+		return xhttpserver.MissingValueError{
 			Header:    hprb.header,
 			Parameter: hprb.parameter,
 		}
@@ -98,7 +98,7 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 	}
 
 	if vrb.required {
-		return xhttp.MissingVariableError{Variable: vrb.variable}
+		return xhttpserver.MissingVariableError{Variable: vrb.variable}
 	}
 
 	return nil
