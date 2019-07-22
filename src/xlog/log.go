@@ -24,27 +24,44 @@ const (
 	LevelDebug = "DEBUG"
 )
 
+// MessageKey returns the logging key for an arbitrary message
 func MessageKey() interface{} {
 	return messageKey
 }
 
+// TimestampKey returns the logging key for the timestamp
 func TimestampKey() interface{} {
 	return timestampKey
 }
 
+// ErrorKey returns the logging key for error text
 func ErrorKey() interface{} {
 	return errorKey
 }
 
+// Options defines the set of configuration options for a go-kit log.LoggeAr.
 type Options struct {
-	File       string
-	Level      string
-	MaxSize    int
+	// File is the output destination for logs.  If unset or set to StdoutFile,
+	// a console logger is created and the log rolling options are ignored.
+	File string
+
+	// Level is the max logging level for output.
+	Level string
+
+	// MaxSize is the lumberjack maximum size when rolling logs
+	MaxSize int
+
+	// MaxBackups is the lumberjack maximum backs when rolling logs
 	MaxBackups int
-	MaxAge     int
-	JSON       bool
+
+	// MaxAge is the lumberjack maximum age when rolling logs
+	MaxAge int
+
+	// JSON indicates whether a go-kit JSON logger or a logfmt logger is used
+	JSON bool
 }
 
+// AllowLevel produces a filtered logger with the given level.AllowXXX set.
 func AllowLevel(next log.Logger, v string) (log.Logger, error) {
 	switch strings.ToUpper(v) {
 	case LevelNone:
@@ -68,6 +85,7 @@ func AllowLevel(next log.Logger, v string) (log.Logger, error) {
 	}
 }
 
+// Level returns the go-kit level.Value for a given configuration string value.
 func Level(v string) (level.Value, error) {
 	switch strings.ToUpper(v) {
 	case LevelNone:
@@ -90,6 +108,7 @@ func Level(v string) (level.Value, error) {
 	}
 }
 
+// New produces a go-kit log.Logger using the given set of configuration options
 func New(o Options) (log.Logger, error) {
 	if len(o.File) == 0 || o.File == StdoutFile {
 		return Default(), nil
@@ -130,6 +149,8 @@ var defaultLogger = log.WithPrefix(
 	TimestampKey(), log.DefaultTimestampUTC,
 )
 
+// Default() returns the singleton default go-kit logger, which writes to stdout and
+// is safe for concurrent usage.
 func Default() log.Logger {
 	return defaultLogger
 }
