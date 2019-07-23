@@ -9,9 +9,13 @@ import (
 type contextKey struct{}
 
 func Get(ctx context.Context) log.Logger {
+	return GetDefault(ctx, Default())
+}
+
+func GetDefault(ctx context.Context, d log.Logger) log.Logger {
 	l, ok := ctx.Value(contextKey{}).(log.Logger)
 	if !ok {
-		return Default()
+		return d
 	}
 
 	return l
