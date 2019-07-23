@@ -136,3 +136,39 @@ func TestGenerateSecretPair(t *testing.T) {
 		})
 	}
 }
+
+func TestReadPair(t *testing.T) {
+	t.Run("pkcs1", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+		)
+
+		p, err := ReadPair("test", "test.pkcs1.pem")
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+
+		k, ok := p.Sign().(*rsa.PrivateKey)
+		assert.NotNil(k)
+		assert.True(ok)
+	})
+
+	t.Run("pkcs8", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+		)
+
+		p, err := ReadPair("test", "test.pkcs8.pem")
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+
+		k, ok := p.Sign().(*rsa.PrivateKey)
+		assert.NotNil(k)
+		assert.True(ok)
+	})
+}
