@@ -6,20 +6,25 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
 )
 
 func TestProvide(t *testing.T) {
 	var (
-		assert  = assert.New(t)
-		require = require.New(t)
+		assert = assert.New(t)
 
-		output   bytes.Buffer
-		expected = log.NewJSONLogger(&output)
+		expected = log.NewJSONLogger(new(bytes.Buffer))
+
+		actual log.Logger
+		app    = fxtest.New(
+			t,
+			fx.Provide(Provide(expected)),
+			fx.Populate(&actual),
+		)
 	)
 
-	f := Provide(expected)
-	require.NotNil(f)
-
-	assert.Equal(expected, f())
+	app.RequireStart()
+	assert.Equal(expected, actual)
+	app.RequireStop()
 }
