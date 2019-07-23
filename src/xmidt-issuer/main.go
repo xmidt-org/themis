@@ -113,9 +113,6 @@ func main() {
 					xloghttp.Method("requestMethod"),
 					xloghttp.URI("requestURI"),
 					xloghttp.RemoteAddress("remoteAddr"),
-					xloghttp.Header("X-Midt-Mac-Address"),
-					xloghttp.Header("X-Midt-Serial-Number"),
-					xloghttp.Header("X-Midt-Uuid"),
 				}
 			},
 			xhttpserver.ProvideParseForm,
