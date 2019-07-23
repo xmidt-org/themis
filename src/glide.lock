@@ -1,5 +1,5 @@
-hash: b373d9c2c98f7bdaba46157ca1fde4dea71fc84c51a4472fb2fafde7a130cb21
-updated: 2019-07-16T11:22:37.371511-07:00
+hash: da5b6300c900f9731bc042a382ccb09738af670f3886018e849c2a0789ea13cc
+updated: 2019-07-22T18:08:05.125631-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -41,6 +41,8 @@ imports:
   - json/token
 - name: github.com/InVisionApp/go-health
   version: 06e1878ab5a8acf6e841861c6cbfcc4d3036add0
+  subpackages:
+  - handlers
 - name: github.com/InVisionApp/go-logger
   version: 753dc5832ddec755df724992c1c3b0f7a288e0aa
 - name: github.com/justinas/alice

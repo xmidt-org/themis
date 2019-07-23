@@ -110,28 +110,28 @@ func Level(v string) (level.Value, error) {
 
 // New produces a go-kit log.Logger using the given set of configuration options
 func New(o Options) (log.Logger, error) {
-	if len(o.File) == 0 || o.File == StdoutFile {
-		return Default(), nil
-	}
-
-	w := &lumberjack.Logger{
-		Filename:   o.File,
-		MaxSize:    o.MaxSize,
-		MaxBackups: o.MaxBackups,
-		MaxAge:     o.MaxAge,
-	}
-
 	var l log.Logger
-	if o.JSON {
-		l = log.NewJSONLogger(w)
+	if len(o.File) == 0 || o.File == StdoutFile {
+		l = Default()
 	} else {
-		l = log.NewLogfmtLogger(w)
-	}
+		w := &lumberjack.Logger{
+			Filename:   o.File,
+			MaxSize:    o.MaxSize,
+			MaxBackups: o.MaxBackups,
+			MaxAge:     o.MaxAge,
+		}
 
-	l = log.WithPrefix(
-		l,
-		TimestampKey(), log.DefaultTimestampUTC,
-	)
+		if o.JSON {
+			l = log.NewJSONLogger(w)
+		} else {
+			l = log.NewLogfmtLogger(w)
+		}
+
+		l = log.WithPrefix(
+			l,
+			TimestampKey(), log.DefaultTimestampUTC,
+		)
+	}
 
 	if levelled, err := AllowLevel(l, o.Level); err != nil {
 		return nil, err
