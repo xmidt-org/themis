@@ -11,17 +11,17 @@ import (
 
 // Parameters is a simple builder for logging key/value pairs
 type Parameters struct {
-	p []interface{}
+	values []interface{}
 }
 
 func (p *Parameters) Add(key, value interface{}) *Parameters {
-	p.p = append(p.p, key, value)
+	p.values = append(p.values, key, value)
 	return p
 }
 
 func (p *Parameters) Use(base log.Logger) log.Logger {
-	if len(p.p) > 0 {
-		return log.With(base, p.p...)
+	if len(p.values) > 0 {
+		return log.With(base, p.values...)
 	}
 
 	return base
@@ -37,10 +37,12 @@ func Method(key string) ParameterBuilder {
 	}
 }
 
-// URI returns a ParameterBuilder that adds the HTTP request URI as a logging key/value pair
+// URI returns a ParameterBuilder that adds the HTTP request URI as a logging key/value pair.
+// Note that only the path is emitted as a logging value.  The query string and any host:port information
+// is omitted.
 func URI(key string) ParameterBuilder {
 	return func(original *http.Request, p *Parameters) {
-		p.Add(key, original.RequestURI)
+		p.Add(key, original.URL.Path)
 	}
 }
 
@@ -53,8 +55,9 @@ func RemoteAddress(key string) ParameterBuilder {
 
 // Header returns a ParameterBuilder that appends the given HTTP header as a key/value pair
 func Header(name string) ParameterBuilder {
+	name = http.CanonicalHeaderKey(name)
 	return func(original *http.Request, p *Parameters) {
-		p.Add(name, original.Header.Get(name))
+		p.Add(name, strings.Join(original.Header[name], ","))
 	}
 }
 
