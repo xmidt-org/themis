@@ -252,9 +252,10 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 		s.ConnState = xloghttp.NewConnStateLogger(
 			log.WithPrefix(
 				base,
-				level.Key(), level.DebugValue(),
 				AddressKey(), o.Address,
 			),
+			"connState",
+			level.DebugValue(),
 		)
 	}
 
