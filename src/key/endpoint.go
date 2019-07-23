@@ -2,27 +2,30 @@ package key
 
 import (
 	"context"
-	"errors"
-	"xlog"
+	"fmt"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/log/level"
 )
 
-var (
-	ErrKeyNotFound = errors.New("That key does not exist")
-)
+type KeyNotFoundError struct {
+	Kid string
+}
+
+func (knfe KeyNotFoundError) Error() string {
+	return fmt.Sprintf("No key exists with kid %s", knfe.Kid)
+}
+
+func (knfe KeyNotFoundError) StatusCode() int {
+	return http.StatusNotFound
+}
 
 func NewEndpoint(r Registry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		kid := request.(string)
 		pair, ok := r.Get(request.(string))
-		xlog.Get(ctx).Log(
-			level.Key(), level.InfoValue(),
-			"pair", pair,
-		)
-
 		if !ok {
-			return nil, ErrKeyNotFound
+			return nil, KeyNotFoundError{Kid: kid}
 		}
 
 		return pair, nil

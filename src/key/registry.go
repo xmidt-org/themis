@@ -2,7 +2,6 @@ package key
 
 import (
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -12,10 +11,6 @@ const (
 	KeyTypeRSA    = "rsa"
 	KeyTypeECDSA  = "ecdsa"
 	KeyTypeSecret = "secret"
-)
-
-var (
-	ErrInvalidDescriptor = errors.New("Either generate or file must be set")
 )
 
 // Descriptor holds the configurable options for a key Pair
@@ -43,9 +38,6 @@ type Registry interface {
 
 	// Register creates a new Pair from a Descriptor and stores it in this registry
 	Register(Descriptor) (Pair, error)
-
-	// Update rotate a key Pair, deleting the old key identifier
-	Update(old string, new Pair) bool
 }
 
 // NewRegistry creates a new key Registry backed by a given source of randomness for generation.
@@ -91,8 +83,6 @@ func (r *registry) newPair(d Descriptor) (Pair, error) {
 	default:
 		return nil, fmt.Errorf("Invalid key type: %s", d.Type)
 	}
-
-	return nil, ErrInvalidDescriptor
 }
 
 func (r *registry) Register(d Descriptor) (Pair, error) {
@@ -110,17 +100,4 @@ func (r *registry) Register(d Descriptor) (Pair, error) {
 
 	r.pairs[p.KID()] = p
 	return p, nil
-}
-
-func (r *registry) Update(old string, new Pair) bool {
-	defer r.lock.Unlock()
-	r.lock.Lock()
-
-	if _, ok := r.pairs[old]; !ok {
-		return false
-	}
-
-	delete(r.pairs, old)
-	r.pairs[new.KID()] = new
-	return true
 }

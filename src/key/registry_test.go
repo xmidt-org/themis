@@ -1,43 +1,105 @@
 package key
 
 import (
-	"crypto/rand"
+	"crypto/ecdsa"
 	"crypto/rsa"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func testRegistryRegister(t *testing.T) {
+func testRegistryValidDescriptor(t *testing.T, d Descriptor) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		registry = NewRegistry(rand.Reader)
+		registry = NewRegistry(nil)
 	)
 
 	require.NotNil(registry)
 
-	pair, err := registry.Register(Descriptor{
-		Kid:  "test",
-		Bits: 512,
-	})
-
+	pair, err := registry.Register(d)
 	require.NoError(err)
 	require.NotNil(pair)
-	assert.Equal("test", pair.KID())
+	assert.Equal(d.Kid, pair.KID())
 
-	key, ok := pair.Sign().(*rsa.PrivateKey)
-	require.True(ok)
-	require.NotNil(key)
+	pair, ok := registry.Get(d.Kid)
+	assert.True(ok)
+	assert.NotNil(pair)
 
-	existing, ok := registry.Get("test")
-	require.True(ok)
-	require.NotNil(existing)
-	assert.Equal(pair, existing)
+	switch d.Type {
+	case "":
+		fallthrough
+	case KeyTypeRSA:
+		_, ok := pair.Sign().(*rsa.PrivateKey)
+		assert.True(ok)
+	case KeyTypeECDSA:
+		_, ok := pair.Sign().(*ecdsa.PrivateKey)
+		assert.True(ok)
+	case KeyTypeSecret:
+		_, ok := pair.Sign().([]byte)
+		assert.True(ok)
+	default:
+		assert.Fail("Unknown key type", d.Type)
+	}
+
+	// idempotency
+	pair, err = registry.Register(d)
+	assert.Error(err)
+	assert.Nil(pair)
+}
+
+func testRegistryInvalidDescriptor(t *testing.T, d Descriptor) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		registry = NewRegistry(nil)
+	)
+
+	require.NotNil(registry)
+
+	pair, err := registry.Register(d)
+	require.Error(err)
+	require.Nil(pair)
+
+	pair, ok := registry.Get(d.Kid)
+	assert.False(ok)
+	assert.Nil(pair)
 }
 
 func TestRegistry(t *testing.T) {
-	t.Run("Register", testRegistryRegister)
+	t.Run("Register", func(t *testing.T) {
+		t.Run("ValidDescriptor", func(t *testing.T) {
+			testData := []Descriptor{
+				Descriptor{Kid: "test"},
+				Descriptor{Kid: "test", Type: "rsa"},
+				Descriptor{Kid: "test", Type: "rsa", File: "test.pkcs1.pem"},
+				Descriptor{Kid: "test", Type: "rsa", File: "test.pkcs8.pem"},
+				Descriptor{Kid: "test", Type: "ecdsa"},
+				Descriptor{Kid: "test", Type: "secret"},
+			}
+
+			for i, d := range testData {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					testRegistryValidDescriptor(t, d)
+				})
+			}
+		})
+
+		t.Run("InvalidDescriptor", func(t *testing.T) {
+			testData := []Descriptor{
+				Descriptor{File: "nosuch"},
+				Descriptor{Type: "not a valid key type"},
+			}
+
+			for i, d := range testData {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					testRegistryInvalidDescriptor(t, d)
+				})
+			}
+		})
+	})
 }

@@ -83,6 +83,17 @@ func TestNewPair(t *testing.T) {
 		assert.Equal("test", p.KID())
 		assert.Equal([]byte(key), p.Sign())
 	})
+
+	t.Run("invalid", func(t *testing.T) {
+		var (
+			assert = assert.New(t)
+			key    = 123.7
+		)
+
+		p, err := NewPair("test", key)
+		assert.Nil(p)
+		assert.Error(err)
+	})
 }
 
 func TestGenerateRSAPair(t *testing.T) {

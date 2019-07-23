@@ -2,6 +2,7 @@ package key
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"xlog"
 
@@ -9,6 +10,10 @@ import (
 	"github.com/go-kit/kit/log/level"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+)
+
+var (
+	ErrNoKidVariable = errors.New("No kid variable in URI definition")
 )
 
 type Handler http.Handler
@@ -19,7 +24,7 @@ func NewHandler(e endpoint.Endpoint) Handler {
 		func(ctx context.Context, request *http.Request) (interface{}, error) {
 			kid, ok := mux.Vars(request)["kid"]
 			if !ok {
-				return nil, ErrKeyNotFound
+				return nil, ErrNoKidVariable
 			}
 
 			xlog.Get(ctx).Log(
@@ -35,15 +40,5 @@ func NewHandler(e endpoint.Endpoint) Handler {
 			_, err := value.(Pair).WriteVerifyPEMTo(response)
 			return err
 		},
-		kithttp.ServerErrorEncoder(
-			func(ctx context.Context, err error, response http.ResponseWriter) {
-				if err == ErrKeyNotFound {
-					response.WriteHeader(http.StatusNotFound)
-					return
-				}
-
-				kithttp.DefaultErrorEncoder(ctx, err, response)
-			},
-		),
 	)
 }
