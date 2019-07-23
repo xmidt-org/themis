@@ -3,6 +3,7 @@ package key
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
@@ -11,6 +12,78 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewPair(t *testing.T) {
+	t.Run("rsa", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+
+			key, err = rsa.GenerateKey(rand.Reader, 1024)
+		)
+
+		require.NoError(err)
+		require.NotNil(key)
+
+		p, err := NewPair("test", key)
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+		assert.Equal(key, p.Sign())
+	})
+
+	t.Run("ecdsa", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+
+			key, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		)
+
+		require.NoError(err)
+		require.NotNil(key)
+
+		p, err := NewPair("test", key)
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+		assert.Equal(key, p.Sign())
+	})
+
+	t.Run("bytes", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+
+			key = []byte{1, 2, 3, 4, 5, 6, 6, 1, 2, 3, 4, 54, 65}
+		)
+
+		p, err := NewPair("test", key)
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+		assert.Equal(key, p.Sign())
+	})
+
+	t.Run("string", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			require = require.New(t)
+
+			key = "this is a test key"
+		)
+
+		p, err := NewPair("test", key)
+		require.NoError(err)
+		require.NotNil(p)
+
+		assert.Equal("test", p.KID())
+		assert.Equal([]byte(key), p.Sign())
+	})
+}
 
 func TestGenerateRSAPair(t *testing.T) {
 	testBits := []int{
