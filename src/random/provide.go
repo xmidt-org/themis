@@ -8,17 +8,20 @@ import (
 	"go.uber.org/fx"
 )
 
-// Out describes the components emitted by this package
-type Out struct {
+// RandomOut describes the components emitted by this package
+type RandomOut struct {
 	fx.Out
 
+	// Random is the source of randomness to use
 	Random io.Reader
+
+	// Noncer is the nonce generation strategy
 	Noncer Noncer
 }
 
-// Provide is a DI provider that creates this package's components
-func Provide() Out {
-	return Out{
+// Provide is an uber/fx provider that emits the components exposed by this package
+func Provide() RandomOut {
+	return RandomOut{
 		Random: rand.Reader,
 		Noncer: NewBase64Noncer(rand.Reader, 16, base64.RawURLEncoding),
 	}

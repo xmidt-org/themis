@@ -53,9 +53,3 @@ func NewBase64Noncer(random io.Reader, size int, encoding *base64.Encoding) Nonc
 		encoding: encoding,
 	}
 }
-
-func ProvideNoncer(size int, encoding *base64.Encoding) func(io.Reader) Noncer {
-	return func(random io.Reader) Noncer {
-		return NewBase64Noncer(random, size, encoding)
-	}
-}
