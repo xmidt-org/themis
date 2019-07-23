@@ -30,19 +30,25 @@ func (p *Parameters) Use(base log.Logger) log.Logger {
 // ParameterBuilder appends logging key/value pairs to be used with a contextual request logger
 type ParameterBuilder func(*http.Request, *Parameters)
 
-// Method is a ParameterBuilder that adds the HTTP request method as a logging key/value pair
-func Method(original *http.Request, p *Parameters) {
-	p.Add("requestMethod", original.Method)
+// Method returns a ParameterBuilder that adds the HTTP request method as a logging key/value pair
+func Method(key string) ParameterBuilder {
+	return func(original *http.Request, p *Parameters) {
+		p.Add(key, original.Method)
+	}
 }
 
-// URI is a ParameterBuilder that adds the HTTP request URI as a logging key/value pair
-func URI(original *http.Request, p *Parameters) {
-	p.Add("requestURI", original.RequestURI)
+// URI returns a ParameterBuilder that adds the HTTP request URI as a logging key/value pair
+func URI(key string) ParameterBuilder {
+	return func(original *http.Request, p *Parameters) {
+		p.Add(key, original.RequestURI)
+	}
 }
 
 // RemoteAddress is a ParameterBuilder that adds the HTTP remote address as a logging key/value pair
-func RemoteAddress(original *http.Request, p *Parameters) {
-	p.Add("remoteAddr", original.RemoteAddr)
+func RemoteAddress(key string) ParameterBuilder {
+	return func(original *http.Request, p *Parameters) {
+		p.Add(key, original.RemoteAddr)
+	}
 }
 
 // Header returns a ParameterBuilder that appends the given HTTP header as a key/value pair
