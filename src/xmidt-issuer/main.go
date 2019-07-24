@@ -102,7 +102,6 @@ func main() {
 					},
 					xhttpserver.ProvideParseForm,
 					xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
-					provideMiddleware,
 				),
 				provideMetrics(),
 				fx.Invoke(

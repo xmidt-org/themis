@@ -6,13 +6,13 @@ import (
 	"xmetrics"
 )
 
-// InstrumentHandlerCounter provides a simple count metric of HTTP transactions
-type InstrumentHandlerCounter struct {
+// HandlerCounter provides a simple count metric of HTTP transactions
+type HandlerCounter struct {
 	Metric   xmetrics.Adder
 	Labeller ServerLabeller
 }
 
-func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
+func (ihc HandlerCounter) Then(next http.Handler) http.Handler {
 	if ihc.Metric == nil {
 		return next
 	}
@@ -30,8 +30,8 @@ func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
 	})
 }
 
-// InstrumentHandlerDuration provides request duration metrics
-type InstrumentHandlerDuration struct {
+// HandlerDuration provides request duration metrics
+type HandlerDuration struct {
 	Metric   xmetrics.Observer
 	Labeller ServerLabeller
 
@@ -43,7 +43,7 @@ type InstrumentHandlerDuration struct {
 	Units time.Duration
 }
 
-func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
+func (ihd HandlerDuration) Then(next http.Handler) http.Handler {
 	if ihd.Metric == nil {
 		return next
 	}
@@ -75,13 +75,13 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 	})
 }
 
-// InstrumentHandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
-type InstrumentHandlerInFlight struct {
+// HandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
+type HandlerInFlight struct {
 	// Metric is a gauge or other metric that can handle postive and negative values being added
 	Metric xmetrics.Adder
 }
 
-func (ihif InstrumentHandlerInFlight) Then(next http.Handler) http.Handler {
+func (ihif HandlerInFlight) Then(next http.Handler) http.Handler {
 	if ihif.Metric == nil {
 		return next
 	}
@@ -100,13 +100,13 @@ func (rtf RoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, er
 	return rtf(request)
 }
 
-// InstrumentRoundTripperCounter provides a simple counting metric for clients executing HTTP transactions
-type InstrumentRoundTripperCounter struct {
+// RoundTripperCounter provides a simple counting metric for clients executing HTTP transactions
+type RoundTripperCounter struct {
 	Metric   xmetrics.Adder
 	Labeller ClientLabeller
 }
 
-func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.RoundTripper {
+func (irtc RoundTripperCounter) Then(next http.RoundTripper) http.RoundTripper {
 	if irtc.Metric == nil {
 		return next
 	}
@@ -128,7 +128,7 @@ func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.Roun
 	})
 }
 
-type InstrumentRoundTripperDuration struct {
+type RoundTripperDuration struct {
 	Metric   xmetrics.Observer
 	Labeller ClientLabeller
 
@@ -140,7 +140,7 @@ type InstrumentRoundTripperDuration struct {
 	Units time.Duration
 }
 
-func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper {
+func (irtd RoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper {
 	if irtd.Metric == nil {
 		return next
 	}
@@ -176,14 +176,14 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 	})
 }
 
-// InstrumentHandlerInFlight provides a gauge of how many in-flight HTTP transactions a client has initiated.
+// HandlerInFlight provides a gauge of how many in-flight HTTP transactions a client has initiated.
 // No labeller is used here, as the reporter must be invoked before the transaction executes to produce a response.
-type InstrumentRoundTripperInFlight struct {
+type RoundTripperInFlight struct {
 	// Metric is a gauge or other metric that can handle postive and negative values being added
 	Metric xmetrics.Adder
 }
 
-func (irtif InstrumentRoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper {
+func (irtif RoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper {
 	if irtif.Metric == nil {
 		return next
 	}
