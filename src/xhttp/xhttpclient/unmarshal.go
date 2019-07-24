@@ -1,8 +1,6 @@
 package xhttpclient
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
@@ -10,8 +8,7 @@ import (
 type ClientIn struct {
 	fx.In
 
-	Logger log.Logger
-	Viper  *viper.Viper
+	Viper *viper.Viper
 }
 
 // Unmarshal returns an uber/fx provider than in turn unmarshals client options
@@ -24,6 +21,6 @@ func Unmarshal(configKey string) func(ClientIn) (Interface, error) {
 			return nil, err
 		}
 
-		return New(in.Logger, o)
+		return New(o)
 	}
 }

@@ -2,7 +2,6 @@ package xhttpclient
 
 import (
 	"crypto/tls"
-	"log"
 	"net/http"
 	"time"
 	"xerror"
@@ -87,7 +86,7 @@ func NewTransport(t *Transport) (*http.Transport, error) {
 }
 
 // New assembles an http client from a set of configuration options
-func New(logger log.Logger, o Options) (Interface, error) {
+func New(o Options) (Interface, error) {
 	transport, err := NewTransport(o.Transport)
 	if err != nil {
 		return nil, err
