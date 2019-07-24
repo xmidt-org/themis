@@ -77,8 +77,7 @@ func (ihd HandlerDuration) Then(next http.Handler) http.Handler {
 
 // HandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
 type HandlerInFlight struct {
-	// Metric is a gauge or other metric that can handle postive and negative values being added
-	Metric xmetrics.Adder
+	Metric xmetrics.GaugeAdder
 }
 
 func (ihif HandlerInFlight) Then(next http.Handler) http.Handler {
@@ -87,8 +86,8 @@ func (ihif HandlerInFlight) Then(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		defer ihif.Metric.Add(nil, -1.0)
-		ihif.Metric.Add(nil, 1.0)
+		defer ihif.Metric.GaugeAdd(nil, -1.0)
+		ihif.Metric.GaugeAdd(nil, 1.0)
 		next.ServeHTTP(response, request)
 	})
 }
@@ -179,8 +178,7 @@ func (irtd RoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper 
 // HandlerInFlight provides a gauge of how many in-flight HTTP transactions a client has initiated.
 // No labeller is used here, as the reporter must be invoked before the transaction executes to produce a response.
 type RoundTripperInFlight struct {
-	// Metric is a gauge or other metric that can handle postive and negative values being added
-	Metric xmetrics.Adder
+	Metric xmetrics.GaugeAdder
 }
 
 func (irtif RoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper {
@@ -189,8 +187,8 @@ func (irtif RoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper
 	}
 
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
-		defer irtif.Metric.Add(nil, -1.0)
-		irtif.Metric.Add(nil, 1.0)
+		defer irtif.Metric.GaugeAdd(nil, -1.0)
+		irtif.Metric.GaugeAdd(nil, 1.0)
 		return next.RoundTrip(request)
 	})
 }
