@@ -31,21 +31,21 @@ func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux
 
 	return []mux.MiddlewareFunc{
 		xmetricshttp.InstrumentHandlerCounter{
-			Reporter: xmetrics.NewCounterVecReporter(in.RequestCount.MustCurryWith(curryLabel)),
+			Metric: xmetrics.LabelledCounterVec{CounterVec: in.RequestCount.MustCurryWith(curryLabel)},
 			Labeller: xmetricshttp.ServerLabellers{
 				xmetricshttp.CodeLabeller{},
 				xmetricshttp.MethodLabeller{},
 			},
 		}.Then,
 		xmetricshttp.InstrumentHandlerDuration{
-			Reporter: xmetrics.NewObserverVecReporter(in.RequestDuration.MustCurryWith(curryLabel)),
+			Metric: xmetrics.LabelledObserverVec{ObserverVec: in.RequestDuration.MustCurryWith(curryLabel)},
 			Labeller: xmetricshttp.ServerLabellers{
 				xmetricshttp.CodeLabeller{},
 				xmetricshttp.MethodLabeller{},
 			},
 		}.Then,
 		xmetricshttp.InstrumentHandlerInFlight{
-			Reporter: xmetrics.NewGaugeVecAdderReporter(in.InFlight.MustCurryWith(curryLabel)),
+			Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.InFlight.MustCurryWith(curryLabel)},
 		}.Then,
 	}
 }

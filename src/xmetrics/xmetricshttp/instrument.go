@@ -8,12 +8,12 @@ import (
 
 // InstrumentHandlerCounter provides a simple count metric of HTTP transactions
 type InstrumentHandlerCounter struct {
-	Reporter xmetrics.AdderReporter
+	Metric   xmetrics.Adder
 	Labeller ServerLabeller
 }
 
 func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
-	if ihc.Reporter == nil {
+	if ihc.Metric == nil {
 		return next
 	}
 
@@ -26,13 +26,13 @@ func (ihc InstrumentHandlerCounter) Then(next http.Handler) http.Handler {
 		next.ServeHTTP(response, request)
 		var l xmetrics.Labels
 		labeller.ServerLabels(response, request, &l)
-		ihc.Reporter.Report(&l, 1.0)
+		ihc.Metric.Add(&l, 1.0)
 	})
 }
 
 // InstrumentHandlerDuration provides request duration metrics
 type InstrumentHandlerDuration struct {
-	Reporter xmetrics.ObserverReporter
+	Metric   xmetrics.Observer
 	Labeller ServerLabeller
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
@@ -44,7 +44,7 @@ type InstrumentHandlerDuration struct {
 }
 
 func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
-	if ihd.Reporter == nil {
+	if ihd.Metric == nil {
 		return next
 	}
 
@@ -68,7 +68,7 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 		next.ServeHTTP(response, request)
 		var l xmetrics.Labels
 		labeller.ServerLabels(response, request, &l)
-		ihd.Reporter.Report(
+		ihd.Metric.Observe(
 			&l,
 			float64(now().Sub(start)/units),
 		)
@@ -77,17 +77,18 @@ func (ihd InstrumentHandlerDuration) Then(next http.Handler) http.Handler {
 
 // InstrumentHandlerInFlight records how many current HTTP transactions are being executed by an http.Handler
 type InstrumentHandlerInFlight struct {
-	Reporter xmetrics.SetterReporter
+	// Metric is a gauge or other metric that can handle postive and negative values being added
+	Metric xmetrics.Adder
 }
 
 func (ihif InstrumentHandlerInFlight) Then(next http.Handler) http.Handler {
-	if ihif.Reporter == nil {
+	if ihif.Metric == nil {
 		return next
 	}
 
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		defer ihif.Reporter.Report(nil, -1.0)
-		ihif.Reporter.Report(nil, 1.0)
+		defer ihif.Metric.Add(nil, -1.0)
+		ihif.Metric.Add(nil, 1.0)
 		next.ServeHTTP(response, request)
 	})
 }
@@ -101,12 +102,12 @@ func (rtf RoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, er
 
 // InstrumentRoundTripperCounter provides a simple counting metric for clients executing HTTP transactions
 type InstrumentRoundTripperCounter struct {
-	Reporter xmetrics.AdderReporter
+	Metric   xmetrics.Adder
 	Labeller ClientLabeller
 }
 
 func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.RoundTripper {
-	if irtc.Reporter == nil {
+	if irtc.Metric == nil {
 		return next
 	}
 
@@ -120,7 +121,7 @@ func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.Roun
 		if err == nil {
 			var l xmetrics.Labels
 			labeller.ClientLabels(response, request, &l)
-			irtc.Reporter.Report(&l, 1.0)
+			irtc.Metric.Add(&l, 1.0)
 		}
 
 		return response, err
@@ -128,7 +129,7 @@ func (irtc InstrumentRoundTripperCounter) Then(next http.RoundTripper) http.Roun
 }
 
 type InstrumentRoundTripperDuration struct {
-	Reporter xmetrics.ObserverReporter
+	Metric   xmetrics.Observer
 	Labeller ClientLabeller
 
 	// Now is the optional strategy for obtaining the system time.  If not supplied, time.Now is used.
@@ -140,7 +141,7 @@ type InstrumentRoundTripperDuration struct {
 }
 
 func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper {
-	if irtd.Reporter == nil {
+	if irtd.Metric == nil {
 		return next
 	}
 
@@ -165,7 +166,7 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 		if err == nil {
 			var l xmetrics.Labels
 			labeller.ClientLabels(response, request, &l)
-			irtd.Reporter.Report(
+			irtd.Metric.Observe(
 				&l,
 				float64(now().Sub(start)/units),
 			)
@@ -178,17 +179,18 @@ func (irtd InstrumentRoundTripperDuration) Then(next http.RoundTripper) http.Rou
 // InstrumentHandlerInFlight provides a gauge of how many in-flight HTTP transactions a client has initiated.
 // No labeller is used here, as the reporter must be invoked before the transaction executes to produce a response.
 type InstrumentRoundTripperInFlight struct {
-	Reporter xmetrics.SetterReporter
+	// Metric is a gauge or other metric that can handle postive and negative values being added
+	Metric xmetrics.Adder
 }
 
 func (irtif InstrumentRoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper {
-	if irtif.Reporter == nil {
+	if irtif.Metric == nil {
 		return next
 	}
 
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
-		defer irtif.Reporter.Report(nil, -1.0)
-		irtif.Reporter.Report(nil, 1.0)
+		defer irtif.Metric.Add(nil, -1.0)
+		irtif.Metric.Add(nil, 1.0)
 		return next.RoundTrip(request)
 	})
 }

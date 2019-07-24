@@ -1,5 +1,10 @@
 package xmetrics
 
+import (
+	"github.com/go-kit/kit/metrics"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
 var empty string
 
 // Labels provides a simple builder for name/value pairs.  Go-kit and prometheus have different
@@ -14,7 +19,7 @@ func (l *Labels) Len() int {
 		return 0
 	}
 
-	return len(l.pairs) >> 1
+	return len(l.pairs) / 2
 }
 
 // Reset wipes out the name/value pairs, but does not free the underlying storage
@@ -75,7 +80,7 @@ func (l *Labels) Values() []string {
 	if l == nil {
 		return nil
 	} else if len(l.pairs) > 0 {
-		values := make([]string, len(l.pairs)>>1)
+		values := make([]string, len(l.pairs)/2)
 		for i := 1; i < len(l.pairs); i += 2 {
 			values[i>>1] = l.pairs[i]
 		}
@@ -84,4 +89,77 @@ func (l *Labels) Values() []string {
 	}
 
 	return nil
+}
+
+type Adder interface {
+	Add(*Labels, float64)
+}
+
+type LabelledCounter struct {
+	metrics.Counter
+}
+
+func (lc LabelledCounter) Add(l *Labels, v float64) {
+	lc.Counter.With(l.NamesAndValues()...).Add(v)
+}
+
+type LabelledCounterVec struct {
+	*prometheus.CounterVec
+}
+
+func (lcv LabelledCounterVec) Add(l *Labels, v float64) {
+	lcv.CounterVec.WithLabelValues(l.Values()...).Add(v)
+}
+
+type Setter interface {
+	Set(*Labels, float64)
+}
+
+type AdderSetter interface {
+	Adder
+	Setter
+}
+
+type LabelledGauge struct {
+	metrics.Gauge
+}
+
+func (lg LabelledGauge) Add(l *Labels, v float64) {
+	lg.Gauge.With(l.NamesAndValues()...).Add(v)
+}
+
+func (lg LabelledGauge) Set(l *Labels, v float64) {
+	lg.Gauge.With(l.NamesAndValues()...).Set(v)
+}
+
+type LabelledGaugeVec struct {
+	*prometheus.GaugeVec
+}
+
+func (lgv LabelledGaugeVec) Add(l *Labels, v float64) {
+	lgv.GaugeVec.WithLabelValues(l.Values()...).Add(v)
+}
+
+func (lgv LabelledGaugeVec) Set(l *Labels, v float64) {
+	lgv.GaugeVec.WithLabelValues(l.Values()...).Set(v)
+}
+
+type Observer interface {
+	Observe(*Labels, float64)
+}
+
+type LabelledHistogram struct {
+	metrics.Histogram
+}
+
+func (lh LabelledHistogram) Observe(l *Labels, v float64) {
+	lh.Histogram.With(l.NamesAndValues()...).Observe(v)
+}
+
+type LabelledObserverVec struct {
+	prometheus.ObserverVec
+}
+
+func (lov LabelledObserverVec) Observe(l *Labels, v float64) {
+	lov.ObserverVec.WithLabelValues(l.Values()...).Observe(v)
 }
