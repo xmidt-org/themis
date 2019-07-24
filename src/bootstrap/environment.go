@@ -50,6 +50,13 @@ type Environment struct {
 // Any errors that occur during bootstrapping are emitted as fx.Invoke functions and will be available via App.Err().
 // For example, if the help options was requested on the command line, pflag.ErrHelp will be returned to the application.
 func (e Environment) Options(opts ...fx.Option) []fx.Option {
+	if e.Initialize == nil {
+		return []fx.Option{
+			fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
+			fx.Invoke(func() error { return ErrNoInitialize }),
+		}
+	}
+
 	name := e.Name
 	if len(name) == 0 {
 		name = os.Args[0]
@@ -65,12 +72,7 @@ func (e Environment) Options(opts ...fx.Option) []fx.Option {
 		v  = viper.New()
 	)
 
-	if e.Initialize == nil {
-		return []fx.Option{
-			fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
-			fx.Invoke(func() error { return ErrNoInitialize }),
-		}
-	} else if err := e.Initialize(name, arguments, fs, v); err != nil {
+	if err := e.Initialize(name, arguments, fs, v); err != nil {
 		return []fx.Option{
 			fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
 			fx.Invoke(func() error { return err }),
