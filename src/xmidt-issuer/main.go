@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bootstrap"
 	"fmt"
 	"key"
 	"os"
@@ -24,10 +25,7 @@ import (
 	"xhealth"
 	"xhttp/xhttpclient"
 	"xhttp/xhttpserver"
-	"xlog"
 	"xlog/xloghttp"
-
-	"github.com/go-kit/kit/log"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -39,99 +37,92 @@ const (
 	applicationVersion = "0.0.0"
 )
 
-func initViper(name string, arguments []string) (*pflag.FlagSet, *viper.Viper, error) {
+func initialize(name string, arguments []string, fs *pflag.FlagSet, v *viper.Viper) error {
 	var (
-		fs   = pflag.NewFlagSet(name, pflag.ContinueOnError)
 		file = fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
 		dev  = fs.BoolP("dev", "", false, "development node")
 		iss  = fs.StringP("iss", "", "", "the name of the issuer to put into claims.  Overrides configuration.")
 	)
 
-	if err := fs.Parse(arguments); err != nil {
-		return nil, nil, err
+	err := fs.Parse(arguments)
+	if err != nil {
+		return err
 	}
 
-	v := viper.New()
 	switch {
 	case *dev:
 		v.SetConfigType("yaml")
-		if err := v.ReadConfig(strings.NewReader(devMode)); err != nil {
-			return nil, nil, err
-		}
+		err = v.ReadConfig(strings.NewReader(devMode))
 
 	case len(*file) > 0:
 		v.SetConfigFile(*file)
-		if err := v.ReadInConfig(); err != nil {
-			return nil, nil, err
-		}
+		err = v.ReadInConfig()
 
 	default:
 		v.SetConfigName(name)
 		v.AddConfigPath(".")
 		v.AddConfigPath(fmt.Sprintf("$HOME/.%s", name))
 		v.AddConfigPath(fmt.Sprintf("/etc/%s", name))
-		if err := v.ReadInConfig(); err != nil {
-			return nil, nil, err
-		}
+		err = v.ReadInConfig()
+	}
+
+	if err != nil {
+		return err
 	}
 
 	if len(*iss) > 0 {
 		v.Set("issuer.claims.iss", *iss)
 	}
 
-	return fs, v, nil
+	return nil
 }
 
 func main() {
-	fs, v, err := initViper(applicationName, os.Args[1:])
-	if err == pflag.ErrHelp {
-		os.Exit(0)
-	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to initialize viper: %s", err)
-		os.Exit(1)
-	}
+	var (
+		e = bootstrap.Environment{
+			Name:       applicationName,
+			LogKey:     "log",
+			Initialize: initialize,
+		}
 
-	logger, err := xlog.Unmarshal("log", v)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to initialize logging: %s", err)
-		os.Exit(1)
-	}
-
-	app := fx.New(
-		fx.Logger(xlog.Printer{Logger: logger}),
-		fx.Provide(
-			func() (*pflag.FlagSet, *viper.Viper, log.Logger) {
-				return fs, v, logger
-			},
-			xhealth.Unmarshal("health"),
-			xhttpclient.Unmarshal("client"),
-			random.Provide,
-			key.Provide,
-			token.Unmarshal("token"),
-			func() []xloghttp.ParameterBuilder {
-				return []xloghttp.ParameterBuilder{
-					xloghttp.Method("requestMethod"),
-					xloghttp.URI("requestURI"),
-					xloghttp.RemoteAddress("remoteAddr"),
-				}
-			},
-			xhttpserver.ProvideParseForm,
-			xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
-			provideMiddleware,
-		),
-		provideMetrics(),
-		fx.Invoke(
-			RunKeyServer("servers.key"),
-			RunIssuerServer("servers.issuer"),
-			RunClaimsServer("servers.claims"),
-			RunMetricsServer("servers.metrics"),
-			RunHealthServer("servers.health"),
-			xhttpserver.InvokeOptional("servers.pprof", xhttpserver.AddPprofRoutes),
-		),
+		app = fx.New(
+			e.Options(
+				fx.Provide(
+					xhealth.Unmarshal("health"),
+					xhttpclient.Unmarshal("client"),
+					random.Provide,
+					key.Provide,
+					token.Unmarshal("token"),
+					func() []xloghttp.ParameterBuilder {
+						return []xloghttp.ParameterBuilder{
+							xloghttp.Method("requestMethod"),
+							xloghttp.URI("requestURI"),
+							xloghttp.RemoteAddress("remoteAddr"),
+						}
+					},
+					xhttpserver.ProvideParseForm,
+					xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
+					provideMiddleware,
+				),
+				provideMetrics(),
+				fx.Invoke(
+					RunKeyServer("servers.key"),
+					RunIssuerServer("servers.issuer"),
+					RunClaimsServer("servers.claims"),
+					RunMetricsServer("servers.metrics"),
+					RunHealthServer("servers.health"),
+					xhttpserver.InvokeOptional("servers.pprof", xhttpserver.AddPprofRoutes),
+				),
+			)...,
+		)
 	)
 
 	if err := app.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to start: %s", err)
+		if err == pflag.ErrHelp {
+			return
+		}
+
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
 
