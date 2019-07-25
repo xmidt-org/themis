@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
-	"xerror"
 )
 
 // Interface defines the behavior of an HTTP client.  *http.Client implements this interface.
@@ -22,11 +21,11 @@ type Transport struct {
 	MaxIdleConns           int
 	MaxIdleConnsPerHost    int
 	MaxConnsPerHost        int
-	IdleConnTimeout        string
-	ResponseHeaderTimeout  string
-	ExpectContinueTimeout  string
+	IdleConnTimeout        time.Duration
+	ResponseHeaderTimeout  time.Duration
+	ExpectContinueTimeout  time.Duration
 	MaxResponseHeaderBytes int64
-	TlsHandshakeTimeout    string
+	TlsHandshakeTimeout    time.Duration
 	Tls                    *Tls
 }
 
@@ -37,14 +36,14 @@ type Options struct {
 
 // NewTlsConfig assembles a *tls.Config for clients given a set of configuration options.
 // If the Tls options is nil, this method returns nil, nil.
-func NewTlsConfig(tc *Tls) (*tls.Config, error) {
+func NewTlsConfig(tc *Tls) *tls.Config {
 	if tc == nil {
-		return nil, nil
+		return nil
 	}
 
 	return &tls.Config{
 		InsecureSkipVerify: tc.InsecureSkipVerify,
-	}, nil
+	}
 }
 
 // NewRoundTripper assembles an http.RoundTripper given a set of configuration options.
@@ -54,11 +53,6 @@ func NewTlsConfig(tc *Tls) (*tls.Config, error) {
 func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) {
 	var delegate *http.Transport
 	if t != nil {
-		tc, err := NewTlsConfig(t.Tls)
-		if err != nil {
-			return nil, err
-		}
-
 		delegate = &http.Transport{
 			DisableKeepAlives:      t.DisableKeepAlives,
 			DisableCompression:     t.DisableCompression,
@@ -66,18 +60,13 @@ func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) 
 			MaxIdleConnsPerHost:    t.MaxIdleConnsPerHost,
 			MaxConnsPerHost:        t.MaxConnsPerHost,
 			MaxResponseHeaderBytes: t.MaxResponseHeaderBytes,
-			TLSClientConfig:        tc,
-		}
 
-		err = xerror.Do(
-			xerror.TryOptionalDuration(t.IdleConnTimeout, &delegate.IdleConnTimeout),
-			xerror.TryOptionalDuration(t.ResponseHeaderTimeout, &delegate.ResponseHeaderTimeout),
-			xerror.TryOptionalDuration(t.ExpectContinueTimeout, &delegate.ExpectContinueTimeout),
-			xerror.TryOptionalDuration(t.TlsHandshakeTimeout, &delegate.TLSHandshakeTimeout),
-		)
+			IdleConnTimeout:       t.IdleConnTimeout,
+			ResponseHeaderTimeout: t.ResponseHeaderTimeout,
+			ExpectContinueTimeout: t.ExpectContinueTimeout,
+			TLSHandshakeTimeout:   t.TlsHandshakeTimeout,
 
-		if err != nil {
-			return nil, err
+			TLSClientConfig: NewTlsConfig(t.Tls),
 		}
 	}
 

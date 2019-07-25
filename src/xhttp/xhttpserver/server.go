@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-	"xerror"
 	"xlog"
 	"xlog/xloghttp"
 
@@ -30,10 +29,12 @@ var (
 	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
 
+// AddressKey is the logging key for the server's bind address
 func AddressKey() interface{} {
 	return addressKey
 }
 
+// ServerKey is the logging key for the server's name
 func ServerKey() interface{} {
 	return serverKey
 }
@@ -57,10 +58,10 @@ type Options struct {
 	DisableHTTPKeepAlives bool
 	MaxHeaderBytes        int
 
-	IdleTimeout       string
-	ReadHeaderTimeout string
-	ReadTimeout       string
-	WriteTimeout      string
+	IdleTimeout       time.Duration
+	ReadHeaderTimeout time.Duration
+	ReadTimeout       time.Duration
+	WriteTimeout      time.Duration
 
 	DisableTCPKeepAlives bool
 	TCPKeepAlivePeriod   string
@@ -215,7 +216,7 @@ func OnStop(logger log.Logger, s Interface) func(context.Context) error {
 
 // New constructs a basic HTTP server instance.  The supplied logger is enriched with information
 // about the server and returned for use by higher-level code.
-func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, error) {
+func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 	if len(o.Address) == 0 {
 		o.Address = ":http"
 	}
@@ -223,10 +224,15 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
-		Addr: o.Address,
+		Addr:    o.Address,
+		Handler: h,
 
-		Handler:        h,
-		MaxHeaderBytes: o.MaxHeaderBytes,
+		MaxHeaderBytes:    o.MaxHeaderBytes,
+		IdleTimeout:       o.IdleTimeout,
+		ReadHeaderTimeout: o.ReadHeaderTimeout,
+		ReadTimeout:       o.ReadTimeout,
+		WriteTimeout:      o.WriteTimeout,
+
 		ErrorLog: xloghttp.NewErrorLog(
 			o.Address,
 			log.WithPrefix(
@@ -235,17 +241,6 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 				AddressKey(), o.Address,
 			),
 		),
-	}
-
-	err := xerror.Do(
-		xerror.TryOptionalDuration(o.IdleTimeout, &s.IdleTimeout),
-		xerror.TryOptionalDuration(o.ReadHeaderTimeout, &s.ReadHeaderTimeout),
-		xerror.TryOptionalDuration(o.ReadTimeout, &s.ReadTimeout),
-		xerror.TryOptionalDuration(o.WriteTimeout, &s.WriteTimeout),
-	)
-
-	if err != nil {
-		return nil, nil, err
 	}
 
 	if o.LogConnectionState {
@@ -263,5 +258,5 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger, err
 		s.SetKeepAlivesEnabled(false)
 	}
 
-	return s, log.WithPrefix(base, ServerKey(), o.Name, AddressKey(), o.Address), nil
+	return s, log.WithPrefix(base, ServerKey(), o.Name, AddressKey(), o.Address)
 }

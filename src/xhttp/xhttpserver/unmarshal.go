@@ -74,10 +74,7 @@ func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 	}
 
 	router := mux.NewRouter()
-	server, logger, err := New(in.Logger, router, o)
-	if err != nil {
-		return UnmarshalResult{Name: o.Name}, err
-	}
+	server, logger := New(in.Logger, router, o)
 
 	in.Lifecycle.Append(fx.Hook{
 		OnStart: OnStart(logger, server, func() { in.Shutdowner.Shutdown() }, o),
