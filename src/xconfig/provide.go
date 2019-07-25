@@ -14,10 +14,12 @@ type ViperOut struct {
 }
 
 // ProvideViper emits the various uber/fx components related to Viper.
-func ProvideViper(v *viper.Viper, options ...viper.DecoderConfigOption) ViperOut {
-	return ViperOut{
-		Viper:           v,
-		Unmarshaller:    ViperUnmarshaller{Viper: v, Options: options},
-		KeyUnmarshaller: ViperUnmarshaller{Viper: v, Options: options},
+func ProvideViper(v *viper.Viper, options ...viper.DecoderConfigOption) func() ViperOut {
+	return func() ViperOut {
+		return ViperOut{
+			Viper:           v,
+			Unmarshaller:    ViperUnmarshaller{Viper: v, Options: options},
+			KeyUnmarshaller: ViperUnmarshaller{Viper: v, Options: options},
+		}
 	}
 }
