@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	applicationName    = "xmidt-issuer"
+	applicationName    = "themis"
 	applicationVersion = "0.0.0"
 )
 
