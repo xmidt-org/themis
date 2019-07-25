@@ -1,12 +1,12 @@
-# xmidt-issuer
+# themis
 
-[![Build Status](https://travis-ci.com/Comcast/xmidt-issuer.svg?branch=master)](https://travis-ci.com/Comcast/xmidt-issuer) 
-[![codecov.io](http://codecov.io/github/Comcast/xmidt-issuer/coverage.svg?branch=master)](http://codecov.io/github/Comcast/xmidt-issuer?branch=master)
-[![Code Climate](https://codeclimate.com/github/Comcast/xmidt-issuer/badges/gpa.svg)](https://codeclimate.com/github/Comcast/xmidt-issuer)
-[![Issue Count](https://codeclimate.com/github/Comcast/xmidt-issuer/badges/issue_count.svg)](https://codeclimate.com/github/Comcast/xmidt-issuer)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Comcast/xmidt-issuer)](https://goreportcard.com/report/github.com/Comcast/xmidt-issuer)
-[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/Comcast/xmidt-issuer/blob/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/Comcast/xmidt-issuer.svg)](CHANGELOG.md)
+[![Build Status](https://travis-ci.com/xmidt-org/themis.svg?branch=master)](https://travis-ci.com/xmidt-org/themis) 
+[![codecov.io](http://codecov.io/github/xmidt-org/themis/coverage.svg?branch=master)](http://codecov.io/github/xmidt-org/themis?branch=master)
+[![Code Climate](https://codeclimate.com/github/xmidt-org/themis/badges/gpa.svg)](https://codeclimate.com/github/xmidt-org/themis)
+[![Issue Count](https://codeclimate.com/github/xmidt-org/themis/badges/issue_count.svg)](https://codeclimate.com/github/xmidt-org/themis)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/themis)](https://goreportcard.com/report/github.com/xmidt-org/themis)
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/themis/blob/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/xmidt-org/themis.svg)](CHANGELOG.md)
 
 The Xmidt server that provides a framework for issueing JWT tokens to connecting devices.
 
@@ -24,7 +24,7 @@ Docker containers make life super easy.
 ### Running
 #### Build the docker image
 ```bash
-docker build -t xmidt-issuer:local .
+docker build -t themis:local .
 ```
 This `build.sh` script will build the binary and docker image
 

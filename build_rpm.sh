@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=xmidt-issuer
+NAME=themis
 
 RPM_BUILD_ROOT=/root
 SIGN=1

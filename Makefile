@@ -2,7 +2,7 @@ DEFAULT: build
 
 GOPATH       := ${CURDIR}
 GOFMT        ?= gofmt
-APP          := xmidt-issuer
+APP          := themis
 FIRST_GOPATH := $(firstword $(subst :, ,$(shell go env GOPATH)))
 BINARY       := $(FIRST_GOPATH)/bin/$(APP)
 
