@@ -14,7 +14,6 @@ type ClientIn struct {
 
 func provideClient(configKey string) func(ClientIn) (xhttpclient.Interface, error) {
 	return func(in ClientIn) (xhttpclient.Interface, error) {
-
 		c, err := xhttpclient.Unmarshal(
 			configKey,
 			in.RequestCount.Then,
