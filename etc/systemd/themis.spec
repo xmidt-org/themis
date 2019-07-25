@@ -1,6 +1,6 @@
 %define debug_package %{nil}
 
-Name:       xmidt-issuer
+Name:       themis
 Version:    %{_ver}
 Release:    %{_releaseno}%{?dist}
 Summary:    The Xmidt authentication JWT issuer for connecting devices.

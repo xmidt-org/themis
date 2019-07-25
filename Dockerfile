@@ -8,17 +8,17 @@ RUN curl https://glide.sh/get | sh
 COPY src/ /go/src/
 
 RUN glide -q install --strip-vendor
-RUN go build -o xmidt-issuer_linux_amd64 xmidt-issuer
+RUN go build -o themis_linux_amd64 themis
 
 EXPOSE 6000 6001 6002
-RUN mkdir -p /etc/xmidt-issuer
-VOLUME /etc/xmidt-issuer
+RUN mkdir -p /etc/themis
+VOLUME /etc/themis
 
 # the actual image
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
-RUN mkdir -p /etc/xmidt-issuer
-VOLUME /etc/xmidt-issuer
+RUN mkdir -p /etc/themis
+VOLUME /etc/themis
 WORKDIR /root/
-COPY --from=builder /go/src/xmidt-issuer_linux_amd64 .
-ENTRYPOINT ["./xmidt-issuer_linux_amd64"]
+COPY --from=builder /go/src/themis_linux_amd64 .
+ENTRYPOINT ["./themis_linux_amd64"]

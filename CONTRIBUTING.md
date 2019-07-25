@@ -14,7 +14,7 @@ Documentation
 -------------
 
 If you contribute anything that changes the behavior of the
-application, document it in the [README](https://github.com/Comcast/xmidt-issuer/blob/master/README.md) or [wiki](https://github.com/Comcast/xmidt-issuer/wiki)! This includes new features, additional variants of behavior and breaking changes.
+application, document it in the [README](https://github.com/xmidt-org/themis/blob/master/README.md) or [wiki](https://github.com/xmidt-org/themis/wiki)! This includes new features, additional variants of behavior and breaking changes.
 
 Testing
 -------

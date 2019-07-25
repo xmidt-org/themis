@@ -1,12 +1,12 @@
 [Unit]
-Description=The xmidt-issuer JWT issuer service
+Description=The themis JWT issuer service
 After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=simple
-PIDFile=/run/xmidt-issuer.pid
-ExecStartPre=/usr/bin/rm -f /run/xmidt-issuer.pid
-ExecStart=/usr/bin/xmidt-issuer
+PIDFile=/run/themis.pid
+ExecStartPre=/usr/bin/rm -f /run/themis.pid
+ExecStart=/usr/bin/themis
 ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutStopSec=10
 KillMode=process
