@@ -23,7 +23,6 @@ import (
 	"strings"
 	"token"
 	"xhealth"
-	"xhttp/xhttpclient"
 	"xhttp/xhttpserver"
 	"xlog/xloghttp"
 
@@ -87,9 +86,9 @@ func main() {
 
 		app = fx.New(
 			e.Options(
+				provideMetrics("prometheus"),
 				fx.Provide(
 					xhealth.Unmarshal("health"),
-					xhttpclient.Unmarshal("client"),
 					random.Provide,
 					key.Provide,
 					token.Unmarshal("token"),
@@ -102,8 +101,8 @@ func main() {
 					},
 					xhttpserver.ProvideParseForm,
 					xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
+					provideClient("client"),
 				),
-				provideMetrics(),
 				fx.Invoke(
 					RunKeyServer("servers.key"),
 					RunIssuerServer("servers.issuer"),

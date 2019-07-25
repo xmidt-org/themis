@@ -20,46 +20,125 @@ type StatusCoder interface {
 
 // ServerLabeller is a strategy for producing metrics label/value pairs from a serverside HTTP request
 type ServerLabeller interface {
+	// LabelNames returns the labels this labeller applies, in the correct order that it applies them.
+	// It is important that the order of label names and applies labels agree.
+	LabelNames() []string
+
+	// ServerLabels applies the labels this strategy provides.  The order the labels are applies
+	// must match the order of names returned by LabelNames.
 	ServerLabels(http.ResponseWriter, *http.Request, *xmetrics.Labels)
 }
 
-type ServerLabellerFunc func(http.ResponseWriter, *http.Request, *xmetrics.Labels)
-
-func (slf ServerLabellerFunc) ServerLabels(response http.ResponseWriter, request *http.Request, l *xmetrics.Labels) {
-	slf(response, request, l)
+// ServerLabellers is a set of ServerLabeller strategies to be executed in sequence.  Keys are label names.
+// This type guarantees a consistent ordering for both the labels and labellers.
+//
+// A default ServerLabellers is ready to use and can be built up using Add.  A nil ServerLabellers is also
+// valid, and acts as a no-op.
+type ServerLabellers struct {
+	labelNames []string
+	labellers  []ServerLabeller
 }
 
-// ServerLabellers is a set of ServerLabeller strategies to be executed in sequence
-type ServerLabellers []ServerLabeller
+func NewServerLabellers(labellers ...ServerLabeller) *ServerLabellers {
+	sl := &ServerLabellers{
+		labelNames: make([]string, len(labellers)), // just an optimization step
+		labellers:  append([]ServerLabeller{}, labellers...),
+	}
 
-func (sl ServerLabellers) ServerLabels(response http.ResponseWriter, request *http.Request, l *xmetrics.Labels) {
-	for _, slf := range sl {
-		slf.ServerLabels(response, request, l)
+	for _, l := range labellers {
+		sl.labelNames = append(sl.labelNames, l.LabelNames()...)
+	}
+
+	return sl
+}
+
+// Add is a fluent-style builder function that adds name/labeller pairs to this instance.
+func (sl *ServerLabellers) Add(more ...ServerLabeller) *ServerLabellers {
+	if sl != nil {
+		for _, m := range more {
+			sl.labelNames = append(sl.labelNames, m.LabelNames()...)
+		}
+
+		sl.labellers = append(sl.labellers, more...)
+	}
+
+	return sl
+}
+
+func (sl *ServerLabellers) LabelNames() []string {
+	if sl == nil {
+		return nil
+	}
+
+	return sl.labelNames
+}
+
+func (sl *ServerLabellers) ServerLabels(response http.ResponseWriter, request *http.Request, l *xmetrics.Labels) {
+	if sl != nil {
+		for _, labeller := range sl.labellers {
+			labeller.ServerLabels(response, request, l)
+		}
 	}
 }
 
 // ClientLabeller is a strategy for producing metrics label/value pairs from a clientside HTTP request
 type ClientLabeller interface {
+	// LabelNames returns the labels this labeller applies, in the correct order that it applies them.
+	// It is important that the order of label names and applies labels agree.
+	LabelNames() []string
+
+	// ClientLabels applies the labels this strategy provides.  The order the labels are applies
+	// must match the order of names returned by LabelNames.
 	ClientLabels(*http.Response, *http.Request, *xmetrics.Labels)
 }
 
-type ClientLabellerFunc func(*http.Response, *http.Request, *xmetrics.Labels)
-
-func (clf ClientLabellerFunc) ClientLabels(response *http.Response, request *http.Request, l *xmetrics.Labels) {
-	clf(response, request, l)
+// ClientLabellers is a set of ClientLabeller strategies to be executed in sequence.  Keys are label names.
+// This type guarantees a consistent ordering for both the labels and labellers.
+//
+// A default ClientLabellers is ready to use and can be built up using Add.  A nil ClientLabellers is valid
+// and acts as a no-op.
+type ClientLabellers struct {
+	labelNames []string
+	labellers  []ClientLabeller
 }
 
-// ClientLabellers is a set of ClientLabeller strategies to be executed in sequence
-type ClientLabellers []ClientLabeller
+func NewClientLabellers(labellers ...ClientLabeller) *ClientLabellers {
+	cl := &ClientLabellers{
+		labelNames: make([]string, len(labellers)), // just an optimization step
+		labellers:  append([]ClientLabeller{}, labellers...),
+	}
 
-func (cl ClientLabellers) ServerLabels(response *http.Response, request *http.Request, l *xmetrics.Labels) {
-	for _, clf := range cl {
-		clf.ClientLabels(response, request, l)
+	for _, l := range labellers {
+		cl.labelNames = append(cl.labelNames, l.LabelNames()...)
+	}
+
+	return cl
+}
+
+// LabelNames returns the label names in the order they were added.  This is the same order that
+// ClientLabels applies labels to a metric.
+func (cl *ClientLabellers) LabelNames() []string {
+	if cl == nil {
+		return nil
+	}
+
+	return cl.labelNames
+}
+
+func (cl *ClientLabellers) ClientLabels(response *http.Response, request *http.Request, l *xmetrics.Labels) {
+	if cl != nil {
+		for _, labeller := range cl.labellers {
+			labeller.ClientLabels(response, request, l)
+		}
 	}
 }
 
 // EmptyLabeller is both a server and client labeller which produces no labels
 type EmptyLabeller struct{}
+
+func (el EmptyLabeller) LabelNames() []string {
+	return nil
+}
 
 func (el EmptyLabeller) ServerLabels(http.ResponseWriter, *http.Request, *xmetrics.Labels) {
 }
@@ -74,22 +153,24 @@ type CodeLabeller struct {
 	Name string
 }
 
-func (cl CodeLabeller) ServerLabels(response http.ResponseWriter, _ *http.Request, l *xmetrics.Labels) {
-	name := cl.Name
-	if len(name) == 0 {
-		name = DefaultCodeLabel
+func (cl CodeLabeller) name() string {
+	if len(cl.Name) > 0 {
+		return cl.Name
 	}
 
-	l.Add(name, strconv.Itoa(response.(StatusCoder).StatusCode()))
+	return DefaultCodeLabel
+}
+
+func (cl CodeLabeller) LabelNames() []string {
+	return []string{cl.name()}
+}
+
+func (cl CodeLabeller) ServerLabels(response http.ResponseWriter, _ *http.Request, l *xmetrics.Labels) {
+	l.Add(cl.name(), strconv.Itoa(response.(StatusCoder).StatusCode()))
 }
 
 func (cl CodeLabeller) ClientLabels(response *http.Response, _ *http.Request, l *xmetrics.Labels) {
-	name := cl.Name
-	if len(name) == 0 {
-		name = DefaultCodeLabel
-	}
-
-	l.Add(name, strconv.Itoa(response.StatusCode))
+	l.Add(cl.name(), strconv.Itoa(response.StatusCode))
 }
 
 var defaultTrackedMethods = map[string]bool{
@@ -117,12 +198,16 @@ type MethodLabeller struct {
 	Other string
 }
 
-func (ml MethodLabeller) labels(request *http.Request, l *xmetrics.Labels) {
+func (ml MethodLabeller) name() string {
 	name := ml.Name
 	if len(name) == 0 {
 		name = DefaultMethodLabel
 	}
 
+	return name
+}
+
+func (ml MethodLabeller) labels(request *http.Request, l *xmetrics.Labels) {
 	value := request.Method
 	if len(ml.TrackedMethods) > 0 {
 		if !ml.TrackedMethods[value] {
@@ -136,7 +221,11 @@ func (ml MethodLabeller) labels(request *http.Request, l *xmetrics.Labels) {
 		value = DefaultOther
 	}
 
-	l.Add(name, value)
+	l.Add(ml.name(), value)
+}
+
+func (ml MethodLabeller) LabelNames() []string {
+	return []string{ml.name()}
 }
 
 func (ml MethodLabeller) ServerLabels(_ http.ResponseWriter, request *http.Request, l *xmetrics.Labels) {

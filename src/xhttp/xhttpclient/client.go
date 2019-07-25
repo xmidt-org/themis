@@ -47,17 +47,19 @@ func NewTlsConfig(tc *Tls) (*tls.Config, error) {
 	}, nil
 }
 
-// NewTransport assembles an http.Transport given a set of configuration options.
-// If the supplied Transport options is nil, this method returns a non-nil default transport
-// that is distinct from net/http.
-func NewTransport(t *Transport) (*http.Transport, error) {
+// NewRoundTripper assembles an http.RoundTripper given a set of configuration options.
+// The returned round tripper will be backed by an http.Transport, decorated with any
+// constructors that were supplied.  If the Transport options is nil, a default http.Transport
+// is used.
+func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) {
+	var delegate *http.Transport
 	if t != nil {
 		tc, err := NewTlsConfig(t.Tls)
 		if err != nil {
 			return nil, err
 		}
 
-		transport := &http.Transport{
+		delegate = &http.Transport{
 			DisableKeepAlives:      t.DisableKeepAlives,
 			DisableCompression:     t.DisableCompression,
 			MaxIdleConns:           t.MaxIdleConns,
@@ -68,32 +70,29 @@ func NewTransport(t *Transport) (*http.Transport, error) {
 		}
 
 		err = xerror.Do(
-			xerror.TryOptionalDuration(t.IdleConnTimeout, &transport.IdleConnTimeout),
-			xerror.TryOptionalDuration(t.ResponseHeaderTimeout, &transport.ResponseHeaderTimeout),
-			xerror.TryOptionalDuration(t.ExpectContinueTimeout, &transport.ExpectContinueTimeout),
-			xerror.TryOptionalDuration(t.TlsHandshakeTimeout, &transport.TLSHandshakeTimeout),
+			xerror.TryOptionalDuration(t.IdleConnTimeout, &delegate.IdleConnTimeout),
+			xerror.TryOptionalDuration(t.ResponseHeaderTimeout, &delegate.ResponseHeaderTimeout),
+			xerror.TryOptionalDuration(t.ExpectContinueTimeout, &delegate.ExpectContinueTimeout),
+			xerror.TryOptionalDuration(t.TlsHandshakeTimeout, &delegate.TLSHandshakeTimeout),
 		)
 
 		if err != nil {
 			return nil, err
 		}
-
-		return transport, nil
 	}
 
-	// always return a transport other than the default
-	return new(http.Transport), nil
+	return NewChain(c...).Then(delegate), nil
 }
 
 // New assembles an http client from a set of configuration options
-func New(o Options) (Interface, error) {
-	transport, err := NewTransport(o.Transport)
+func New(o Options, c ...Constructor) (Interface, error) {
+	roundTripper, err := NewRoundTripper(o.Transport, c...)
 	if err != nil {
 		return nil, err
 	}
 
 	client := &http.Client{
-		Transport: transport,
+		Transport: roundTripper,
 	}
 
 	if len(o.Timeout) > 0 {

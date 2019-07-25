@@ -17,47 +17,32 @@ const ServerLabel = "server"
 type ServerMetricsIn struct {
 	fx.In
 
-	RequestCount    *prometheus.CounterVec   `name:"server_request_count"`
-	RequestDuration *prometheus.HistogramVec `name:"server_request_duration_ms"`
-	InFlight        *prometheus.GaugeVec     `name:"server_requests_in_flight"`
+	RequestCount     *prometheus.CounterVec   `name:"server_request_count"`
+	RequestDuration  *prometheus.HistogramVec `name:"server_request_duration_ms"`
+	RequestsInFlight *prometheus.GaugeVec     `name:"server_requests_in_flight"`
 }
 
-// metricsMiddleware is a helper function that creates a chain of middleware for gorilla/mux given
-// the common serverside metrics
-func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux.MiddlewareFunc {
-	curryLabel := prometheus.Labels{
-		ServerLabel: ur.Name,
-	}
+type ClientInstrumentsIn struct {
+	fx.In
 
-	return []mux.MiddlewareFunc{
-		xmetricshttp.HandlerCounter{
-			Metric: xmetrics.LabelledCounterVec{CounterVec: in.RequestCount.MustCurryWith(curryLabel)},
-			Labeller: xmetricshttp.ServerLabellers{
-				xmetricshttp.CodeLabeller{},
-				xmetricshttp.MethodLabeller{},
-			},
-		}.Then,
-		xmetricshttp.HandlerDuration{
-			Metric: xmetrics.LabelledObserverVec{ObserverVec: in.RequestDuration.MustCurryWith(curryLabel)},
-			Labeller: xmetricshttp.ServerLabellers{
-				xmetricshttp.CodeLabeller{},
-				xmetricshttp.MethodLabeller{},
-			},
-		}.Then,
-		xmetricshttp.HandlerInFlight{
-			Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.InFlight.MustCurryWith(curryLabel)},
-		}.Then,
-	}
+	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
+	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
+	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
 }
 
 // provideMetrics builds the various metrics components needed by the issuer
-func provideMetrics() fx.Option {
+func provideMetrics(configKey string) fx.Option {
+	clientLabellers := xmetricshttp.NewClientLabellers(
+		xmetricshttp.CodeLabeller{},
+		xmetricshttp.MethodLabeller{},
+	)
+
 	return fx.Provide(
-		xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+		xmetricshttp.Unmarshal(configKey, promhttp.HandlerOpts{}),
 		xmetrics.ProvideCounterVec(
 			prometheus.CounterOpts{
 				Name: "server_request_count",
-				Help: "total HTTP requests made to servers",
+				Help: "total incoming HTTP requests",
 			},
 			xmetricshttp.DefaultCodeLabel,
 			xmetricshttp.DefaultMethodLabel,
@@ -66,7 +51,7 @@ func provideMetrics() fx.Option {
 		xmetrics.ProvideHistogramVec(
 			prometheus.HistogramOpts{
 				Name: "server_request_duration_ms",
-				Help: "tracks server request durations in milliseconds",
+				Help: "tracks incoming request durations in ms",
 			},
 			xmetricshttp.DefaultCodeLabel,
 			xmetricshttp.DefaultMethodLabel,
@@ -75,9 +60,56 @@ func provideMetrics() fx.Option {
 		xmetrics.ProvideGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "server_requests_in_flight",
-				Help: "tracks the current number of server requests currently being processed",
+				Help: "tracks the current number of incoming requests being processed",
 			},
 			ServerLabel,
 		),
+		xmetricshttp.ProvideRoundTripperCounter(
+			prometheus.CounterOpts{
+				Name: "client_request_count",
+				Help: "total outgoing HTTP requests",
+			},
+			clientLabellers,
+		),
+		xmetricshttp.ProvideRoundTripperDurationHistogram(
+			prometheus.HistogramOpts{
+				Name: "client_request_count",
+				Help: "total outgoing HTTP requests",
+			},
+			clientLabellers,
+		),
+		xmetricshttp.ProvideRoundTripperInFlight(
+			prometheus.GaugeOpts{
+				Name: "client_requests_in_flight",
+				Help: "tracks the current number of incoming requests being processed",
+			},
+		),
 	)
+}
+
+// metricsMiddleware is a helper function that creates a chain of middleware for gorilla/mux given
+// the common serverside metrics.  Server metrics have an extra label that client metrics don't have.
+func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux.MiddlewareFunc {
+	curryLabel := prometheus.Labels{
+		ServerLabel: ur.Name,
+	}
+
+	serverLabellers := xmetricshttp.NewServerLabellers(
+		xmetricshttp.CodeLabeller{},
+		xmetricshttp.MethodLabeller{},
+	)
+
+	return []mux.MiddlewareFunc{
+		xmetricshttp.HandlerCounter{
+			Metric:   xmetrics.LabelledCounterVec{CounterVec: in.RequestCount.MustCurryWith(curryLabel)},
+			Labeller: serverLabellers,
+		}.Then,
+		xmetricshttp.HandlerDuration{
+			Metric:   xmetrics.LabelledObserverVec{ObserverVec: in.RequestDuration.MustCurryWith(curryLabel)},
+			Labeller: serverLabellers,
+		}.Then,
+		xmetricshttp.HandlerInFlight{
+			Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.RequestsInFlight.MustCurryWith(curryLabel)},
+		}.Then,
+	}
 }

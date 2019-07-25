@@ -5,7 +5,7 @@ import (
 	"go.uber.org/fx"
 )
 
-type ClientIn struct {
+type UnmarshalIn struct {
 	fx.In
 
 	Viper *viper.Viper
@@ -14,13 +14,13 @@ type ClientIn struct {
 // Unmarshal returns an uber/fx provider than in turn unmarshals client options
 // and produces a client object.  If multiple client objects need to coexist
 // in the same uber/fx App, use fx.Annotated with this function.
-func Unmarshal(configKey string) func(ClientIn) (Interface, error) {
-	return func(in ClientIn) (Interface, error) {
+func Unmarshal(configKey string, c ...Constructor) func(UnmarshalIn) (Interface, error) {
+	return func(in UnmarshalIn) (Interface, error) {
 		var o Options
 		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
 			return nil, err
 		}
 
-		return New(o)
+		return New(o, c...)
 	}
 }
