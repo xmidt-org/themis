@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"errors"
 	"os"
+	"xconfig"
 	"xlog"
 
 	"github.com/go-kit/kit/log"
@@ -30,6 +31,10 @@ type Environment struct {
 	// LogKey is the viper configuration key where logging configuration is supplied.
 	// There is no default.  If unset, xlog.Default() is used as the logger.
 	LogKey string
+
+	// DecodeOptions are the optional Viper options for unmarshalling.  These are used when emitting
+	// the various Viper-related components and when unmarshalling the logger.
+	DecodeOptions []viper.DecoderConfigOption
 
 	// Initialize is the required closure used to initialize the environment.  This function should configure
 	// the flagset and viper, parse the command line, and read in configuration as appropriate.  It represents
@@ -82,7 +87,7 @@ func (e Environment) Options(opts ...fx.Option) []fx.Option {
 	logger := xlog.Default()
 	if len(e.LogKey) > 0 {
 		var err error
-		logger, err = xlog.Unmarshal(e.LogKey, v)
+		logger, err = xlog.Unmarshal(e.LogKey, xconfig.ViperUnmarshaller{Viper: v, Options: e.DecodeOptions})
 		if err != nil {
 			return []fx.Option{
 				fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
@@ -97,7 +102,7 @@ func (e Environment) Options(opts ...fx.Option) []fx.Option {
 			fx.Provide(
 				func() log.Logger { return logger },
 				func() *pflag.FlagSet { return fs },
-				func() *viper.Viper { return v },
+				xconfig.ProvideViper(v, e.DecodeOptions...),
 			),
 		},
 		opts...,
