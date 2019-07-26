@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"crypto/rand"
 	"key"
 	"random"
@@ -16,9 +17,13 @@ func TestNewFactory(t *testing.T) {
 		require  = require.New(t)
 		registry = key.NewRegistry(rand.Reader)
 		noncer   = random.NewBase64Noncer(rand.Reader, 128, nil)
+
+		cb = ClaimBuilders{
+			nonceClaimBuilder{n: noncer},
+		}
 	)
 
-	factory, err := NewFactory(noncer, registry, Descriptor{
+	factory, err := NewFactory(cb, registry, Options{
 		Alg: "RS256",
 		Key: key.Descriptor{
 			Kid:  "test",
@@ -30,7 +35,7 @@ func TestNewFactory(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(factory)
 
-	token, err := factory.NewToken(Request{})
+	token, err := factory.NewToken(context.Background(), new(Request))
 	require.NoError(err)
 	assert.True(len(token) > 0)
 }

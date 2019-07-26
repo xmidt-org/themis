@@ -1,14 +1,15 @@
 package xhttpclient
 
 import (
-	"github.com/spf13/viper"
+	"xconfig"
+
 	"go.uber.org/fx"
 )
 
 type UnmarshalIn struct {
 	fx.In
 
-	Viper *viper.Viper
+	Unmarshaller xconfig.KeyUnmarshaller
 }
 
 // Unmarshal returns an uber/fx provider than in turn unmarshals client options
@@ -17,7 +18,7 @@ type UnmarshalIn struct {
 func Unmarshal(configKey string, c ...Constructor) func(UnmarshalIn) (Interface, error) {
 	return func(in UnmarshalIn) (Interface, error) {
 		var o Options
-		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return nil, err
 		}
 

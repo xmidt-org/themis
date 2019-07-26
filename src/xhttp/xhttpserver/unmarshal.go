@@ -3,6 +3,7 @@ package xhttpserver
 import (
 	"fmt"
 	"strings"
+	"xconfig"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -25,10 +26,11 @@ func (snce ServerNotConfiguredError) Error() string {
 type ServerIn struct {
 	fx.In
 
-	Logger     log.Logger
-	Viper      *viper.Viper
-	Shutdowner fx.Shutdowner
-	Lifecycle  fx.Lifecycle
+	Logger       log.Logger
+	Viper        *viper.Viper
+	Unmarshaller xconfig.KeyUnmarshaller
+	Shutdowner   fx.Shutdowner
+	Lifecycle    fx.Lifecycle
 }
 
 // UnmarshalResult is the result of unmarshalling a server and binding it to the container lifecycle
@@ -60,7 +62,7 @@ func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 	}
 
 	var o Options
-	if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+	if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 		return UnmarshalResult{Name: configKey}, err
 	}
 

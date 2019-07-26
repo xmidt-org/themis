@@ -1,15 +1,16 @@
 package xmetrics
 
 import (
+	"xconfig"
+
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
 type MetricsIn struct {
 	fx.In
 
-	Viper *viper.Viper
+	Unmarshaller xconfig.KeyUnmarshaller
 }
 
 type MetricsOut struct {
@@ -27,7 +28,7 @@ type MetricsOut struct {
 func Unmarshal(configKey string) func(MetricsIn) (MetricsOut, error) {
 	return func(in MetricsIn) (MetricsOut, error) {
 		var o Options
-		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return MetricsOut{}, err
 		}
 

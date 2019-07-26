@@ -3,17 +3,17 @@ package token
 import (
 	"key"
 	"random"
+	"xconfig"
 
-	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
 type TokenIn struct {
 	fx.In
 
-	Noncer random.Noncer
-	Keys   key.Registry
-	Viper  *viper.Viper
+	Noncer       random.Noncer
+	Keys         key.Registry
+	Unmarshaller xconfig.KeyUnmarshaller
 }
 
 type TokenOut struct {
@@ -30,7 +30,7 @@ type TokenOut struct {
 func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, error) {
 	return func(in TokenIn) (TokenOut, error) {
 		var o Options
-		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return TokenOut{}, err
 		}
 

@@ -36,25 +36,32 @@ const (
 	applicationVersion = "0.0.0"
 )
 
-func initialize(name string, arguments []string, fs *pflag.FlagSet, v *viper.Viper) error {
-	var (
-		file = fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
-		dev  = fs.BoolP("dev", "", false, "development node")
-		iss  = fs.StringP("iss", "", "", "the name of the issuer to put into claims.  Overrides configuration.")
-	)
+type CommandLine struct {
+	File string
+	Dev  bool
+	Iss  string
+}
 
-	err := fs.Parse(arguments)
-	if err != nil {
-		return err
-	}
+func flagSetBuilder(fs *pflag.FlagSet) (interface{}, error) {
+	cl := new(CommandLine)
+	fs.StringVarP(&cl.File, "file", "f", "", "the configuration file to use.  Overrides the search path.")
+	fs.BoolVar(&cl.Dev, "dev", false, "development mode")
+	fs.StringVar(&cl.Iss, "iss", "", "the name of the issuer to put into claims.  Overrides configuration.")
+
+	return cl, nil
+}
+
+func initialize(name string, cl interface{}, fs *pflag.FlagSet, v *viper.Viper) error {
+	commandLine := cl.(*CommandLine)
+	var err error
 
 	switch {
-	case *dev:
+	case commandLine.Dev:
 		v.SetConfigType("yaml")
 		err = v.ReadConfig(strings.NewReader(devMode))
 
-	case len(*file) > 0:
-		v.SetConfigFile(*file)
+	case len(commandLine.File) > 0:
+		v.SetConfigFile(commandLine.File)
 		err = v.ReadInConfig()
 
 	default:
@@ -69,8 +76,8 @@ func initialize(name string, arguments []string, fs *pflag.FlagSet, v *viper.Vip
 		return err
 	}
 
-	if len(*iss) > 0 {
-		v.Set("issuer.claims.iss", *iss)
+	if len(commandLine.Iss) > 0 {
+		v.Set("issuer.claims.iss", commandLine.Iss)
 	}
 
 	return nil
@@ -79,9 +86,10 @@ func initialize(name string, arguments []string, fs *pflag.FlagSet, v *viper.Vip
 func main() {
 	var (
 		e = bootstrap.Environment{
-			Name:       applicationName,
-			LogKey:     "log",
-			Initialize: initialize,
+			Name:           applicationName,
+			LogKey:         "log",
+			FlagSetBuilder: flagSetBuilder,
+			Initialize:     initialize,
 		}
 
 		app = fx.New(
