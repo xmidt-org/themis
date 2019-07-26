@@ -85,33 +85,32 @@ func main() {
 		}
 
 		app = fx.New(
-			e.Options(
-				provideMetrics("prometheus"),
-				fx.Provide(
-					xhealth.Unmarshal("health"),
-					random.Provide,
-					key.Provide,
-					token.Unmarshal("token"),
-					func() []xloghttp.ParameterBuilder {
-						return []xloghttp.ParameterBuilder{
-							xloghttp.Method("requestMethod"),
-							xloghttp.URI("requestURI"),
-							xloghttp.RemoteAddress("remoteAddr"),
-						}
-					},
-					xhttpserver.ProvideParseForm,
-					xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
-					provideClient("client"),
-				),
-				fx.Invoke(
-					RunKeyServer("servers.key"),
-					RunIssuerServer("servers.issuer"),
-					RunClaimsServer("servers.claims"),
-					RunMetricsServer("servers.metrics"),
-					RunHealthServer("servers.health"),
-					xhttpserver.InvokeOptional("servers.pprof", xhttpserver.AddPprofRoutes),
-				),
-			)...,
+			e.Bootstrap(),
+			provideMetrics("prometheus"),
+			fx.Provide(
+				xhealth.Unmarshal("health"),
+				random.Provide,
+				key.Provide,
+				token.Unmarshal("token"),
+				func() []xloghttp.ParameterBuilder {
+					return []xloghttp.ParameterBuilder{
+						xloghttp.Method("requestMethod"),
+						xloghttp.URI("requestURI"),
+						xloghttp.RemoteAddress("remoteAddr"),
+					}
+				},
+				xhttpserver.ProvideParseForm,
+				xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
+				provideClient("client"),
+			),
+			fx.Invoke(
+				RunKeyServer("servers.key"),
+				RunIssuerServer("servers.issuer"),
+				RunClaimsServer("servers.claims"),
+				RunMetricsServer("servers.metrics"),
+				RunHealthServer("servers.health"),
+				xhttpserver.InvokeOptional("servers.pprof", xhttpserver.AddPprofRoutes),
+			),
 		)
 	)
 

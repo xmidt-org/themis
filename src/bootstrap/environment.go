@@ -42,8 +42,7 @@ type Environment struct {
 	Initialize func(name string, arguments []string, fs *pflag.FlagSet, v *viper.Viper) error
 }
 
-// Options prepends the appropriate bootstrapping to a variadic set of uber/fx options.  The result
-// is returned, and can be used via fx.New.
+// Bootstrap creates the infrastructure that needs to exist before the container is created, e.g. with fx.New.
 //
 // This function does the following:
 //   - Creates pflag.FlagSet and viper.Viper instances
@@ -54,12 +53,12 @@ type Environment struct {
 //
 // Any errors that occur during bootstrapping are emitted as fx.Invoke functions and will be available via App.Err().
 // For example, if the help options was requested on the command line, pflag.ErrHelp will be returned to the application.
-func (e Environment) Options(opts ...fx.Option) []fx.Option {
+func (e Environment) Bootstrap() fx.Option {
 	if e.Initialize == nil {
-		return []fx.Option{
+		return fx.Options(
 			fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
 			fx.Invoke(func() error { return ErrNoInitialize }),
-		}
+		)
 	}
 
 	name := e.Name
@@ -78,10 +77,10 @@ func (e Environment) Options(opts ...fx.Option) []fx.Option {
 	)
 
 	if err := e.Initialize(name, arguments, fs, v); err != nil {
-		return []fx.Option{
+		return fx.Options(
 			fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
 			fx.Invoke(func() error { return err }),
-		}
+		)
 	}
 
 	logger := xlog.Default()
@@ -89,22 +88,19 @@ func (e Environment) Options(opts ...fx.Option) []fx.Option {
 		var err error
 		logger, err = xlog.Unmarshal(e.LogKey, xconfig.ViperUnmarshaller{Viper: v, Options: e.DecodeOptions})
 		if err != nil {
-			return []fx.Option{
+			return fx.Options(
 				fx.Logger(xlog.Printer{Logger: xlog.Discard()}),
 				fx.Invoke(func() error { return err }),
-			}
+			)
 		}
 	}
 
-	return append(
-		[]fx.Option{
-			fx.Logger(xlog.Printer{Logger: logger}),
-			fx.Provide(
-				func() log.Logger { return logger },
-				func() *pflag.FlagSet { return fs },
-				xconfig.ProvideViper(v, e.DecodeOptions...),
-			),
-		},
-		opts...,
+	return fx.Options(
+		fx.Logger(xlog.Printer{Logger: logger}),
+		fx.Provide(
+			func() log.Logger { return logger },
+			func() *pflag.FlagSet { return fs },
+			xconfig.ProvideViper(v, e.DecodeOptions...),
+		),
 	)
 }

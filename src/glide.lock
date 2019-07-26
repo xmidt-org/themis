@@ -1,5 +1,5 @@
-hash: da5b6300c900f9731bc042a382ccb09738af670f3886018e849c2a0789ea13cc
-updated: 2019-07-22T18:08:05.125631-07:00
+hash: daaecdc6bd3a6c47a74d6a3e9c9155b133b635e650bf42a6bb0511b375543656
+updated: 2019-07-25T22:27:32.352852-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -106,6 +106,7 @@ imports:
 - name: go.uber.org/fx
   version: 3de044da969b90ad0a3e4a7867a74662f645f3f9
   subpackages:
+  - fxtest
   - internal/fxlog
   - internal/fxreflect
   - internal/lifecycle
