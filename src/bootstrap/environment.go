@@ -15,7 +15,6 @@ import (
 // using spf13's flagset and viper libraries together with go-kit logging.
 type Environment struct {
 	// Name is the application name, typically the executable name.  If unset, os.Args[0] is used.
-	//
 	// The name is what is passed to NewFlagSet and is the same value passed to Initialize.
 	Name string
 
@@ -37,7 +36,8 @@ type Environment struct {
 	// an arbitrary type, such as a pointer to struct, that will contain the results of parsing the command line.
 	// If not supplied, no setup is performed.
 	//
-	// This closure should not parse the command-line itself.  That is done by the Bootstrap method.
+	// This closure should not parse the command line.  Parsing is handled by the bootstrap method, using
+	// the arguments obtained either from this struct or the os package.
 	FlagSetBuilder func(*pflag.FlagSet) (interface{}, error)
 
 	// Initialize is the optionsl closure used to initialize the environment.  This function should configure
