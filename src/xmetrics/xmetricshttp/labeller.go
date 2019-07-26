@@ -18,11 +18,16 @@ type StatusCoder interface {
 	StatusCode() int
 }
 
+// LabelNames is a strategy for determining the names for metrics labels
+type LabelNames interface {
+	// LabelNames returns the ordered set of metrics label names.  The order in which these
+	// names occur in the slice will match any labeller strategies in a ClientLabeller or a ServerLabeller.
+	LabelNames() []string
+}
+
 // ServerLabeller is a strategy for producing metrics label/value pairs from a serverside HTTP request
 type ServerLabeller interface {
-	// LabelNames returns the labels this labeller applies, in the correct order that it applies them.
-	// It is important that the order of label names and applies labels agree.
-	LabelNames() []string
+	LabelNames
 
 	// ServerLabels applies the labels this strategy provides.  The order the labels are applies
 	// must match the order of names returned by LabelNames.
@@ -52,19 +57,6 @@ func NewServerLabellers(labellers ...ServerLabeller) *ServerLabellers {
 	return sl
 }
 
-// Add is a fluent-style builder function that adds name/labeller pairs to this instance.
-func (sl *ServerLabellers) Add(more ...ServerLabeller) *ServerLabellers {
-	if sl != nil {
-		for _, m := range more {
-			sl.labelNames = append(sl.labelNames, m.LabelNames()...)
-		}
-
-		sl.labellers = append(sl.labellers, more...)
-	}
-
-	return sl
-}
-
 func (sl *ServerLabellers) LabelNames() []string {
 	if sl == nil {
 		return nil
@@ -83,9 +75,7 @@ func (sl *ServerLabellers) ServerLabels(response http.ResponseWriter, request *h
 
 // ClientLabeller is a strategy for producing metrics label/value pairs from a clientside HTTP request
 type ClientLabeller interface {
-	// LabelNames returns the labels this labeller applies, in the correct order that it applies them.
-	// It is important that the order of label names and applies labels agree.
-	LabelNames() []string
+	LabelNames
 
 	// ClientLabels applies the labels this strategy provides.  The order the labels are applies
 	// must match the order of names returned by LabelNames.
