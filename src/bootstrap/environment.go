@@ -11,6 +11,13 @@ import (
 	"go.uber.org/fx"
 )
 
+// UnmarshalLogger returns a CreateLogger strategy that unmarshals the logger from viper using the xlog package.
+func UnmarshalLogger(logKey string, options ...viper.DecoderConfigOption) func(string, *pflag.FlagSet, *viper.Viper) (log.Logger, error) {
+	return func(_ string, _ *pflag.FlagSet, v *viper.Viper) (log.Logger, error) {
+		return xlog.Unmarshal(logKey, xconfig.ViperUnmarshaller{Viper: v, Options: options})
+	}
+}
+
 // Environment supplies the externally created components and configurable options for bootstrap an fx application
 // using spf13's flagset and viper libraries together with go-kit logging.
 type Environment struct {
@@ -24,12 +31,7 @@ type Environment struct {
 	// ErrorHandling is the pflag error handling strategy.  By default, this is ContinueOnError.
 	ErrorHandling pflag.ErrorHandling
 
-	// LogKey is the viper configuration key where logging configuration is supplied.
-	// There is no default.  If unset, xlog.Default() is used as the logger.
-	LogKey string
-
-	// DecodeOptions are the optional Viper options for unmarshalling.  These are used when emitting
-	// the various Viper-related components and when unmarshalling the logger.
+	// DecodeOptions are the optional Viper options for unmarshalling
 	DecodeOptions []viper.DecoderConfigOption
 
 	// FlagSetBuilder is an optional closure that builds command line options.  This closure can return
@@ -47,6 +49,12 @@ type Environment struct {
 	//
 	// If not supplied, no viper setup is performed.
 	Initialize func(string, interface{}, *pflag.FlagSet, *viper.Viper) error
+
+	// CreateLogger is the strategy for creating a top-level go-kit Logger for the application.  This closure
+	// is passed the application name and the initialized flagset and viper instances.
+	//
+	// If not supplied, xlog.Default() is used as the top-level logger.
+	CreateLogger func(string, *pflag.FlagSet, *viper.Viper) (log.Logger, error)
 }
 
 // newErrorOption produces an uber/fx Option which discards container printing and emits
@@ -105,9 +113,9 @@ func (e Environment) Bootstrap() fx.Option {
 	}
 
 	logger := xlog.Default()
-	if len(e.LogKey) > 0 {
+	if e.CreateLogger != nil {
 		var err error
-		logger, err = xlog.Unmarshal(e.LogKey, xconfig.ViperUnmarshaller{Viper: viper, Options: e.DecodeOptions})
+		logger, err = e.CreateLogger(name, flagSet, viper)
 		if err != nil {
 			return newErrorOption(err)
 		}

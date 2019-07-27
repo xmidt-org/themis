@@ -87,9 +87,9 @@ func main() {
 	var (
 		e = bootstrap.Environment{
 			Name:           applicationName,
-			LogKey:         "log",
 			FlagSetBuilder: flagSetBuilder,
 			Initialize:     initialize,
+			CreateLogger:   bootstrap.UnmarshalLogger("log"),
 		}
 
 		app = fx.New(
