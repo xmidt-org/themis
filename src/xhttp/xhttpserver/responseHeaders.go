@@ -27,6 +27,10 @@ func (rh ResponseHeaders) Then(next http.Handler) http.Handler {
 	})
 }
 
+func (rh ResponseHeaders) ThenFunc(next http.HandlerFunc) http.Handler {
+	return rh.Then(next)
+}
+
 type ResponseHeadersIn struct {
 	fx.In
 
