@@ -15,13 +15,13 @@
 package main
 
 import (
-	"bootstrap"
 	"fmt"
 	"key"
 	"os"
 	"random"
 	"strings"
 	"token"
+	"xconfig"
 	"xhealth"
 	"xhttp/xhttpserver"
 	"xlog/xloghttp"
@@ -85,11 +85,11 @@ func initialize(name string, cl interface{}, fs *pflag.FlagSet, v *viper.Viper) 
 
 func main() {
 	var (
-		e = bootstrap.Environment{
+		e = xconfig.Environment{
 			Name:           applicationName,
 			FlagSetBuilder: flagSetBuilder,
 			Initialize:     initialize,
-			CreateLogger:   bootstrap.UnmarshalLogger("log"),
+			CreateLogger:   xconfig.UnmarshalLogger("log"),
 		}
 
 		app = fx.New(

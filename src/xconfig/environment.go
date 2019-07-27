@@ -1,8 +1,7 @@
-package bootstrap
+package xconfig
 
 import (
 	"os"
-	"xconfig"
 	"xlog"
 
 	"github.com/go-kit/kit/log"
@@ -14,7 +13,7 @@ import (
 // UnmarshalLogger returns a CreateLogger strategy that unmarshals the logger from viper using the xlog package.
 func UnmarshalLogger(logKey string, options ...viper.DecoderConfigOption) func(string, *pflag.FlagSet, *viper.Viper) (log.Logger, error) {
 	return func(_ string, _ *pflag.FlagSet, v *viper.Viper) (log.Logger, error) {
-		return xlog.Unmarshal(logKey, xconfig.ViperUnmarshaller{Viper: v, Options: options})
+		return xlog.Unmarshal(logKey, ViperUnmarshaller{Viper: v, Options: options})
 	}
 }
 
@@ -126,7 +125,7 @@ func (e Environment) Bootstrap() fx.Option {
 		fx.Provide(
 			func() log.Logger { return logger },
 			func() *pflag.FlagSet { return flagSet },
-			xconfig.ProvideViper(viper, e.DecodeOptions...),
+			ProvideViper(viper, e.DecodeOptions...),
 		),
 	)
 }
