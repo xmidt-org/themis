@@ -4,6 +4,7 @@ import (
 	"key"
 	"random"
 	"xconfig"
+	"xhttp/xhttpclient"
 
 	"go.uber.org/fx"
 )
@@ -14,6 +15,7 @@ type TokenIn struct {
 	Noncer       random.Noncer
 	Keys         key.Registry
 	Unmarshaller xconfig.KeyUnmarshaller
+	Client       xhttpclient.Interface `optional:"true"`
 }
 
 type TokenOut struct {
@@ -34,7 +36,7 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			return TokenOut{}, err
 		}
 
-		cb, err := NewClaimBuilders(in.Noncer, o)
+		cb, err := NewClaimBuilders(in.Noncer, in.Client, o)
 		if err != nil {
 			return TokenOut{}, err
 		}

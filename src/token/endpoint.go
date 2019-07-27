@@ -17,7 +17,7 @@ func NewIssueEndpoint(f Factory) endpoint.Endpoint {
 func NewClaimsEndpoint(cb ClaimBuilder) endpoint.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		merged := make(map[string]interface{})
-		if err := cb.Append(ctx, v.(*Request), merged); err != nil {
+		if err := cb.AddClaims(ctx, v.(*Request), merged); err != nil {
 			return nil, err
 		}
 

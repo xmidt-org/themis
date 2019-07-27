@@ -13,7 +13,6 @@ import (
 
 var (
 	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
-	ErrMetadataNeedsHttp  = errors.New("Metadata requires either header/parameter or variable to be set")
 )
 
 // RequestBuilder is a strategy for building a token factory Request from an HTTP request
@@ -134,8 +133,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				},
 			)
 		}
-
-		// for claims, just skip anything that isn't an HTTP-derived value
 	}
 
 	for name, value := range o.Metadata {
@@ -162,9 +159,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					setter:   metadataSetter,
 				},
 			)
-		} else {
-			// metadata MUST come from an HTTP request
-			return nil, ErrMetadataNeedsHttp
 		}
 	}
 

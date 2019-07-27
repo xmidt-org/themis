@@ -41,7 +41,7 @@ type factory struct {
 
 func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 	merged := make(map[string]interface{}, len(r.Claims))
-	if err := f.claimBuilder.Append(ctx, r, merged); err != nil {
+	if err := f.claimBuilder.AddClaims(ctx, r, merged); err != nil {
 		return "", err
 	}
 

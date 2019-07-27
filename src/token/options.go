@@ -1,12 +1,18 @@
 package token
 
-import "key"
+import (
+	"key"
+)
 
 // RemoteClaims describes a remote HTTP endpoint that can produce claims given the
 // metadata from a token request.
 type RemoteClaims struct {
+	// Method is the HTTP method used to invoke the URL
 	Method string
-	URL    string
+
+	// URL is the remote endpoint that is expected to receive Request.Metadata and return a JSON document
+	// which is merged into the token claims
+	URL string
 }
 
 // Value represents information pulled from either the HTTP request or statically, via config.
