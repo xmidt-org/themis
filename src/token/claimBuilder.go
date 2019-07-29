@@ -66,9 +66,10 @@ func (sc staticClaimBuilder) AddClaims(_ context.Context, r *Request, target map
 
 // timeClaimBuilder is a ClaimBuilder which handles time-based claims
 type timeClaimBuilder struct {
-	now            func() time.Time
-	duration       time.Duration
-	notBeforeDelta *time.Duration
+	now              func() time.Time
+	duration         time.Duration
+	disableNotBefore bool
+	notBeforeDelta   time.Duration
 }
 
 func (tc *timeClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
@@ -79,8 +80,8 @@ func (tc *timeClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 		target["exp"] = now.Add(tc.duration).Unix()
 	}
 
-	if tc.notBeforeDelta != nil {
-		target["nbf"] = now.Add(*tc.notBeforeDelta).Unix()
+	if !tc.disableNotBefore {
+		target["nbf"] = now.Add(tc.notBeforeDelta).Unix()
 	}
 
 	return nil
@@ -231,17 +232,15 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	}
 
 	if !o.DisableTime {
-		timeClaimBuilder := &timeClaimBuilder{
-			now:      time.Now,
-			duration: o.Duration,
-		}
-
-		if !o.DisableNotBefore {
-			timeClaimBuilder.notBeforeDelta = new(time.Duration)
-			*timeClaimBuilder.notBeforeDelta = o.NotBeforeDelta
-		}
-
-		builders = append(builders, timeClaimBuilder)
+		builders = append(
+			builders,
+			&timeClaimBuilder{
+				now:              time.Now,
+				duration:         o.Duration,
+				disableNotBefore: o.DisableNotBefore,
+				notBeforeDelta:   o.NotBeforeDelta,
+			},
+		)
 	}
 
 	return builders, nil
