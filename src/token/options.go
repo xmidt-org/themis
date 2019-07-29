@@ -2,6 +2,7 @@ package token
 
 import (
 	"key"
+	"time"
 )
 
 // RemoteClaims describes a remote HTTP endpoint that can produce claims given the
@@ -53,19 +54,22 @@ type Options struct {
 	Nonce bool
 
 	// DisableTime completely disables all time-based claims, such as iat.  Setting this to true
-	// causes Duration and NotBeforeDelta to be ignored.
+	// also causes Duration and NotBeforeDelta to be ignored.
 	DisableTime bool
 
 	// Duration specifies how long the token should be valid for.  An exp claim is set
 	// using this duration from the current time if this field is positive.
-	Duration string
+	Duration time.Duration
 
-	// NotBeforeDelta is a golang duration that determines the nbf field.  If set, this field
+	// DisableNotBefore specifically controls the nbf claim.
+	DisableNotBefore bool
+
+	// NotBeforeDelta is a golang duration that determines the nbf field.  This field
 	// is parsed and added to the current time at the moment a token is issued.  The result
 	// is set as an nbf claim.  Note that the duration may be zero or negative.
 	//
-	// If unset, then now nbf claim is issued.
-	NotBeforeDelta string
+	// If either DisableTime or DisableNotBefore are true, this field is ignored and no nbf claim is emitted.
+	NotBeforeDelta time.Duration
 
 	// Remote specifies an optional external system that takes metadata from a token request
 	// and returns a set of claims to be merged into tokens returned by the Factory.  Returned

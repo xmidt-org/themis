@@ -232,24 +232,13 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 
 	if !o.DisableTime {
 		timeClaimBuilder := &timeClaimBuilder{
-			now: time.Now,
+			now:      time.Now,
+			duration: o.Duration,
 		}
 
-		if len(o.Duration) > 0 {
-			var err error
-			timeClaimBuilder.duration, err = time.ParseDuration(o.Duration)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if len(o.NotBeforeDelta) > 0 {
-			var err error
+		if !o.DisableNotBefore {
 			timeClaimBuilder.notBeforeDelta = new(time.Duration)
-			*timeClaimBuilder.notBeforeDelta, err = time.ParseDuration(o.NotBeforeDelta)
-			if err != nil {
-				return nil, err
-			}
+			*timeClaimBuilder.notBeforeDelta = o.NotBeforeDelta
 		}
 
 		builders = append(builders, timeClaimBuilder)
