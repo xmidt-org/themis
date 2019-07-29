@@ -1,9 +1,9 @@
 package xhttpserver
 
 import (
+	"config"
 	"fmt"
 	"strings"
-	"xconfig"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -28,7 +28,7 @@ type ServerIn struct {
 
 	Logger       log.Logger
 	Viper        *viper.Viper
-	Unmarshaller xconfig.KeyUnmarshaller
+	Unmarshaller config.KeyUnmarshaller
 	Shutdowner   fx.Shutdowner
 	Lifecycle    fx.Lifecycle
 }

@@ -1,7 +1,7 @@
 package xmetrics
 
 import (
-	"xconfig"
+	"config"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/fx"
@@ -10,7 +10,7 @@ import (
 type MetricsIn struct {
 	fx.In
 
-	Unmarshaller xconfig.KeyUnmarshaller
+	Unmarshaller config.KeyUnmarshaller
 }
 
 type MetricsOut struct {

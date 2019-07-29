@@ -1,7 +1,7 @@
 package xhttpclient
 
 import (
-	"xconfig"
+	"config"
 
 	"go.uber.org/fx"
 )
@@ -9,7 +9,7 @@ import (
 type UnmarshalIn struct {
 	fx.In
 
-	Unmarshaller xconfig.KeyUnmarshaller
+	Unmarshaller config.KeyUnmarshaller
 }
 
 // Unmarshal returns an uber/fx provider than in turn unmarshals client options

@@ -1,4 +1,4 @@
-package xconfig
+package config
 
 import (
 	"os"
@@ -10,10 +10,13 @@ import (
 	"go.uber.org/fx"
 )
 
-// UnmarshalLogger returns a CreateLogger strategy that unmarshals the logger from viper using the xlog package.
-func UnmarshalLogger(logKey string, options ...viper.DecoderConfigOption) func(string, *pflag.FlagSet, *viper.Viper) (log.Logger, error) {
+// UseKey generates a CreateLogger closure that unmarshals the logger from a viper environment
+func UseKey(key string, options ...viper.DecoderConfigOption) func(string, *pflag.FlagSet, *viper.Viper) (log.Logger, error) {
 	return func(_ string, _ *pflag.FlagSet, v *viper.Viper) (log.Logger, error) {
-		return xlog.Unmarshal(logKey, ViperUnmarshaller{Viper: v, Options: options})
+		return xlog.Unmarshal(
+			key,
+			ViperUnmarshaller{Viper: v, Options: options},
+		)
 	}
 }
 

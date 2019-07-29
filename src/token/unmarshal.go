@@ -1,9 +1,9 @@
 package token
 
 import (
+	"config"
 	"key"
 	"random"
-	"xconfig"
 	"xhttp/xhttpclient"
 
 	"go.uber.org/fx"
@@ -14,7 +14,7 @@ type TokenIn struct {
 
 	Noncer       random.Noncer
 	Keys         key.Registry
-	Unmarshaller xconfig.KeyUnmarshaller
+	Unmarshaller config.KeyUnmarshaller
 	Client       xhttpclient.Interface `optional:"true"`
 }
 

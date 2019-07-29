@@ -5,7 +5,7 @@ import (
 )
 
 // keyUnmarshaller is the strategy for unmarshalling a logger.  It's declared here to avoid
-// a circular dependency between packages.
+// a circular dependency between this package and config.
 type keyUnmarshaller interface {
 	UnmarshalKey(string, interface{}) error
 }
