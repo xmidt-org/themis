@@ -139,10 +139,6 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 }
 
 func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
-	if r == nil {
-		return nil, nil
-	}
-
 	if len(r.URL) == 0 {
 		return nil, ErrRemoteURLRequired
 	}
@@ -199,7 +195,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 				return nil, fmt.Errorf("A value is required for the static metadata: %s", name)
 			}
 
-			metadata[name] = value
+			metadata[name] = value.Value
 		}
 
 		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
