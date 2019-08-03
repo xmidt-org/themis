@@ -6,8 +6,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Rename from xmidt-issuer to themis to follow the naming convention
-
-## [v0.0.0]
 - Dev mode
 - Uber/fx style provders
 - MTLS support
@@ -21,4 +19,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Integrated health via InvisionApp/go-health
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/0.0.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.0...HEAD
