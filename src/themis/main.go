@@ -24,10 +24,12 @@ import (
 	"token"
 	"xhealth"
 	"xhttp/xhttpserver"
+	"xlog"
 	"xlog/xloghttp"
 
+	"github.com/go-kit/kit/log"
+
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
@@ -36,64 +38,68 @@ const (
 	applicationVersion = "0.0.0"
 )
 
-type CommandLine struct {
-	File string
-	Dev  bool
-	Iss  string
-}
+func initialize(e config.Environment) error {
+	var (
+		file = e.FlagSet.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
+		dev  = e.FlagSet.Bool("dev", false, "development mode")
+		iss  = e.FlagSet.String("iss", "", "the name of the issuer to put into claims.  Overrides configuration.")
+	)
 
-func flagSetBuilder(fs *pflag.FlagSet) (interface{}, error) {
-	cl := new(CommandLine)
-	fs.StringVarP(&cl.File, "file", "f", "", "the configuration file to use.  Overrides the search path.")
-	fs.BoolVar(&cl.Dev, "dev", false, "development mode")
-	fs.StringVar(&cl.Iss, "iss", "", "the name of the issuer to put into claims.  Overrides configuration.")
+	e.FlagSet.BoolP("enable-app-logging", "e", false, "enables logging output from the uber/fx App")
 
-	return cl, nil
-}
-
-func initialize(name string, cl interface{}, fs *pflag.FlagSet, v *viper.Viper) error {
-	commandLine := cl.(*CommandLine)
-	var err error
+	err := e.FlagSet.Parse(e.Arguments)
+	if err != nil {
+		return err
+	}
 
 	switch {
-	case commandLine.Dev:
-		v.SetConfigType("yaml")
-		err = v.ReadConfig(strings.NewReader(devMode))
+	case *dev:
+		e.Viper.SetConfigType("yaml")
+		err = e.Viper.ReadConfig(strings.NewReader(devMode))
 
-	case len(commandLine.File) > 0:
-		v.SetConfigFile(commandLine.File)
-		err = v.ReadInConfig()
+	case len(*file) > 0:
+		e.Viper.SetConfigFile(*file)
+		err = e.Viper.ReadInConfig()
 
 	default:
-		v.SetConfigName(name)
-		v.AddConfigPath(".")
-		v.AddConfigPath(fmt.Sprintf("$HOME/.%s", name))
-		v.AddConfigPath(fmt.Sprintf("/etc/%s", name))
-		err = v.ReadInConfig()
+		e.Viper.SetConfigName(e.Name)
+		e.Viper.AddConfigPath(".")
+		e.Viper.AddConfigPath(fmt.Sprintf("$HOME/.%s", e.Name))
+		e.Viper.AddConfigPath(fmt.Sprintf("/etc/%s", e.Name))
+		err = e.Viper.ReadInConfig()
 	}
 
 	if err != nil {
 		return err
 	}
 
-	if len(commandLine.Iss) > 0 {
-		v.Set("issuer.claims.iss", commandLine.Iss)
+	if len(*iss) > 0 {
+		e.Viper.Set("issuer.claims.iss", *iss)
 	}
 
 	return nil
 }
 
+func createPrinter(logger log.Logger, e config.Environment) fx.Printer {
+	if v, err := e.FlagSet.GetBool("enable-app-logging"); v && err == nil {
+		return xlog.Printer{Logger: logger}
+	}
+
+	return xlog.Printer{Logger: xlog.Discard()}
+}
+
 func main() {
 	var (
-		e = config.Environment{
-			Name:           applicationName,
-			FlagSetBuilder: flagSetBuilder,
-			Initialize:     initialize,
-			CreateLogger:   config.UseKey("log"),
+		b = config.Bootstrap{
+			Name:        applicationName,
+			Initializer: initialize,
+			Optioners: config.Optioners{
+				xlog.Unmarshaller("log", createPrinter),
+			},
 		}
 
 		app = fx.New(
-			e.Bootstrap(),
+			b.Provide(),
 			provideMetrics("prometheus"),
 			fx.Provide(
 				xhealth.Unmarshal("health"),
