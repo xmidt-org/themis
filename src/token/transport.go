@@ -92,7 +92,7 @@ type variableRequestBuilder struct {
 func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) error {
 	value := mux.Vars(original)[vrb.variable]
 	if len(value) > 0 {
-		vrb.setter(vrb.key, value[0], tr)
+		vrb.setter(vrb.key, value, tr)
 		return nil
 	}
 
@@ -167,11 +167,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 
 // BuildRequest applies a sequence of RequestBuilder instances to produce a token factory Request
 func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) {
-	tr := &Request{
-		Claims:   make(map[string]interface{}),
-		Metadata: make(map[string]interface{}),
-	}
-
+	tr := NewRequest()
 	if err := rb.Build(original, tr); err != nil {
 		return nil, err
 	}
@@ -202,9 +198,12 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 		return nil, err
 	}
 
+	// allow empty bodies
 	var claims map[string]interface{}
-	if err := json.Unmarshal(body, &claims); err != nil {
-		return nil, err
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &claims); err != nil {
+			return nil, err
+		}
 	}
 
 	return claims, nil

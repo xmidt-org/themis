@@ -25,6 +25,14 @@ type Request struct {
 	Metadata map[string]interface{}
 }
 
+// NewRequest returns an empty, fully initialized token Request
+func NewRequest() *Request {
+	return &Request{
+		Claims:   make(map[string]interface{}),
+		Metadata: make(map[string]interface{}),
+	}
+}
+
 // Factory is a creation strategy for signed JWT tokens
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token

@@ -305,7 +305,7 @@ func testRemoteClaimBuilderRemoteError(t *testing.T) {
 		require = require.New(t)
 
 		handler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-			response.WriteHeader(http.StatusInternalServerError)
+			response.Write([]byte("this is not JSON"))
 		})
 	)
 
