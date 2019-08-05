@@ -7,14 +7,16 @@ import (
 	"go.uber.org/fx"
 )
 
-// Unmarshal loads an Options from a Viper instance and produces a go-kit Logger
-func Unmarshal(key string, u config.KeyUnmarshaller) (log.Logger, error) {
-	var o Options
-	if err := u.UnmarshalKey(key, &o); err != nil {
-		return nil, err
-	}
+// Unmarshal returns an uber/fx provider function that handles unmarshalling a logger and emitted it as a component.
+func Unmarshal(key string) func(config.Unmarshaller) (log.Logger, error) {
+	return func(u config.Unmarshaller) (log.Logger, error) {
+		var o Options
+		if err := u.UnmarshalKey(key, &o); err != nil {
+			return nil, err
+		}
 
-	return New(o)
+		return New(o)
+	}
 }
 
 // Unmarshaller produces an optioner strategy that loads the logger from configuration and
@@ -22,7 +24,7 @@ func Unmarshal(key string, u config.KeyUnmarshaller) (log.Logger, error) {
 // an fx.Printer which may use the created logger.  If pf is nil, no fx.Printer is configured.
 func Unmarshaller(key string, pf func(log.Logger, config.Environment) fx.Printer) config.Optioner {
 	return func(e config.Environment) fx.Option {
-		logger, err := Unmarshal(key, e.KeyUnmarshaller)
+		logger, err := Unmarshal(key)(e.Unmarshaller)
 		if logger == nil {
 			logger = Default()
 		}

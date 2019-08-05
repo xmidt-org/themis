@@ -1,5 +1,5 @@
-hash: daaecdc6bd3a6c47a74d6a3e9c9155b133b635e650bf42a6bb0511b375543656
-updated: 2019-07-29T21:28:17.198072-07:00
+hash: d01bffbecb4ee545a36ca781597520809b02b860d8615375e4be6a0f6e6b723a
+updated: 2019-08-05T13:05:17.302072-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -68,7 +68,7 @@ imports:
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
-  version: 4ab88e80c249ed361d3299e2930427d9ac43ef8d
+  version: 170205fb58decfd011f1550d4cfb737230d7ae4f
   subpackages:
   - prometheus
   - prometheus/internal
@@ -102,7 +102,7 @@ imports:
 - name: github.com/stretchr/objx
   version: 35313a95ee26395aa17d366c71a2ccf788fa69b6
 - name: github.com/stretchr/testify
-  version: ffdc059bfe9ce6a4e144ba849dbedead332c6053
+  version: 221dbe5ed46703ee255b1da0dec05086f5035f62
   subpackages:
   - assert
   - mock

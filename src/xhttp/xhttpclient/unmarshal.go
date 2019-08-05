@@ -9,7 +9,7 @@ import (
 type UnmarshalIn struct {
 	fx.In
 
-	Unmarshaller config.KeyUnmarshaller
+	Unmarshaller config.Unmarshaller
 }
 
 // Unmarshal returns an uber/fx provider than in turn unmarshals client options

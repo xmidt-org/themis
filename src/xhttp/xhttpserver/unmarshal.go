@@ -28,7 +28,7 @@ type ServerIn struct {
 
 	Logger       log.Logger
 	Viper        *viper.Viper
-	Unmarshaller config.KeyUnmarshaller
+	Unmarshaller config.Unmarshaller
 	Shutdowner   fx.Shutdowner
 	Lifecycle    fx.Lifecycle
 }

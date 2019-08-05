@@ -19,12 +19,11 @@ func (dp DiscardPrinter) Printf(string, ...interface{}) {
 // Environment holds the boilerplate objects that describe or make up the application environment.
 // An Initializer, if supplied, is invoked to setup the flagset (which includes parsing) and viper instances.
 type Environment struct {
-	Name            string
-	Arguments       []string
-	FlagSet         *pflag.FlagSet
-	Viper           *viper.Viper
-	Unmarshaller    Unmarshaller
-	KeyUnmarshaller KeyUnmarshaller
+	Name         string
+	Arguments    []string
+	FlagSet      *pflag.FlagSet
+	Viper        *viper.Viper
+	Unmarshaller Unmarshaller
 }
 
 // Initializer is the strategy for initializing the application environment.  Implementations
@@ -73,16 +72,6 @@ type Bootstrap struct {
 	Optioners Optioners
 }
 
-// ConfigOut defines the core components emitted by this package
-type ConfigOut struct {
-	fx.Out
-
-	FlagSet         *pflag.FlagSet
-	Viper           *viper.Viper
-	Unmarshaller    Unmarshaller
-	KeyUnmarshaller KeyUnmarshaller
-}
-
 // Provide performs initialization external to the uber/fx App flow, creating the various environmental
 // components that need to exist prior to any providers running.
 func (b Bootstrap) Provide() fx.Option {
@@ -99,12 +88,11 @@ func (b Bootstrap) Provide() fx.Option {
 	var (
 		v = viper.New()
 		e = Environment{
-			Name:            name,
-			Arguments:       arguments,
-			FlagSet:         pflag.NewFlagSet(name, b.ErrorHandling),
-			Viper:           v,
-			Unmarshaller:    ViperUnmarshaller{Viper: v, Options: b.DecodeOptions},
-			KeyUnmarshaller: ViperUnmarshaller{Viper: v, Options: b.DecodeOptions},
+			Name:         name,
+			Arguments:    arguments,
+			FlagSet:      pflag.NewFlagSet(name, b.ErrorHandling),
+			Viper:        v,
+			Unmarshaller: ViperUnmarshaller{Viper: v, Options: b.DecodeOptions},
 		}
 	)
 
@@ -123,14 +111,10 @@ func (b Bootstrap) Provide() fx.Option {
 
 	options := []fx.Option{
 		fx.Provide(
-			func() ConfigOut {
-				return ConfigOut{
-					FlagSet:         e.FlagSet,
-					Viper:           e.Viper,
-					Unmarshaller:    e.Unmarshaller,
-					KeyUnmarshaller: e.KeyUnmarshaller,
-				}
+			func() *pflag.FlagSet {
+				return e.FlagSet
 			},
+			ProvideViper(e.Viper, b.DecodeOptions...),
 		),
 	}
 

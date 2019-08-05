@@ -24,6 +24,6 @@ import:
 - package: github.com/prometheus/procfs
   version: ^0.0.3
 - package: github.com/stretchr/testify
-  version: 1.3.0
+  version: 221dbe5ed46703ee255b1da0dec05086f5035f62
 - package: github.com/InVisionApp/go-health
   version: ^2.1.0

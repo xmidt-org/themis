@@ -85,7 +85,7 @@ func createPrinter(logger log.Logger, e config.Environment) fx.Printer {
 		return xlog.Printer{Logger: logger}
 	}
 
-	return xlog.Printer{Logger: xlog.Discard()}
+	return config.DiscardPrinter{}
 }
 
 func main() {

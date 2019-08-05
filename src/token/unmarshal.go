@@ -14,7 +14,7 @@ type TokenIn struct {
 
 	Noncer       random.Noncer
 	Keys         key.Registry
-	Unmarshaller config.KeyUnmarshaller
+	Unmarshaller config.Unmarshaller
 	Client       xhttpclient.Interface `optional:"true"`
 }
 

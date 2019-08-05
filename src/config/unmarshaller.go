@@ -5,10 +5,6 @@ import "github.com/spf13/viper"
 // Unmarshaller is a strategy for unmarshalling configuration, mostly in the form of structs
 type Unmarshaller interface {
 	Unmarshal(interface{}) error
-}
-
-// KeyUnmarshaller is a strategy for unmarshalling configuration keys, mostly in the form of structs
-type KeyUnmarshaller interface {
 	UnmarshalKey(string, interface{}) error
 }
 
