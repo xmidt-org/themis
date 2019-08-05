@@ -72,7 +72,7 @@ style:
 
 .PHONY: test
 test:
-	go test -o $(BINARY) -v -race  -coverprofile=cover.out $(go list ./... | grep -v "/vendor/")
+	go test -v -race  -coverprofile=cover.out $(APP)/...
 
 .PHONY: test-cover
 test-cover: test
