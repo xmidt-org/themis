@@ -43,7 +43,7 @@ endif
 .PHONY: update-version
 update-version:
 	@echo "Update Version $(PROGVER) to $(RUN_ARGS)"
-	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" src/$(APP)/$(APP).go
+	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" src/$(APP)/main.go
 
 
 .PHONY: install
