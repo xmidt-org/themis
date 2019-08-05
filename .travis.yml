@@ -1,0 +1,27 @@
+language: go
+
+go:
+  - 1.12.x
+  - tip
+
+os:
+  - linux
+
+services:
+  - docker
+
+matrix:
+  allow_failures:
+    - go: tip
+  fast_finish: true
+
+branches:
+  only:
+    - master
+
+install:
+  - go get -v github.com/Masterminds/glide
+
+script:
+  - make build style codecov
+
