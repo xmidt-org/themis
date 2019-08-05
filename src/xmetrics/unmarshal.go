@@ -10,7 +10,7 @@ import (
 type MetricsIn struct {
 	fx.In
 
-	Unmarshaller config.KeyUnmarshaller
+	Unmarshaller config.Unmarshaller
 }
 
 type MetricsOut struct {
