@@ -12,7 +12,7 @@ import (
 type TokenIn struct {
 	fx.In
 
-	Noncer       random.Noncer
+	Noncer       random.Noncer `optional:"true"`
 	Keys         key.Registry
 	Unmarshaller config.Unmarshaller
 	Client       xhttpclient.Interface `optional:"true"`
