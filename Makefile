@@ -68,7 +68,7 @@ local-docker:
 
 .PHONY: style
 style:
-	! gofmt -d $$(find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
+	! gofmt -d $$(find . -path ./src/vendor -prune -o -name '*.go' -print) | grep '^'
 
 .PHONY: test
 test:
