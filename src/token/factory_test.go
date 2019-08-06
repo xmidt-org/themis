@@ -11,7 +11,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewFactory(t *testing.T) {
+func testNewFactoryInvalidAlg(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		f, err = NewFactory(
+			ClaimBuilders{},
+			key.NewRegistry(nil),
+			Options{
+				Alg: "this is not a signing method",
+			},
+		)
+	)
+
+	assert.Nil(f)
+	assert.Error(err)
+}
+
+func testNewFactoryInvalidKeyType(t *testing.T) {
+	var (
+		assert = assert.New(t)
+		f, err = NewFactory(
+			ClaimBuilders{},
+			key.NewRegistry(nil),
+			Options{
+				Key: key.Descriptor{
+					Type: "this is not a valid key type",
+				},
+			},
+		)
+	)
+
+	assert.Nil(f)
+	assert.Error(err)
+}
+
+func testNewFactorySuccess(t *testing.T) {
 	var (
 		assert   = assert.New(t)
 		require  = require.New(t)
@@ -38,4 +72,10 @@ func TestNewFactory(t *testing.T) {
 	token, err := factory.NewToken(context.Background(), new(Request))
 	require.NoError(err)
 	assert.True(len(token) > 0)
+}
+
+func TestNewFactory(t *testing.T) {
+	t.Run("InvalidAlg", testNewFactoryInvalidAlg)
+	t.Run("InvalidKeyType", testNewFactoryInvalidKeyType)
+	t.Run("Success", testNewFactorySuccess)
 }
