@@ -5,11 +5,9 @@ import (
 	"config"
 	"config/configtest"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/log"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,30 +20,26 @@ func testUnmarshalSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		v      = viper.New()
+		v = configtest.LoadJson(t, `
+			{
+				"log": {
+					"file": "stdout",
+					"level": "DEBUG"
+				}
+			}`,
+		)
+
 		logger log.Logger
-	)
 
-	v.SetConfigType("json")
-	require.NoError(
-		v.ReadConfig(strings.NewReader(`
-		{
-			"log": {
-				"file": "stdout",
-				"level": "DEBUG"
-			}
-		}
-	`)),
-	)
-
-	app := fxtest.New(t,
-		fx.Provide(
-			func() config.Unmarshaller {
-				return config.ViperUnmarshaller{Viper: v}
-			},
-			Unmarshal("log"),
-		),
-		fx.Populate(&logger),
+		app = fxtest.New(t,
+			fx.Provide(
+				func() config.Unmarshaller {
+					return config.ViperUnmarshaller{Viper: v}
+				},
+				Unmarshal("log"),
+			),
+			fx.Populate(&logger),
+		)
 	)
 
 	require.NoError(app.Err())
@@ -90,30 +84,23 @@ func testUnmarshallerWithPrinter(t *testing.T) {
 		expected  bytes.Buffer
 		component log.Logger
 
-		v = viper.New()
-	)
+		v = configtest.LoadJson(t, `
+			{
+				"log": {
+					"file": "stdout",
+					"level": "DEBUG"
+				}
+			}`,
+		)
 
-	v.SetConfigType("json")
-	require.NoError(
-		v.ReadConfig(strings.NewReader(`
-		{
-			"log": {
-				"file": "stdout",
-				"level": "DEBUG"
-			}
-		}
-	`)),
-	)
+		optioner = Unmarshaller("log", func(_ log.Logger, e config.Environment) fx.Printer {
+			return Printer{Logger: log.NewJSONLogger(&expected)}
+		})
 
-	optioner := Unmarshaller("log", func(_ log.Logger, e config.Environment) fx.Printer {
-		return Printer{Logger: log.NewJSONLogger(&expected)}
-	})
-
-	require.NotNil(optioner)
-
-	app := fxtest.New(t,
-		optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
-		fx.Populate(&component),
+		app = fxtest.New(t,
+			optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
+			fx.Populate(&component),
+		)
 	)
 
 	require.NoError(app.Err())
@@ -128,27 +115,21 @@ func testUnmarshallerNoPrinter(t *testing.T) {
 
 		component log.Logger
 
-		v = viper.New()
-	)
+		v = configtest.LoadJson(t, `
+			{
+				"log": {
+					"file": "stdout",
+					"level": "DEBUG"
+				}
+			}`,
+		)
 
-	v.SetConfigType("json")
-	require.NoError(
-		v.ReadConfig(strings.NewReader(`
-		{
-			"log": {
-				"file": "stdout",
-				"level": "DEBUG"
-			}
-		}
-	`)),
-	)
+		optioner = Unmarshaller("log", nil)
 
-	optioner := Unmarshaller("log", nil)
-	require.NotNil(optioner)
-
-	app := fxtest.New(t,
-		optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
-		fx.Populate(&component),
+		app = fxtest.New(t,
+			optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
+			fx.Populate(&component),
+		)
 	)
 
 	require.NoError(app.Err())
