@@ -106,7 +106,6 @@ type MetricsServerIn struct {
 	CommonIn
 
 	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
-	ResponseHeaders   xhttpserver.ResponseHeaders
 	Handler           xmetricshttp.Handler
 }
 

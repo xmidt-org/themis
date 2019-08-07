@@ -7,14 +7,29 @@ servers:
   key:
     address: :8080
     disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - issuer
+      X-Midt-Version:
+        - development
 
   issuer:
     address: :8081
     disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - issuer
+      X-Midt-Version:
+        - development
 
   claims:
     address: :8082
     disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - issuer
+      X-Midt-Version:
+        - development
 
   metrics:
     address: :8083
@@ -23,14 +38,15 @@ servers:
   health:
     address: :8084
     disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - issuer
+      X-Midt-Version:
+        - development
 
   pprof:
     address: :8085
     disableHTTPKeepAlives: true
-
-responseHeaders:
-  X-Midt-Server: issuer
-  X-Midt-Version: development
 
 health:
   disableLogging: false

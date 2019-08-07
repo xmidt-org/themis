@@ -114,7 +114,6 @@ func main() {
 					}
 				},
 				xhttpserver.ProvideParseForm,
-				xhttpserver.UnmarshalResponseHeaders("responseHeaders"),
 				provideClient("client"),
 			),
 			fx.Invoke(

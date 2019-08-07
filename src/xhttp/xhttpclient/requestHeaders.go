@@ -1,6 +1,9 @@
 package xhttpclient
 
-import "net/http"
+import (
+	"net/http"
+	"xhttp"
+)
 
 // RequestHeaders provides a RoundTripper constructor that inserts a constant set of headers
 // into each request
@@ -13,13 +16,9 @@ func (rh RequestHeaders) Then(next http.RoundTripper) http.RoundTripper {
 		return next
 	}
 
+	header := xhttp.CanonicalizeHeaders(rh.Header)
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
-		for name, values := range rh.Header {
-			for _, value := range values {
-				request.Header.Add(name, value)
-			}
-		}
-
+		xhttp.AddHeaders(request.Header, header)
 		return next.RoundTrip(request)
 	})
 }

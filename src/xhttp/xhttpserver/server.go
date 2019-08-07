@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/justinas/alice"
 )
 
 const (
@@ -66,7 +67,7 @@ type Options struct {
 	DisableTCPKeepAlives bool
 	TCPKeepAlivePeriod   string
 
-	Header map[string]string
+	Header http.Header
 }
 
 // Interface is the expected behavior of a server
@@ -221,11 +222,15 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 		o.Address = ":http"
 	}
 
+	chain := alice.New(
+		ResponseHeaders{Header: o.Header}.Then,
+	)
+
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
 		Addr:    o.Address,
-		Handler: h,
+		Handler: chain.Then(h),
 
 		MaxHeaderBytes:    o.MaxHeaderBytes,
 		IdleTimeout:       o.IdleTimeout,
