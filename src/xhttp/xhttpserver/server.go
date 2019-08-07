@@ -67,7 +67,8 @@ type Options struct {
 	DisableTCPKeepAlives bool
 	TCPKeepAlivePeriod   string
 
-	Header http.Header
+	Header          http.Header
+	DisableTracking bool
 }
 
 // Interface is the expected behavior of a server
@@ -225,6 +226,10 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 	)
+
+	if !o.DisableTracking {
+		chain = chain.Append(UseTrackingWriter)
+	}
 
 	s := &http.Server{
 		// we don't need this technically, because we create a listener

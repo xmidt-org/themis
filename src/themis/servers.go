@@ -33,7 +33,6 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/key/{kid}", in.Handler).Methods("GET")
-				ur.Router.Use(xhttpserver.TrackWriter)
 				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
 
@@ -60,7 +59,6 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/issue", in.IssueHandler).Methods("GET")
-				ur.Router.Use(xhttpserver.TrackWriter)
 				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
 				ur.Router.Use(in.ParseForm.Then)
@@ -88,7 +86,6 @@ func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/claims", in.ClaimsHandler).Methods("GET")
-				ur.Router.Use(xhttpserver.TrackWriter)
 				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
 				ur.Router.Use(in.ParseForm.Then)

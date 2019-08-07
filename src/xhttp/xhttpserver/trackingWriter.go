@@ -122,8 +122,8 @@ func (dw *trackingWriter) Push(target string, opts *http.PushOptions) error {
 	return http.ErrNotSupported
 }
 
-// TrackWriter is an Alice-style constructor that wraps the response writer as a TrackingWriter
-func TrackWriter(next http.Handler) http.Handler {
+// UseTrackingWriter is an Alice-style constructor that wraps the response writer as a TrackingWriter
+func UseTrackingWriter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(original http.ResponseWriter, request *http.Request) {
 		next.ServeHTTP(
 			NewTrackingWriter(original),
