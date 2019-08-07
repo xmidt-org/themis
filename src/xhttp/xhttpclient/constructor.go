@@ -20,18 +20,18 @@ func NewChain(c ...Constructor) Chain {
 	return Chain{c: c}
 }
 
-func (ch Chain) Append(c ...Constructor) Chain {
+func (ch Chain) Append(more ...Constructor) Chain {
 	merged := Chain{
-		c: make([]Constructor, 0, len(ch.c)+len(c)),
+		c: make([]Constructor, 0, len(ch.c)+len(more)),
 	}
 
 	merged.c = append(merged.c, ch.c...)
-	merged.c = append(merged.c, c...)
+	merged.c = append(merged.c, more...)
 	return merged
 }
 
-func (ch Chain) Extend(c ...Constructor) Chain {
-	return ch.Append(c...)
+func (ch Chain) Extend(more Chain) Chain {
+	return ch.Append(more.c...)
 }
 
 func (ch Chain) Then(rt http.RoundTripper) http.RoundTripper {

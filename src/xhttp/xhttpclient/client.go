@@ -11,10 +11,12 @@ type Interface interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// Tls represents the set of configurable options for client-side TLS
 type Tls struct {
 	InsecureSkipVerify bool
 }
 
+// Transport represents the set of configurable options for a client RoundTripper
 type Transport struct {
 	DisableKeepAlives      bool
 	DisableCompression     bool
@@ -27,10 +29,12 @@ type Transport struct {
 	MaxResponseHeaderBytes int64
 	TlsHandshakeTimeout    time.Duration
 	Tls                    *Tls
+	Header                 http.Header
 }
 
+// Options represents the set of configurable options for an HTTP client
 type Options struct {
-	Timeout   string
+	Timeout   time.Duration
 	Transport *Transport
 }
 
@@ -53,6 +57,8 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) {
 	var delegate *http.Transport
 	if t != nil {
+		c = append(c, RequestHeaders{Header: t.Header}.Then)
+
 		delegate = &http.Transport{
 			DisableKeepAlives:      t.DisableKeepAlives,
 			DisableCompression:     t.DisableCompression,
@@ -80,17 +86,8 @@ func New(o Options, c ...Constructor) (Interface, error) {
 		return nil, err
 	}
 
-	client := &http.Client{
+	return &http.Client{
 		Transport: roundTripper,
-	}
-
-	if len(o.Timeout) > 0 {
-		var err error
-		client.Timeout, err = time.ParseDuration(o.Timeout)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return client, nil
+		Timeout:   o.Timeout,
+	}, nil
 }
