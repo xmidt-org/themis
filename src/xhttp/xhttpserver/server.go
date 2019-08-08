@@ -65,10 +65,12 @@ type Options struct {
 	WriteTimeout      time.Duration
 
 	DisableTCPKeepAlives bool
-	TCPKeepAlivePeriod   string
+	TCPKeepAlivePeriod   time.Duration
 
-	Header          http.Header
-	DisableTracking bool
+	Header               http.Header
+	DisableTracking      bool
+	DisableHandlerLogger bool
+	DisableParseForm     bool
 }
 
 // Interface is the expected behavior of a server
@@ -155,13 +157,9 @@ func NewListener(ctx context.Context, lcfg net.ListenConfig, o Options) (net.Lis
 	}
 
 	if !o.DisableTCPKeepAlives {
-		period := defaultTCPKeepAlivePeriod
-		if len(o.TCPKeepAlivePeriod) > 0 {
-			var err error
-			period, err = time.ParseDuration(o.TCPKeepAlivePeriod)
-			if err != nil {
-				return nil, err
-			}
+		period := o.TCPKeepAlivePeriod
+		if period <= 0 {
+			period = defaultTCPKeepAlivePeriod
 		}
 
 		l = tcpKeepAliveListener{
@@ -216,13 +214,23 @@ func OnStop(logger log.Logger, s Interface) func(context.Context) error {
 	}
 }
 
-// New constructs a basic HTTP server instance.  The supplied logger is enriched with information
-// about the server and returned for use by higher-level code.
-func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
-	if len(o.Address) == 0 {
-		o.Address = ":http"
+// NewServerLogger returns a go-kit Logger enriched with information about the server.
+func NewServerLogger(o Options, base log.Logger, extra ...interface{}) log.Logger {
+	address := o.Address
+	if len(address) == 0 {
+		address = ":http"
 	}
 
+	parameters := []interface{}{AddressKey(), address}
+	if len(o.Name) > 0 {
+		parameters = append(parameters, ServerKey(), o.Name)
+	}
+
+	return log.WithPrefix(base, append(parameters, extra...)...)
+}
+
+// NewServerChain produces the standard constructor chain for a server, primarily using configuration.
+func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 	)
@@ -231,11 +239,27 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 		chain = chain.Append(UseTrackingWriter)
 	}
 
+	if !o.DisableHandlerLogger {
+		chain = chain.Append(
+			xloghttp.Logging{Base: l, Builders: pb}.Then,
+		)
+	}
+
+	return chain
+}
+
+// New constructs a basic HTTP server instance.  The supplied logger is enriched with information
+// about the server and returned for use by higher-level code.
+func New(o Options, l log.Logger, h http.Handler) Interface {
+	if len(o.Address) == 0 {
+		o.Address = ":http"
+	}
+
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
 		Addr:    o.Address,
-		Handler: chain.Then(h),
+		Handler: h,
 
 		MaxHeaderBytes:    o.MaxHeaderBytes,
 		IdleTimeout:       o.IdleTimeout,
@@ -245,20 +269,13 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 
 		ErrorLog: xloghttp.NewErrorLog(
 			o.Address,
-			log.WithPrefix(
-				base,
-				level.Key(), level.ErrorValue(),
-				AddressKey(), o.Address,
-			),
+			log.WithPrefix(l, level.Key(), level.ErrorValue()),
 		),
 	}
 
 	if o.LogConnectionState {
 		s.ConnState = xloghttp.NewConnStateLogger(
-			log.WithPrefix(
-				base,
-				AddressKey(), o.Address,
-			),
+			l,
 			"connState",
 			level.DebugValue(),
 		)
@@ -268,5 +285,5 @@ func New(base log.Logger, h http.Handler, o Options) (Interface, log.Logger) {
 		s.SetKeepAlivesEnabled(false)
 	}
 
-	return s, log.WithPrefix(base, ServerKey(), o.Name, AddressKey(), o.Address)
+	return s
 }

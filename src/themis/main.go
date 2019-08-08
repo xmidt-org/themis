@@ -106,14 +106,7 @@ func main() {
 				random.Provide,
 				key.Provide,
 				token.Unmarshal("token"),
-				func() []xloghttp.ParameterBuilder {
-					return []xloghttp.ParameterBuilder{
-						xloghttp.Method("requestMethod"),
-						xloghttp.URI("requestURI"),
-						xloghttp.RemoteAddress("remoteAddr"),
-					}
-				},
-				xhttpserver.ProvideParseForm,
+				xloghttp.ProvideStandardBuilders,
 				provideClient("client"),
 			),
 			fx.Invoke(

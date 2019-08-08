@@ -14,9 +14,6 @@ import (
 type CommonIn struct {
 	fx.In
 	ServerMetricsIn
-
-	ParseForm         xhttpserver.ParseForm
-	ParameterBuilders []xloghttp.ParameterBuilder `optional:"true"`
 }
 
 type KeyServerIn struct {
@@ -33,7 +30,6 @@ func RunKeyServer(serverConfigKey string) func(KeyServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/key/{kid}", in.Handler).Methods("GET")
-				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
 
 				return nil
@@ -48,7 +44,6 @@ type IssuerServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	ParseForm    xhttpserver.ParseForm
 	IssueHandler token.IssueHandler
 }
 
@@ -59,9 +54,7 @@ func RunIssuerServer(serverConfigKey string) func(IssuerServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/issue", in.IssueHandler).Methods("GET")
-				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
-				ur.Router.Use(in.ParseForm.Then)
 
 				return nil
 			},
@@ -75,7 +68,6 @@ type ClaimsServerIn struct {
 	xhttpserver.ServerIn
 	CommonIn
 
-	ParseForm     xhttpserver.ParseForm
 	ClaimsHandler token.ClaimsHandler
 }
 
@@ -86,9 +78,7 @@ func RunClaimsServer(serverConfigKey string) func(ClaimsServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/claims", in.ClaimsHandler).Methods("GET")
-				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 				ur.Router.Use(metricsMiddleware(in.ServerMetricsIn, ur)...)
-				ur.Router.Use(in.ParseForm.Then)
 
 				return nil
 			},
@@ -113,7 +103,6 @@ func RunMetricsServer(serverConfigKey string) func(MetricsServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/metrics", in.Handler).Methods("GET")
-				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 
 				return nil
 			},
@@ -137,7 +126,6 @@ func RunHealthServer(serverConfigKey string) func(HealthServerIn) error {
 			in.ServerIn,
 			func(ur xhttpserver.UnmarshalResult) error {
 				ur.Router.Handle("/health", in.Handler).Methods("GET")
-				ur.Router.Use(xloghttp.Logging{Base: ur.Logger, Builders: in.ParameterBuilders}.Then)
 
 				return nil
 			},

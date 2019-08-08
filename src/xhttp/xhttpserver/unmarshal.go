@@ -4,6 +4,7 @@ import (
 	"config"
 	"fmt"
 	"strings"
+	"xlog/xloghttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -26,11 +27,12 @@ func (snce ServerNotConfiguredError) Error() string {
 type ServerIn struct {
 	fx.In
 
-	Logger       log.Logger
-	Viper        *viper.Viper
-	Unmarshaller config.Unmarshaller
-	Shutdowner   fx.Shutdowner
-	Lifecycle    fx.Lifecycle
+	Logger            log.Logger
+	Viper             *viper.Viper
+	Unmarshaller      config.Unmarshaller
+	Shutdowner        fx.Shutdowner
+	Lifecycle         fx.Lifecycle
+	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
 // UnmarshalResult is the result of unmarshalling a server and binding it to the container lifecycle
@@ -75,17 +77,21 @@ func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 		o.Name = defaultName
 	}
 
-	router := mux.NewRouter()
-	server, logger := New(in.Logger, router, o)
+	var (
+		serverLogger = NewServerLogger(o, in.Logger)
+		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
+		router       = mux.NewRouter()
+		server       = New(o, serverLogger, serverChain.Then(router))
+	)
 
 	in.Lifecycle.Append(fx.Hook{
-		OnStart: OnStart(logger, server, func() { in.Shutdowner.Shutdown() }, o),
-		OnStop:  OnStop(logger, server),
+		OnStart: OnStart(serverLogger, server, func() { in.Shutdowner.Shutdown() }, o),
+		OnStop:  OnStop(serverLogger, server),
 	})
 
 	return UnmarshalResult{
 		Name:   o.Name,
-		Logger: logger,
+		Logger: serverLogger,
 		Router: router,
 	}, nil
 }

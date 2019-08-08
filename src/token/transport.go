@@ -15,7 +15,9 @@ var (
 	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
 )
 
-// RequestBuilder is a strategy for building a token factory Request from an HTTP request
+// RequestBuilder is a strategy for building a token factory Request from an HTTP request.
+//
+// Note: before invoking a RequestBuilder, calling code should parse the HTTP request form.
 type RequestBuilder interface {
 	Build(*http.Request, *Request) error
 }
@@ -26,9 +28,10 @@ func (rbf RequestBuilderFunc) Build(original *http.Request, tr *Request) error {
 	return rbf(original, tr)
 }
 
-// RequestBuilders represents a set of RequestBuilder strategies that can be invoked in sequence
+// RequestBuilders represents a set of RequestBuilder strategies that can be invoked in sequence.
 type RequestBuilders []RequestBuilder
 
+// Build invokes each request builder in sequence.  Prior to invoking any of the chain of builders,
 func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
 	for _, rb := range rbs {
 		if err := rb.Build(original, tr); err != nil {
@@ -177,6 +180,10 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 
 func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
 	return func(_ context.Context, hr *http.Request) (interface{}, error) {
+		if err := hr.ParseForm(); err != nil {
+			return nil, err
+		}
+
 		tr, err := BuildRequest(hr, rb)
 		if err != nil {
 			return nil, err

@@ -30,6 +30,9 @@ func (p *Parameters) Use(base log.Logger) log.Logger {
 // ParameterBuilder appends logging key/value pairs to be used with a contextual request logger
 type ParameterBuilder func(*http.Request, *Parameters)
 
+// ParameterBuilders is a simple slice type for ParameterBuilder instances
+type ParameterBuilders []ParameterBuilder
+
 // Method returns a ParameterBuilder that adds the HTTP request method as a logging key/value pair
 func Method(key string) ParameterBuilder {
 	return func(original *http.Request, p *Parameters) {
@@ -97,7 +100,7 @@ func WithRequest(original *http.Request, l log.Logger, b ...ParameterBuilder) *h
 // Logging provides an Alice-style decorator that attaches a contextual logger to requests
 type Logging struct {
 	Base     log.Logger
-	Builders []ParameterBuilder
+	Builders ParameterBuilders
 }
 
 func (l Logging) Then(next http.Handler) http.Handler {
@@ -107,4 +110,8 @@ func (l Logging) Then(next http.Handler) http.Handler {
 			WithRequest(request, l.Base, l.Builders...),
 		)
 	})
+}
+
+func (l Logging) ThenFunc(next http.HandlerFunc) http.Handler {
+	return l.Then(next)
 }
