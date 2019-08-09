@@ -41,7 +41,7 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			return TokenOut{}, err
 		}
 
-		f, err := NewFactory(cb, in.Keys, o)
+		f, err := NewFactory(o, cb, in.Keys)
 		if err != nil {
 			return TokenOut{}, err
 		}

@@ -15,11 +15,11 @@ func testNewFactoryInvalidAlg(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, err = NewFactory(
-			ClaimBuilders{},
-			key.NewRegistry(nil),
 			Options{
 				Alg: "this is not a signing method",
 			},
+			ClaimBuilders{},
+			key.NewRegistry(nil),
 		)
 	)
 
@@ -31,13 +31,13 @@ func testNewFactoryInvalidKeyType(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		f, err = NewFactory(
-			ClaimBuilders{},
-			key.NewRegistry(nil),
 			Options{
 				Key: key.Descriptor{
 					Type: "this is not a valid key type",
 				},
 			},
+			ClaimBuilders{},
+			key.NewRegistry(nil),
 		)
 	)
 
@@ -57,14 +57,14 @@ func testNewFactorySuccess(t *testing.T) {
 		}
 	)
 
-	factory, err := NewFactory(cb, registry, Options{
+	factory, err := NewFactory(Options{
 		Alg: "RS256",
 		Key: key.Descriptor{
 			Kid:  "test",
 			Bits: 512,
 		},
 		Nonce: true,
-	})
+	}, cb, registry)
 
 	require.NoError(err)
 	require.NotNil(factory)

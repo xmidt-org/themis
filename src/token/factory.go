@@ -62,7 +62,7 @@ func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 // NewFactory creates a token Factory from a Descriptor.  The supplied Noncer is used if and only
 // if d.Nonce is true.  Alternatively, supplying a nil Noncer will disable nonce creation altogether.
 // The token's key pair is registered with the given key Registry.
-func NewFactory(cb ClaimBuilder, kr key.Registry, o Options) (Factory, error) {
+func NewFactory(o Options, cb ClaimBuilder, kr key.Registry) (Factory, error) {
 	if len(o.Alg) == 0 {
 		o.Alg = DefaultAlg
 	}
