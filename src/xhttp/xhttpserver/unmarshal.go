@@ -12,10 +12,25 @@ import (
 	"go.uber.org/fx"
 )
 
+// ChainFactory is a creation strategy for server-specific alice.Chains that will decorate the
+// server handler.  Chains created by this factory will be appended to the core chain created
+// by NewServerChain.
+//
+// This interface is useful when particular servers need custom chains based on configuration.
+// The most common example of this is metrics, as server metrics might need the name of the
+// server as a label.
+type ChainFactory interface {
+	New(Options) (alice.Chain, error)
+}
+
+type ChainFactoryFunc func(Options) (alice.Chain, error)
+
+func (cff ChainFactoryFunc) New(o Options) (alice.Chain, error) {
+	return cff(o)
+}
+
 // ServerIn holds the set of dependencies required to create an HTTP server in the context
 // of a uber/fx application.
-//
-// This struct is typically embedded in other fx.In structs so that Unmarshal can be invoked.
 type ServerIn struct {
 	fx.In
 
@@ -24,6 +39,7 @@ type ServerIn struct {
 	Shutdowner        fx.Shutdowner
 	Lifecycle         fx.Lifecycle
 	Chain             alice.Chain                `optional:"true"`
+	ChainFactory      ChainFactory               `optional:"true"`
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
@@ -39,12 +55,24 @@ func unmarshal(configKey string, in ServerIn, c ...alice.Constructor) (*mux.Rout
 
 	var (
 		serverLogger = NewServerLogger(o, in.Logger)
-		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
-		router       = mux.NewRouter()
-		server       = New(
+		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...).Extend(in.Chain)
+	)
+
+	if in.ChainFactory != nil {
+		more, err := in.ChainFactory.New(o)
+		if err != nil {
+			return nil, err
+		}
+
+		serverChain = serverChain.Extend(more)
+	}
+
+	var (
+		router = mux.NewRouter()
+		server = New(
 			o,
 			serverLogger,
-			serverChain.Extend(in.Chain).Append(c...).Then(router),
+			serverChain.Append(c...).Then(router),
 		)
 	)
 

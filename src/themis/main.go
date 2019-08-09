@@ -109,6 +109,7 @@ func main() {
 				token.Unmarshal("token"),
 				xloghttp.ProvideStandardBuilders,
 				provideClientChain,
+				provideServerChainFactory,
 				xhttpclient.Unmarshal("client"),
 				fx.Annotated{
 					Name:   "servers.key",

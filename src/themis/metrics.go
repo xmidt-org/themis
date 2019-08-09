@@ -4,7 +4,6 @@ import (
 	"xmetrics"
 	"xmetrics/xmetricshttp"
 
-	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/fx"
@@ -19,6 +18,13 @@ type ServerMetricsIn struct {
 	RequestCount     *prometheus.CounterVec   `name:"server_request_count"`
 	RequestDuration  *prometheus.HistogramVec `name:"server_request_duration_ms"`
 	RequestsInFlight *prometheus.GaugeVec     `name:"server_requests_in_flight"`
+}
+
+type ClientMetricsIn struct {
+	fx.In
+	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
+	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
+	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
 }
 
 // provideMetrics builds the various metrics components needed by the issuer
@@ -76,39 +82,4 @@ func provideMetrics(configKey string) fx.Option {
 			},
 		),
 	)
-}
-
-// metricsMiddleware is a helper function that creates a chain of middleware for gorilla/mux given
-// the common serverside metrics.  Server metrics have an extra label that client metrics don't have.
-func metricsMiddleware(in ServerMetricsIn, label string) []mux.MiddlewareFunc {
-	curryLabel := prometheus.Labels{
-		ServerLabel: label,
-	}
-
-	serverLabellers := xmetricshttp.NewServerLabellers(
-		xmetricshttp.CodeLabeller{},
-		xmetricshttp.MethodLabeller{},
-	)
-
-	return []mux.MiddlewareFunc{
-		xmetricshttp.HandlerCounter{
-			Metric:   xmetrics.LabelledCounterVec{CounterVec: in.RequestCount.MustCurryWith(curryLabel)},
-			Labeller: serverLabellers,
-		}.Then,
-		xmetricshttp.HandlerDuration{
-			Metric:   xmetrics.LabelledObserverVec{ObserverVec: in.RequestDuration.MustCurryWith(curryLabel)},
-			Labeller: serverLabellers,
-		}.Then,
-		xmetricshttp.HandlerInFlight{
-			Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.RequestsInFlight.MustCurryWith(curryLabel)},
-		}.Then,
-	}
-}
-
-type ClientInstrumentsIn struct {
-	fx.In
-
-	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
-	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
-	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
 }
