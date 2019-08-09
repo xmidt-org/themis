@@ -44,10 +44,6 @@ servers:
       X-Midt-Version:
         - development
 
-  pprof:
-    address: :8085
-    disableHTTPKeepAlives: true
-
 health:
   disableLogging: false
   custom:
