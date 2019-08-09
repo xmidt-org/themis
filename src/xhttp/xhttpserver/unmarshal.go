@@ -2,6 +2,7 @@ package xhttpserver
 
 import (
 	"config"
+	"strings"
 	"xlog"
 	"xlog/xloghttp"
 
@@ -43,6 +44,7 @@ type ServerIn struct {
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
+// unmarshal implements the common, internal logic to provide a server
 func unmarshal(configKey string, in ServerIn, c ...alice.Constructor) (*mux.Router, error) {
 	var o Options
 	if err := config.UnmarshalRequired(in.Unmarshaller, configKey, &o); err != nil {
@@ -50,7 +52,11 @@ func unmarshal(configKey string, in ServerIn, c ...alice.Constructor) (*mux.Rout
 	}
 
 	if len(o.Name) == 0 {
-		o.Name = configKey
+		if pos := strings.LastIndexByte(configKey, '.'); pos >= 0 {
+			o.Name = configKey[pos+1:]
+		} else {
+			o.Name = configKey
+		}
 	}
 
 	var (
@@ -86,6 +92,11 @@ func unmarshal(configKey string, in ServerIn, c ...alice.Constructor) (*mux.Rout
 
 // Required unmarshals a server from the given configuration key and emits a *mux.Router.
 // This provider raises an error if the configuration key does not exist.
+//
+// This function provides a default server name if none is supplied in the options.  This default name
+// is the last dotted element of the configuration key.  This allows multiple servers in a map to naturally
+// take their map keys as default names.  For example, unmarshalling a key of "servers.foo" would yield
+// a default name of "foo".
 func Required(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
 	return func(in ServerIn) (*mux.Router, error) {
 		return unmarshal(configKey, in, c...)
@@ -93,7 +104,7 @@ func Required(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.
 }
 
 // Optional unmarshals a server from the given configuration key, returning a nil *mux.Router if
-// no such configuration key is found.
+// no such configuration key is found.  In all other ways, this function is the same as Required.
 func Optional(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
 	return func(in ServerIn) (*mux.Router, error) {
 		r, err := unmarshal(configKey, in, c...)
