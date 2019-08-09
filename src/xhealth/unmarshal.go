@@ -1,9 +1,10 @@
 package xhealth
 
 import (
+	"config"
+
 	health "github.com/InVisionApp/go-health"
 	"github.com/go-kit/kit/log"
-	"github.com/spf13/viper"
 
 	"go.uber.org/fx"
 )
@@ -12,7 +13,7 @@ type HealthIn struct {
 	fx.In
 
 	Logger         log.Logger
-	Viper          *viper.Viper
+	Unmarshaller   config.Unmarshaller
 	Lifecycle      fx.Lifecycle
 	StatusListener health.IStatusListener `optional:"true"`
 }
@@ -29,7 +30,7 @@ type HealthOut struct {
 func Unmarshal(configKey string) func(HealthIn) (HealthOut, error) {
 	return func(in HealthIn) (HealthOut, error) {
 		var o Options
-		if err := in.Viper.UnmarshalKey(configKey, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return HealthOut{}, err
 		}
 
