@@ -33,7 +33,7 @@ func Unmarshal(configKey string) func(HealthIn) (HealthOut, error) {
 			return HealthOut{}, err
 		}
 
-		h, err := New(in.Logger, in.StatusListener, o)
+		h, err := New(o, in.Logger, in.StatusListener)
 		if err != nil {
 			return HealthOut{}, err
 		}

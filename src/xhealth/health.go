@@ -16,7 +16,7 @@ type Options struct {
 }
 
 // New constructs an IHealth instance for the given environment
-func New(logger log.Logger, listener health.IStatusListener, o Options) (health.IHealth, error) {
+func New(o Options, logger log.Logger, listener health.IStatusListener) (health.IHealth, error) {
 	h := health.New()
 	if o.DisableLogging || logger == nil {
 		h.DisableLogging()
