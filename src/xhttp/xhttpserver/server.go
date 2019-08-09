@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-	"xlog"
 	"xlog/xloghttp"
 
 	"github.com/go-kit/kit/log"
@@ -136,7 +135,7 @@ func NewTlsConfig(t *Tls) (*tls.Config, error) {
 	return tc, nil
 }
 
-func NewListener(ctx context.Context, lcfg net.ListenConfig, o Options) (net.Listener, error) {
+func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Listener, error) {
 	address := o.Address
 	if len(address) == 0 {
 		address = ":http"
@@ -169,49 +168,6 @@ func NewListener(ctx context.Context, lcfg net.ListenConfig, o Options) (net.Lis
 	}
 
 	return l, nil
-}
-
-// OnStart produces a closure that will start the given server appropriately
-func OnStart(logger log.Logger, s Interface, onExit func(), o Options) func(context.Context) error {
-	if len(o.Address) == 0 {
-		o.Address = ":http"
-	}
-
-	return func(ctx context.Context) error {
-		l, err := NewListener(ctx, net.ListenConfig{}, o)
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			if onExit != nil {
-				defer onExit()
-			}
-
-			logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting server")
-			err := s.Serve(l)
-
-			logger.Log(
-				level.Key(), level.ErrorValue(),
-				xlog.MessageKey(), "listener exited",
-				xlog.ErrorKey(), err,
-			)
-		}()
-
-		return nil
-	}
-}
-
-// OnStop produces a closure that will shutdown the server appropriately
-func OnStop(logger log.Logger, s Interface) func(context.Context) error {
-	return func(ctx context.Context) error {
-		logger.Log(
-			level.Key(), level.InfoValue(),
-			xlog.MessageKey(), "server stopping",
-		)
-
-		return s.Shutdown(ctx)
-	}
 }
 
 // NewServerLogger returns a go-kit Logger enriched with information about the server.

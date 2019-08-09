@@ -43,8 +43,8 @@ func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
 	)
 
 	in.Lifecycle.Append(fx.Hook{
-		OnStart: OnStart(serverLogger, server, func() { in.Shutdowner.Shutdown() }, o),
-		OnStop:  OnStop(serverLogger, server),
+		OnStart: OnStart(o, server, serverLogger, func() { in.Shutdowner.Shutdown() }),
+		OnStop:  OnStop(server, serverLogger),
 	})
 
 	return router, nil
