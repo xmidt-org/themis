@@ -17,9 +17,6 @@ import (
 )
 
 const (
-	addressKey = "address"
-	serverKey  = "server"
-
 	defaultTCPKeepAlivePeriod time.Duration = 3 * time.Minute // the value used internally by net/http
 )
 
@@ -28,16 +25,6 @@ var (
 	ErrTlsCertificateRequired         = errors.New("Both a certificateFile and keyFile are required")
 	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
-
-// AddressKey is the logging key for the server's bind address
-func AddressKey() interface{} {
-	return addressKey
-}
-
-// ServerKey is the logging key for the server's name
-func ServerKey() interface{} {
-	return serverKey
-}
 
 type Tls struct {
 	CertificateFile         string
