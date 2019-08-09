@@ -108,11 +108,26 @@ func main() {
 				token.Unmarshal("token"),
 				xloghttp.ProvideStandardBuilders,
 				provideClient("client"),
-				xhttpserver.NamedRequired("servers.key"),
-				xhttpserver.NamedRequired("servers.issuer"),
-				xhttpserver.NamedRequired("servers.claims"),
-				xhttpserver.NamedOptional("servers.metrics"),
-				xhttpserver.NamedOptional("servers.health"),
+				fx.Annotated{
+					Name:   "servers.key",
+					Target: xhttpserver.Required("servers.key"),
+				},
+				fx.Annotated{
+					Name:   "servers.issuer",
+					Target: xhttpserver.Required("servers.issuer"),
+				},
+				fx.Annotated{
+					Name:   "servers.claims",
+					Target: xhttpserver.Required("servers.claims"),
+				},
+				fx.Annotated{
+					Name:   "servers.metrics",
+					Target: xhttpserver.Optional("servers.metrics"),
+				},
+				fx.Annotated{
+					Name:   "servers.health",
+					Target: xhttpserver.Optional("servers.health"),
+				},
 			),
 			fx.Invoke(
 				BuildKeyRoutes,

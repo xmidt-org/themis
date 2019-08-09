@@ -58,15 +58,6 @@ func Required(configKey string) func(in ServerIn) (*mux.Router, error) {
 	}
 }
 
-// NamedRequired unmarshals a server and emits its *mux.Router as a component with the same
-// name as the configuration key.  This is useful when an application starts multiple servers.
-func NamedRequired(configKey string) fx.Annotated {
-	return fx.Annotated{
-		Name:   configKey,
-		Target: Required(configKey),
-	}
-}
-
 // Optional unmarshals a server from the given configuration key, returning a nil *mux.Router if
 // no such configuration key is found.
 func Optional(configKey string) func(in ServerIn) (*mux.Router, error) {
@@ -83,16 +74,5 @@ func Optional(configKey string) func(in ServerIn) (*mux.Router, error) {
 		}
 
 		return r, err
-	}
-}
-
-// NamedOptional unmarshals a server and emits its *mux.Router as a component with the same
-// name as the configuration key.  This is useful when an application starts multiple servers.
-//
-// As with Optional, this provider emits a nil *mux.Router if the configuration key is not present.
-func NamedOptional(configKey string) fx.Annotated {
-	return fx.Annotated{
-		Name:   configKey,
-		Target: Optional(configKey),
 	}
 }
