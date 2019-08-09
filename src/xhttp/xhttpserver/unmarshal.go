@@ -8,6 +8,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 	"go.uber.org/fx"
 )
 
@@ -22,10 +23,11 @@ type ServerIn struct {
 	Unmarshaller      config.Unmarshaller
 	Shutdowner        fx.Shutdowner
 	Lifecycle         fx.Lifecycle
+	Chain             alice.Chain                `optional:"true"`
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
-func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
+func unmarshal(configKey string, in ServerIn, c ...alice.Constructor) (*mux.Router, error) {
 	var o Options
 	if err := config.UnmarshalRequired(in.Unmarshaller, configKey, &o); err != nil {
 		return nil, err
@@ -39,7 +41,11 @@ func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
 		serverLogger = NewServerLogger(o, in.Logger)
 		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
 		router       = mux.NewRouter()
-		server       = New(o, serverLogger, serverChain.Then(router))
+		server       = New(
+			o,
+			serverLogger,
+			serverChain.Extend(in.Chain).Append(c...).Then(router),
+		)
 	)
 
 	in.Lifecycle.Append(fx.Hook{
@@ -52,17 +58,17 @@ func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
 
 // Required unmarshals a server from the given configuration key and emits a *mux.Router.
 // This provider raises an error if the configuration key does not exist.
-func Required(configKey string) func(in ServerIn) (*mux.Router, error) {
+func Required(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
 	return func(in ServerIn) (*mux.Router, error) {
-		return unmarshal(configKey, in)
+		return unmarshal(configKey, in, c...)
 	}
 }
 
 // Optional unmarshals a server from the given configuration key, returning a nil *mux.Router if
 // no such configuration key is found.
-func Optional(configKey string) func(in ServerIn) (*mux.Router, error) {
+func Optional(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
 	return func(in ServerIn) (*mux.Router, error) {
-		r, err := unmarshal(configKey, in)
+		r, err := unmarshal(configKey, in, c...)
 		if _, ok := err.(config.MissingKeyError); ok {
 			in.Logger.Log(
 				level.Key(), level.InfoValue(),
