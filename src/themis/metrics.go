@@ -21,14 +21,6 @@ type ServerMetricsIn struct {
 	RequestsInFlight *prometheus.GaugeVec     `name:"server_requests_in_flight"`
 }
 
-type ClientInstrumentsIn struct {
-	fx.In
-
-	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
-	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
-	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
-}
-
 // provideMetrics builds the various metrics components needed by the issuer
 func provideMetrics(configKey string) fx.Option {
 	clientLabellers := xmetricshttp.NewClientLabellers(
@@ -111,4 +103,12 @@ func metricsMiddleware(in ServerMetricsIn, label string) []mux.MiddlewareFunc {
 			Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.RequestsInFlight.MustCurryWith(curryLabel)},
 		}.Then,
 	}
+}
+
+type ClientInstrumentsIn struct {
+	fx.In
+
+	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
+	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
+	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
 }

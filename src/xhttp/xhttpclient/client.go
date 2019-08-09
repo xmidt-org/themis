@@ -17,6 +17,8 @@ type Tls struct {
 }
 
 // Transport represents the set of configurable options for a client RoundTripper
+// The majority of these fields map directory to an http.Transport.
+// See https://godoc.org/net/http#Transport
 type Transport struct {
 	DisableKeepAlives      bool
 	DisableCompression     bool
@@ -29,7 +31,9 @@ type Transport struct {
 	MaxResponseHeaderBytes int64
 	TlsHandshakeTimeout    time.Duration
 	Tls                    *Tls
-	Header                 http.Header
+
+	// Header is a set of static HTTP headers added to every request
+	Header http.Header
 }
 
 // Options represents the set of configurable options for an HTTP client
@@ -55,9 +59,13 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 // constructors that were supplied.  If the Transport options is nil, a default http.Transport
 // is used.
 func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) {
-	var delegate *http.Transport
+	var (
+		delegate *http.Transport
+		chain    Chain
+	)
+
 	if t != nil {
-		c = append(c, RequestHeaders{Header: t.Header}.Then)
+		chain = chain.Append(RequestHeaders{Header: t.Header}.Then)
 
 		delegate = &http.Transport{
 			DisableKeepAlives:      t.DisableKeepAlives,
@@ -76,7 +84,7 @@ func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) 
 		}
 	}
 
-	return NewChain(c...).Then(delegate), nil
+	return chain.Append(c...).Then(delegate), nil
 }
 
 // New assembles an http client from a set of configuration options

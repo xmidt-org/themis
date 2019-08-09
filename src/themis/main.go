@@ -23,6 +23,7 @@ import (
 	"strings"
 	"token"
 	"xhealth"
+	"xhttp/xhttpclient"
 	"xhttp/xhttpserver"
 	"xlog"
 	"xlog/xloghttp"
@@ -107,7 +108,8 @@ func main() {
 				key.Provide,
 				token.Unmarshal("token"),
 				xloghttp.ProvideStandardBuilders,
-				provideClient("client"),
+				provideClientChain,
+				xhttpclient.Unmarshal("client"),
 				fx.Annotated{
 					Name:   "servers.key",
 					Target: xhttpserver.Required("servers.key"),
