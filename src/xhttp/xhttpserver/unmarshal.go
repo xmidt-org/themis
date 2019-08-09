@@ -50,6 +50,8 @@ func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
 	return router, nil
 }
 
+// Required unmarshals a server from the given configuration key and emits a *mux.Router
+// with the same name as the key.  This provider raises an error if the configuration key does not exist.
 func Required(configKey string) fx.Annotated {
 	return fx.Annotated{
 		Name: configKey,
@@ -59,6 +61,8 @@ func Required(configKey string) fx.Annotated {
 	}
 }
 
+// Optional unmarshals a server from the given configuration key, returning a nil *mux.Router if
+// no such configuration key is found.
 func Optional(configKey string) fx.Annotated {
 	return fx.Annotated{
 		Name: configKey,
