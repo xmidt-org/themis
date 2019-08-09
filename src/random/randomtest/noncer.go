@@ -16,6 +16,6 @@ func (n *Noncer) Nonce() (string, error) {
 
 // Expect sets an expectation for a Nonce() call.  The returned Call object
 // is returned so that it can be further customized.
-func (n *Noncer) Expect(value string, err error) *mock.Call {
-	return n.On("Nonce").Return(value, err)
+func (n *Noncer) ExpectNonce() *mock.Call {
+	return n.On("Nonce")
 }

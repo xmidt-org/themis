@@ -2,23 +2,14 @@ package xhttpserver
 
 import (
 	"config"
-	"fmt"
-	"strings"
+	"xlog"
 	"xlog/xloghttp"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
-
-type ServerNotConfiguredError struct {
-	ConfigKey string
-}
-
-func (snce ServerNotConfiguredError) Error() string {
-	return fmt.Sprintf("No server configured with key %s", snce.ConfigKey)
-}
 
 // ServerIn holds the set of dependencies required to create an HTTP server in the context
 // of a uber/fx application.
@@ -28,53 +19,20 @@ type ServerIn struct {
 	fx.In
 
 	Logger            log.Logger
-	Viper             *viper.Viper
 	Unmarshaller      config.Unmarshaller
 	Shutdowner        fx.Shutdowner
 	Lifecycle         fx.Lifecycle
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
-// UnmarshalResult is the result of unmarshalling a server and binding it to the container lifecycle
-type UnmarshalResult struct {
-	// Name is the label applied to this server in logging.  It will either be set via configuration
-	// or default to the configuration key.
-	Name string
-
-	// Logger is the go-kit logger enriched with server information, such as the bind address
-	Logger log.Logger
-
-	// Router is the gorilla/mux router used as the handler for this server, which can be used
-	// to build handler routes.
-	Router *mux.Router
-}
-
-// Unmarshal reads an Options struct at the given viper key, creates an HTTP server instance,
-// binds it to the fx.App lifecycle, and returns a gorilla/mux router that can be used to
-// define handler routes for the server.
-//
-// This function is useful for writing server invocation code for other packages, typically the main package.
-// It is not intended for direct use as an uber/fx provider.
-//
-// Even when returning an error, this function always returns an UnmarshalResult with at least the server name
-// set to something that can be output for information and debugging.
-func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
-	if !in.Viper.IsSet(configKey) {
-		return UnmarshalResult{Name: configKey}, ServerNotConfiguredError{ConfigKey: configKey}
-	}
-
+func unmarshal(configKey string, in ServerIn) (*mux.Router, error) {
 	var o Options
-	if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
-		return UnmarshalResult{Name: configKey}, err
+	if err := config.UnmarshalRequired(in.Unmarshaller, configKey, &o); err != nil {
+		return nil, err
 	}
 
 	if len(o.Name) == 0 {
-		defaultName := configKey
-		if i := strings.LastIndexByte(defaultName, '.'); i >= 0 {
-			defaultName = configKey[i+1:]
-		}
-
-		o.Name = defaultName
+		o.Name = configKey
 	}
 
 	var (
@@ -89,9 +47,34 @@ func Unmarshal(configKey string, in ServerIn) (UnmarshalResult, error) {
 		OnStop:  OnStop(serverLogger, server),
 	})
 
-	return UnmarshalResult{
-		Name:   o.Name,
-		Logger: serverLogger,
-		Router: router,
-	}, nil
+	return router, nil
+}
+
+func Required(configKey string) fx.Annotated {
+	return fx.Annotated{
+		Name: configKey,
+		Target: func(in ServerIn) (*mux.Router, error) {
+			return unmarshal(configKey, in)
+		},
+	}
+}
+
+func Optional(configKey string) fx.Annotated {
+	return fx.Annotated{
+		Name: configKey,
+		Target: func(in ServerIn) (*mux.Router, error) {
+			r, err := unmarshal(configKey, in)
+			if _, ok := err.(config.MissingKeyError); ok {
+				in.Logger.Log(
+					level.Key(), level.InfoValue(),
+					"configKey", configKey,
+					xlog.MessageKey(), "server not configured",
+				)
+
+				return nil, nil
+			}
+
+			return r, err
+		},
+	}
 }

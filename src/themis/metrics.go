@@ -1,7 +1,6 @@
 package main
 
 import (
-	"xhttp/xhttpserver"
 	"xmetrics"
 	"xmetrics/xmetricshttp"
 
@@ -89,9 +88,9 @@ func provideMetrics(configKey string) fx.Option {
 
 // metricsMiddleware is a helper function that creates a chain of middleware for gorilla/mux given
 // the common serverside metrics.  Server metrics have an extra label that client metrics don't have.
-func metricsMiddleware(in ServerMetricsIn, ur xhttpserver.UnmarshalResult) []mux.MiddlewareFunc {
+func metricsMiddleware(in ServerMetricsIn, label string) []mux.MiddlewareFunc {
 	curryLabel := prometheus.Labels{
-		ServerLabel: ur.Name,
+		ServerLabel: label,
 	}
 
 	serverLabellers := xmetricshttp.NewServerLabellers(

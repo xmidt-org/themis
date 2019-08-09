@@ -162,7 +162,7 @@ func TestNonceClaimBuilder(t *testing.T) {
 			builder = nonceClaimBuilder{n: noncer}
 		)
 
-		noncer.Expect("test", nil).Once()
+		noncer.ExpectNonce().Return("test", error(nil)).Once()
 		assert.NoError(builder.AddClaims(context.Background(), new(Request), actual))
 		assert.Equal(
 			map[string]interface{}{"jti": "test"},
@@ -180,7 +180,7 @@ func TestNonceClaimBuilder(t *testing.T) {
 			builder = nonceClaimBuilder{n: noncer}
 		)
 
-		noncer.Expect("", expectedErr).Once()
+		noncer.ExpectNonce().Return("", expectedErr).Once()
 		assert.Equal(
 			expectedErr,
 			builder.AddClaims(context.Background(), new(Request), actual),
@@ -451,7 +451,7 @@ func testNewClaimBuildersNoRemote(t *testing.T) {
 		}
 	}
 
-	noncer.Expect("test", nil).Once()
+	noncer.ExpectNonce().Return("test", error(nil)).Once()
 
 	actual := make(map[string]interface{})
 	assert.NoError(
@@ -538,7 +538,7 @@ func testNewClaimBuildersFull(t *testing.T) {
 		}
 	}
 
-	noncer.Expect("test", nil).Once()
+	noncer.ExpectNonce().Return("test", error(nil)).Once()
 
 	actual := make(map[string]interface{})
 	assert.NoError(
