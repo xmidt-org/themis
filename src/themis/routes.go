@@ -24,26 +24,43 @@ type ServerChainIn struct {
 
 func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 	return xhttpserver.ChainFactoryFunc(func(o xhttpserver.Options) (alice.Chain, error) {
-		curryLabel := prometheus.Labels{
-			ServerLabel: o.Name,
+		var (
+			curryLabel = prometheus.Labels{
+				ServerLabel: o.Name,
+			}
+
+			serverLabellers = xmetricshttp.NewServerLabellers(
+				xmetricshttp.CodeLabeller{},
+				xmetricshttp.MethodLabeller{},
+			)
+		)
+
+		requestCount, err := in.RequestCount.CurryWith(curryLabel)
+		if err != nil {
+			return alice.Chain{}, err
 		}
 
-		serverLabellers := xmetricshttp.NewServerLabellers(
-			xmetricshttp.CodeLabeller{},
-			xmetricshttp.MethodLabeller{},
-		)
+		requestDuration, err := in.RequestDuration.CurryWith(curryLabel)
+		if err != nil {
+			return alice.Chain{}, err
+		}
+
+		requestsInFlight, err := in.RequestsInFlight.CurryWith(curryLabel)
+		if err != nil {
+			return alice.Chain{}, err
+		}
 
 		return alice.New(
 			xmetricshttp.HandlerCounter{
-				Metric:   xmetrics.LabelledCounterVec{CounterVec: in.RequestCount.MustCurryWith(curryLabel)},
+				Metric:   xmetrics.LabelledCounterVec{CounterVec: requestCount},
 				Labeller: serverLabellers,
 			}.Then,
 			xmetricshttp.HandlerDuration{
-				Metric:   xmetrics.LabelledObserverVec{ObserverVec: in.RequestDuration.MustCurryWith(curryLabel)},
+				Metric:   xmetrics.LabelledObserverVec{ObserverVec: requestDuration},
 				Labeller: serverLabellers,
 			}.Then,
 			xmetricshttp.HandlerInFlight{
-				Metric: xmetrics.LabelledGaugeVec{GaugeVec: in.RequestsInFlight.MustCurryWith(curryLabel)},
+				Metric: xmetrics.LabelledGaugeVec{GaugeVec: requestsInFlight},
 			}.Then,
 		), nil
 	})
