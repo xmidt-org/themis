@@ -68,22 +68,26 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 
 type KeyRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.key"`
+	Router  *mux.Router `name:"servers.key" optional:"true"`
 	Handler key.Handler
 }
 
 func BuildKeyRoutes(in KeyRoutesIn) {
-	in.Router.Handle("/key/{kid}", in.Handler).Methods("GET")
+	if in.Router != nil {
+		in.Router.Handle("/key/{kid}", in.Handler).Methods("GET")
+	}
 }
 
 type IssuerRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.issuer"`
+	Router  *mux.Router `name:"servers.issuer" optional:"true"`
 	Handler token.IssueHandler
 }
 
 func BuildIssuerRoutes(in IssuerRoutesIn) {
-	in.Router.Handle("/issue", in.Handler).Methods("GET")
+	if in.Router != nil {
+		in.Router.Handle("/issue", in.Handler).Methods("GET")
+	}
 }
 
 type ClaimsRoutesIn struct {

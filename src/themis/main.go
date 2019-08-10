@@ -116,11 +116,11 @@ func main() {
 				xhttpclient.Unmarshal("client"),
 				fx.Annotated{
 					Name:   "servers.key",
-					Target: xhttpserver.Required("servers.key"),
+					Target: xhttpserver.Optional("servers.key"),
 				},
 				fx.Annotated{
 					Name:   "servers.issuer",
-					Target: xhttpserver.Required("servers.issuer"),
+					Target: xhttpserver.Optional("servers.issuer"),
 				},
 				fx.Annotated{
 					Name:   "servers.claims",
