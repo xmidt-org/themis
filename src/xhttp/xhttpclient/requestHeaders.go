@@ -18,7 +18,7 @@ func (rh RequestHeaders) Then(next http.RoundTripper) http.RoundTripper {
 
 	header := xhttp.CanonicalizeHeaders(rh.Header)
 	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
-		xhttp.AddHeaders(request.Header, header)
+		xhttp.SetHeaders(request.Header, header)
 		return next.RoundTrip(request)
 	})
 }
