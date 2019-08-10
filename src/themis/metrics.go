@@ -5,37 +5,15 @@ import (
 	"xmetrics/xmetricshttp"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/fx"
 )
 
 // ServerLabel is the metric label for which internal server (key, claims, etc) a metric is for
 const ServerLabel = "server"
 
-type ServerMetricsIn struct {
-	fx.In
-
-	RequestCount     *prometheus.CounterVec   `name:"server_request_count"`
-	RequestDuration  *prometheus.HistogramVec `name:"server_request_duration_ms"`
-	RequestsInFlight *prometheus.GaugeVec     `name:"server_requests_in_flight"`
-}
-
-type ClientMetricsIn struct {
-	fx.In
-	RequestCount     xmetricshttp.RoundTripperCounter  `name:"client_request_count"`
-	RequestDuration  xmetricshttp.RoundTripperDuration `name:"client_request_duration_ms"`
-	RequestsInFlight xmetricshttp.RoundTripperInFlight `name:"client_requests_in_flight"`
-}
-
-// provideMetrics builds the various metrics components needed by the issuer
-func provideMetrics(configKey string) fx.Option {
-	clientLabellers := xmetricshttp.NewClientLabellers(
-		xmetricshttp.CodeLabeller{},
-		xmetricshttp.MethodLabeller{},
-	)
-
+// provideMetrics builds the application metrics and makes them available to the container
+func provideMetrics() fx.Option {
 	return fx.Provide(
-		xmetricshttp.Unmarshal(configKey, promhttp.HandlerOpts{}),
 		xmetrics.ProvideCounterVec(
 			prometheus.CounterOpts{
 				Name: "server_request_count",
@@ -61,21 +39,23 @@ func provideMetrics(configKey string) fx.Option {
 			},
 			ServerLabel,
 		),
-		xmetricshttp.ProvideRoundTripperCounter(
+		xmetrics.ProvideCounterVec(
 			prometheus.CounterOpts{
 				Name: "client_request_count",
 				Help: "total outgoing HTTP requests",
 			},
-			clientLabellers,
+			xmetricshttp.DefaultCodeLabel,
+			xmetricshttp.DefaultMethodLabel,
 		),
-		xmetricshttp.ProvideRoundTripperDurationHistogram(
+		xmetrics.ProvideHistogramVec(
 			prometheus.HistogramOpts{
 				Name: "client_request_count",
 				Help: "total outgoing HTTP requests",
 			},
-			clientLabellers,
+			xmetricshttp.DefaultCodeLabel,
+			xmetricshttp.DefaultMethodLabel,
 		),
-		xmetricshttp.ProvideRoundTripperInFlight(
+		xmetrics.ProvideGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "client_requests_in_flight",
 				Help: "tracks the current number of incoming requests being processed",

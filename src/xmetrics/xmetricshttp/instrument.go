@@ -3,6 +3,7 @@ package xmetricshttp
 import (
 	"net/http"
 	"time"
+	"xhttp/xhttpclient"
 	"xmetrics"
 )
 
@@ -92,13 +93,6 @@ func (ihif HandlerInFlight) Then(next http.Handler) http.Handler {
 	})
 }
 
-// RoundTripperFunc is a function type that implements http.RoundTripper
-type RoundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (rtf RoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, error) {
-	return rtf(request)
-}
-
 // RoundTripperCounter provides a simple counting metric for clients executing HTTP transactions
 type RoundTripperCounter struct {
 	Metric   xmetrics.Adder
@@ -115,7 +109,7 @@ func (irtc RoundTripperCounter) Then(next http.RoundTripper) http.RoundTripper {
 		labeller = EmptyLabeller{}
 	}
 
-	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
+	return xhttpclient.RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
 		response, err := next.RoundTrip(request)
 		if err == nil {
 			var l xmetrics.Labels
@@ -159,7 +153,7 @@ func (irtd RoundTripperDuration) Then(next http.RoundTripper) http.RoundTripper 
 		units = time.Millisecond
 	}
 
-	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
+	return xhttpclient.RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
 		start := now()
 		response, err := next.RoundTrip(request)
 		if err == nil {
@@ -186,7 +180,7 @@ func (irtif RoundTripperInFlight) Then(next http.RoundTripper) http.RoundTripper
 		return next
 	}
 
-	return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
+	return xhttpclient.RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
 		defer irtif.Metric.GaugeAdd(nil, -1.0)
 		irtif.Metric.GaugeAdd(nil, 1.0)
 		return next.RoundTrip(request)

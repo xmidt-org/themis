@@ -16,7 +16,10 @@ import (
 
 type ServerChainIn struct {
 	fx.In
-	ServerMetricsIn
+
+	RequestCount     *prometheus.CounterVec   `name:"server_request_count"`
+	RequestDuration  *prometheus.HistogramVec `name:"server_request_duration_ms"`
+	RequestsInFlight *prometheus.GaugeVec     `name:"server_requests_in_flight"`
 }
 
 func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {

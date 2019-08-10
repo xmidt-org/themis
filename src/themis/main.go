@@ -27,8 +27,10 @@ import (
 	"xhttp/xhttpserver"
 	"xlog"
 	"xlog/xloghttp"
+	"xmetrics/xmetricshttp"
 
 	"github.com/go-kit/kit/log"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/spf13/pflag"
 	"go.uber.org/fx"
@@ -101,12 +103,13 @@ func main() {
 
 		app = fx.New(
 			b.Provide(),
-			provideMetrics("prometheus"),
+			provideMetrics(),
 			fx.Provide(
 				xhealth.Unmarshal("health"),
 				random.Provide,
 				key.Provide,
 				token.Unmarshal("token"),
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 				xloghttp.ProvideStandardBuilders,
 				provideClientChain,
 				provideServerChainFactory,
