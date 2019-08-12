@@ -30,6 +30,6 @@ func Unmarshal(configKey string, c ...Constructor) func(ClientUnmarshalIn) (Inte
 			return nil, err
 		}
 
-		return New(o, in.Chain.Append(c...).Then)
+		return New(o, in.Chain.Append(c...).Then), nil
 	}
 }

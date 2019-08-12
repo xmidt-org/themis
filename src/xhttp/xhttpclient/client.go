@@ -58,7 +58,7 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 // The returned round tripper will be backed by an http.Transport, decorated with any
 // constructors that were supplied.  If the Transport options is nil, a default http.Transport
 // is used.
-func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) {
+func NewRoundTripper(t *Transport, c ...Constructor) http.RoundTripper {
 	var (
 		delegate *http.Transport
 		chain    Chain
@@ -82,20 +82,17 @@ func NewRoundTripper(t *Transport, c ...Constructor) (http.RoundTripper, error) 
 
 			TLSClientConfig: NewTlsConfig(t.Tls),
 		}
+	} else {
+		delegate = new(http.Transport)
 	}
 
-	return chain.Append(c...).Then(delegate), nil
+	return chain.Append(c...).Then(delegate)
 }
 
 // New assembles an http client from a set of configuration options
-func New(o Options, c ...Constructor) (Interface, error) {
-	roundTripper, err := NewRoundTripper(o.Transport, c...)
-	if err != nil {
-		return nil, err
-	}
-
+func New(o Options, c ...Constructor) Interface {
 	return &http.Client{
-		Transport: roundTripper,
+		Transport: NewRoundTripper(o.Transport, c...),
 		Timeout:   o.Timeout,
-	}, nil
+	}
 }

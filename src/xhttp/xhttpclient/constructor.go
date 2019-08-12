@@ -1,6 +1,8 @@
 package xhttpclient
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type RoundTripperFunc func(*http.Request) (*http.Response, error)
 
