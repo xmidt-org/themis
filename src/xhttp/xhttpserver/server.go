@@ -3,9 +3,7 @@ package xhttpserver
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -22,19 +20,8 @@ const (
 
 var (
 	ErrNoAddress                      = errors.New("A server bind address must be specified")
-	ErrTlsCertificateRequired         = errors.New("Both a certificateFile and keyFile are required")
 	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
-
-type Tls struct {
-	CertificateFile         string
-	KeyFile                 string
-	ClientCACertificateFile string
-	ServerName              string
-	NextProtos              []string
-	MinVersion              uint16
-	MaxVersion              uint16
-}
 
 type Options struct {
 	Name    string
@@ -69,57 +56,6 @@ type Interface interface {
 type tcpKeepAliveListener struct {
 	*net.TCPListener
 	period time.Duration
-}
-
-func NewTlsConfig(t *Tls) (*tls.Config, error) {
-	if t == nil {
-		return nil, nil
-	}
-
-	if len(t.CertificateFile) == 0 || len(t.KeyFile) == 0 {
-		return nil, ErrTlsCertificateRequired
-	}
-
-	var nextProtos []string
-	if len(t.NextProtos) > 0 {
-		for _, np := range t.NextProtos {
-			nextProtos = append(nextProtos, np)
-		}
-	} else {
-		// assume http/1.1 by default
-		nextProtos = append(nextProtos, "http/1.1")
-	}
-
-	tc := &tls.Config{
-		MinVersion: t.MinVersion,
-		MaxVersion: t.MaxVersion,
-		ServerName: t.ServerName,
-		NextProtos: nextProtos,
-	}
-
-	if cert, err := tls.LoadX509KeyPair(t.CertificateFile, t.KeyFile); err != nil {
-		return nil, err
-	} else {
-		tc.Certificates = []tls.Certificate{cert}
-	}
-
-	if len(t.ClientCACertificateFile) > 0 {
-		caCert, err := ioutil.ReadFile(t.ClientCACertificateFile)
-		if err != nil {
-			return nil, err
-		}
-
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return nil, ErrUnableToAddClientCACertificate
-		}
-
-		tc.ClientCAs = caCertPool
-		tc.ClientAuth = tls.RequireAndVerifyClientCert
-	}
-
-	tc.BuildNameToCertificate()
-	return tc, nil
 }
 
 func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Listener, error) {
