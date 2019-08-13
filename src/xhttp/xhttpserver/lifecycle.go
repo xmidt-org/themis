@@ -11,10 +11,6 @@ import (
 
 // OnStart produces a closure that will start the given server appropriately
 func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(context.Context) error {
-	if len(o.Address) == 0 {
-		o.Address = ":http"
-	}
-
 	return func(ctx context.Context) error {
 		l, err := NewListener(o, ctx, net.ListenConfig{})
 		if err != nil {
@@ -26,11 +22,17 @@ func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(cont
 				defer onExit()
 			}
 
-			logger.Log(level.Key(), level.InfoValue(), xlog.MessageKey(), "starting server")
-			err := s.Serve(l)
+			address := l.Addr().String()
+			logger.Log(
+				level.Key(), level.InfoValue(),
+				AddressKey(), address,
+				xlog.MessageKey(), "starting server",
+			)
 
+			err := s.Serve(l)
 			logger.Log(
 				level.Key(), level.ErrorValue(),
+				AddressKey(), address,
 				xlog.MessageKey(), "listener exited",
 				xlog.ErrorKey(), err,
 			)

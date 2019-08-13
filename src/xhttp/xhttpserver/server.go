@@ -123,17 +123,12 @@ func NewTlsConfig(t *Tls) (*tls.Config, error) {
 }
 
 func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Listener, error) {
-	address := o.Address
-	if len(address) == 0 {
-		address = ":http"
-	}
-
 	tc, err := NewTlsConfig(o.Tls)
 	if err != nil {
 		return nil, err
 	}
 
-	l, err := lcfg.Listen(ctx, "tcp", address)
+	l, err := lcfg.Listen(ctx, "tcp", o.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -159,12 +154,7 @@ func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Lis
 
 // NewServerLogger returns a go-kit Logger enriched with information about the server.
 func NewServerLogger(o Options, base log.Logger, extra ...interface{}) log.Logger {
-	address := o.Address
-	if len(address) == 0 {
-		address = ":http"
-	}
-
-	parameters := []interface{}{AddressKey(), address}
+	var parameters []interface{}
 	if len(o.Name) > 0 {
 		parameters = append(parameters, ServerKey(), o.Name)
 	}
@@ -194,10 +184,6 @@ func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) al
 // New constructs a basic HTTP server instance.  The supplied logger is enriched with information
 // about the server and returned for use by higher-level code.
 func New(o Options, l log.Logger, h http.Handler) Interface {
-	if len(o.Address) == 0 {
-		o.Address = ":http"
-	}
-
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
