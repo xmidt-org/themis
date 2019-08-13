@@ -1,6 +1,7 @@
 package xhttpserver
 
 import (
+	"crypto/tls"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -85,6 +86,60 @@ func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T) {
 	assert.NotEmpty(tc.NameToCertificate)
 }
 
+func testNewTlsConfigWithClientCACertificateFile(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		tc, err = NewTlsConfig(&Tls{
+			CertificateFile:         "server.cert",
+			KeyFile:                 "server.key",
+			ClientCACertificateFile: "server.cert",
+		})
+	)
+
+	require.NoError(err)
+	require.NotNil(tc)
+
+	assert.Zero(tc.MinVersion)
+	assert.Zero(tc.MaxVersion)
+	assert.Empty(tc.ServerName)
+	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
+	assert.NotEmpty(tc.NameToCertificate)
+	assert.NotNil(tc.ClientCAs)
+	assert.Equal(tls.RequireAndVerifyClientCert, tc.ClientAuth)
+}
+
+func testNewTlsConfigLoadClientCACertificateError(t *testing.T) {
+	var (
+		assert = assert.New(t)
+
+		tc, err = NewTlsConfig(&Tls{
+			CertificateFile:         "server.cert",
+			KeyFile:                 "server.key",
+			ClientCACertificateFile: "nosuch",
+		})
+	)
+
+	assert.Nil(tc)
+	assert.Error(err)
+}
+
+func testNewTlsConfigAppendClientCACertificateError(t *testing.T) {
+	var (
+		assert = assert.New(t)
+
+		tc, err = NewTlsConfig(&Tls{
+			CertificateFile:         "server.cert",
+			KeyFile:                 "server.key",
+			ClientCACertificateFile: "server.key", // not a certificate, but still valid PEM
+		})
+	)
+
+	assert.Nil(tc)
+	assert.Error(err)
+}
+
 func TestNewTlsConfig(t *testing.T) {
 	t.Run("Nil", testNewTlsConfigNil)
 	t.Run("NoCertificateFile", testNewTlsConfigNoCertificateFile)
@@ -92,4 +147,7 @@ func TestNewTlsConfig(t *testing.T) {
 	t.Run("LoadCertificateError", testNewTlsConfigLoadCertificateError)
 	t.Run("Simple", testNewTlsConfigSimple)
 	t.Run("WithoutClientCACertificateFile", testNewTlsConfigWithoutClientCACertificateFile)
+	t.Run("WithClientCACertificateFile", testNewTlsConfigWithClientCACertificateFile)
+	t.Run("LoadClientCACertificateError", testNewTlsConfigLoadClientCACertificateError)
+	t.Run("AppendClientCACertificateError", testNewTlsConfigAppendClientCACertificateError)
 }
