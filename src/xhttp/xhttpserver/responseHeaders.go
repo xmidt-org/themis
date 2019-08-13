@@ -16,7 +16,7 @@ func (rh ResponseHeaders) Then(next http.Handler) http.Handler {
 
 	header := xhttp.CanonicalizeHeaders(rh.Header)
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		xhttp.AddHeaders(response.Header(), header)
+		xhttp.SetHeaders(response.Header(), header)
 		next.ServeHTTP(response, request)
 	})
 }
