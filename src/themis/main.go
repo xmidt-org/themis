@@ -102,7 +102,7 @@ func main() {
 					fx.Provide(
 						fx.Annotated{
 							Name:   "servers.key",
-							Target: xhttpserver.Optional("servers.key"),
+							Target: xhttpserver.Unmarshal("servers.key"),
 						},
 					),
 					fx.Invoke(BuildKeyRoutes),
@@ -111,7 +111,7 @@ func main() {
 					fx.Provide(
 						fx.Annotated{
 							Name:   "servers.issuer",
-							Target: xhttpserver.Optional("servers.issuer"),
+							Target: xhttpserver.Unmarshal("servers.issuer"),
 						},
 					),
 					fx.Invoke(BuildIssuerRoutes),
@@ -120,7 +120,7 @@ func main() {
 					fx.Provide(
 						fx.Annotated{
 							Name:   "servers.claims",
-							Target: xhttpserver.Optional("servers.claims"),
+							Target: xhttpserver.Unmarshal("servers.claims"),
 						},
 					),
 					fx.Invoke(BuildClaimsRoutes),
@@ -129,7 +129,7 @@ func main() {
 					fx.Provide(
 						fx.Annotated{
 							Name:   "servers.metrics",
-							Target: xhttpserver.Optional("servers.metrics"),
+							Target: xhttpserver.Unmarshal("servers.metrics"),
 						},
 					),
 					fx.Invoke(BuildMetricsRoutes),
@@ -138,7 +138,7 @@ func main() {
 					fx.Provide(
 						fx.Annotated{
 							Name:   "servers.health",
-							Target: xhttpserver.Optional("servers.health"),
+							Target: xhttpserver.Unmarshal("servers.health"),
 						},
 					),
 					fx.Invoke(BuildHealthRoutes),
