@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrTlsCertificateRequired = errors.New("Both a certificateFile and keyFile are required")
+	ErrTlsCertificateRequired         = errors.New("Both a certificateFile and keyFile are required")
+	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
 
 // Tls represents the set of configurable options for a serverside tls.Config associated with a server.

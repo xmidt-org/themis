@@ -12,7 +12,7 @@ import (
 // OnStart produces a closure that will start the given server appropriately
 func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(context.Context) error {
 	return func(ctx context.Context) error {
-		l, err := NewListener(o, ctx, net.ListenConfig{})
+		l, err := NewListener(ctx, o, net.ListenConfig{})
 		if err != nil {
 			return err
 		}

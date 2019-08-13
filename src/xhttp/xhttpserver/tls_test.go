@@ -137,7 +137,7 @@ func testNewTlsConfigAppendClientCACertificateError(t *testing.T) {
 	)
 
 	assert.Nil(tc)
-	assert.Error(err)
+	assert.Equal(ErrUnableToAddClientCACertificate, err)
 }
 
 func TestNewTlsConfig(t *testing.T) {

@@ -2,8 +2,6 @@ package xhttpserver
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"net"
 	"net/http"
 	"time"
@@ -14,18 +12,10 @@ import (
 	"github.com/justinas/alice"
 )
 
-const (
-	defaultTCPKeepAlivePeriod time.Duration = 3 * time.Minute // the value used internally by net/http
-)
-
-var (
-	ErrNoAddress                      = errors.New("A server bind address must be specified")
-	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
-)
-
 type Options struct {
 	Name    string
 	Address string
+	Network string
 	Tls     *Tls
 
 	LogConnectionState    bool
@@ -51,41 +41,6 @@ type Interface interface {
 	Serve(l net.Listener) error
 	ServeTLS(l net.Listener, cert, key string) error
 	Shutdown(context.Context) error
-}
-
-type tcpKeepAliveListener struct {
-	*net.TCPListener
-	period time.Duration
-}
-
-func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Listener, error) {
-	tc, err := NewTlsConfig(o.Tls)
-	if err != nil {
-		return nil, err
-	}
-
-	l, err := lcfg.Listen(ctx, "tcp", o.Address)
-	if err != nil {
-		return nil, err
-	}
-
-	if tc != nil {
-		l = tls.NewListener(l, tc)
-	}
-
-	if !o.DisableTCPKeepAlives {
-		period := o.TCPKeepAlivePeriod
-		if period <= 0 {
-			period = defaultTCPKeepAlivePeriod
-		}
-
-		l = tcpKeepAliveListener{
-			TCPListener: l.(*net.TCPListener),
-			period:      period,
-		}
-	}
-
-	return l, nil
 }
 
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
