@@ -68,7 +68,7 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 
 type KeyRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.key" optional:"true"`
+	Router  *mux.Router `name:"servers.key"`
 	Handler key.Handler
 }
 
@@ -80,14 +80,12 @@ func BuildKeyRoutes(in KeyRoutesIn) {
 
 type IssuerRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.issuer" optional:"true"`
+	Router  *mux.Router `name:"servers.issuer"`
 	Handler token.IssueHandler
 }
 
 func BuildIssuerRoutes(in IssuerRoutesIn) {
-	if in.Router != nil {
-		in.Router.Handle("/issue", in.Handler).Methods("GET")
-	}
+	in.Router.Handle("/issue", in.Handler).Methods("GET")
 }
 
 type ClaimsRoutesIn struct {
@@ -102,24 +100,20 @@ func BuildClaimsRoutes(in ClaimsRoutesIn) {
 
 type MetricsRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.metrics" optional:"true"`
+	Router  *mux.Router `name:"servers.metrics"`
 	Handler xmetricshttp.Handler
 }
 
 func BuildMetricsRoutes(in MetricsRoutesIn) {
-	if in.Router != nil {
-		in.Router.Handle("/metrics", in.Handler).Methods("GET")
-	}
+	in.Router.Handle("/metrics", in.Handler).Methods("GET")
 }
 
 type HealthRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.health" optional:"true"`
+	Router  *mux.Router `name:"servers.health"`
 	Handler xhealth.Handler
 }
 
 func BuildHealthRoutes(in HealthRoutesIn) {
-	if in.Router != nil {
-		in.Router.Handle("/health", in.Handler).Methods("GET")
-	}
+	in.Router.Handle("/health", in.Handler).Methods("GET")
 }

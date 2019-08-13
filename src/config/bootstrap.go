@@ -31,14 +31,6 @@ type Environment struct {
 // in viper configuration.
 type Initializer func(Environment) error
 
-// Optioner is a strategy for producing one or more uber/fx options from an environment.
-// This strategy is useful for components that must be created externally from the uber/fx App flow
-// of execution, such as loggers.
-type Optioner func(Environment) fx.Option
-
-// Optioners is a sequence of Optioners strategies
-type Optioners []Optioner
-
 // Bootstrap describes how to bootstrap an uber/fx application using the spf13/pflag and spf13/viper libraries.
 // Since certain components need to be created prior to the uber/fx dependency injection flow, this type manages
 // a simple workflow for application code to setup these components.  One example of such a component is logging,

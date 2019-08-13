@@ -98,6 +98,51 @@ func main() {
 			Initializer: initialize,
 			Optioners: config.Optioners{
 				xlog.Unmarshaller("log", createPrinter),
+				config.IfKeySet("servers.key",
+					fx.Provide(
+						fx.Annotated{
+							Name:   "servers.key",
+							Target: xhttpserver.Optional("servers.key"),
+						},
+					),
+					fx.Invoke(BuildKeyRoutes),
+				),
+				config.IfKeySet("servers.issuer",
+					fx.Provide(
+						fx.Annotated{
+							Name:   "servers.issuer",
+							Target: xhttpserver.Optional("servers.issuer"),
+						},
+					),
+					fx.Invoke(BuildIssuerRoutes),
+				),
+				config.IfKeySet("servers.claims",
+					fx.Provide(
+						fx.Annotated{
+							Name:   "servers.claims",
+							Target: xhttpserver.Optional("servers.claims"),
+						},
+					),
+					fx.Invoke(BuildClaimsRoutes),
+				),
+				config.IfKeySet("servers.metrics",
+					fx.Provide(
+						fx.Annotated{
+							Name:   "servers.metrics",
+							Target: xhttpserver.Optional("servers.metrics"),
+						},
+					),
+					fx.Invoke(BuildMetricsRoutes),
+				),
+				config.IfKeySet("servers.health",
+					fx.Provide(
+						fx.Annotated{
+							Name:   "servers.health",
+							Target: xhttpserver.Optional("servers.health"),
+						},
+					),
+					fx.Invoke(BuildHealthRoutes),
+				),
 			},
 		}
 
@@ -114,33 +159,6 @@ func main() {
 				provideClientChain,
 				provideServerChainFactory,
 				xhttpclient.Unmarshal("client"),
-				fx.Annotated{
-					Name:   "servers.key",
-					Target: xhttpserver.Optional("servers.key"),
-				},
-				fx.Annotated{
-					Name:   "servers.issuer",
-					Target: xhttpserver.Optional("servers.issuer"),
-				},
-				fx.Annotated{
-					Name:   "servers.claims",
-					Target: xhttpserver.Required("servers.claims"),
-				},
-				fx.Annotated{
-					Name:   "servers.metrics",
-					Target: xhttpserver.Optional("servers.metrics"),
-				},
-				fx.Annotated{
-					Name:   "servers.health",
-					Target: xhttpserver.Optional("servers.health"),
-				},
-			),
-			fx.Invoke(
-				BuildKeyRoutes,
-				BuildIssuerRoutes,
-				BuildClaimsRoutes,
-				BuildMetricsRoutes,
-				BuildHealthRoutes,
 			),
 		)
 	)
