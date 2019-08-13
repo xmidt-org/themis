@@ -88,16 +88,6 @@ func NewListener(o Options, ctx context.Context, lcfg net.ListenConfig) (net.Lis
 	return l, nil
 }
 
-// NewServerLogger returns a go-kit Logger enriched with information about the server.
-func NewServerLogger(o Options, base log.Logger, extra ...interface{}) log.Logger {
-	var parameters []interface{}
-	if len(o.Name) > 0 {
-		parameters = append(parameters, ServerKey(), o.Name)
-	}
-
-	return log.WithPrefix(base, append(parameters, extra...)...)
-}
-
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
 func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
 	chain := alice.New(
