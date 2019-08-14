@@ -12,6 +12,18 @@ import (
 	"github.com/justinas/alice"
 )
 
+// Interface is the expected behavior of a server
+type Interface interface {
+	// Serve handles both TLS and non-TLS listeners.  Code in this package takes care of creating
+	// a *tls.Config and TLS listener.
+	Serve(l net.Listener) error
+
+	// Shutdown gracefully shuts down the server
+	Shutdown(context.Context) error
+}
+
+// Options represent the configurable options for creating a server, typically unmarshalled from an
+// external source.
 type Options struct {
 	Name    string
 	Address string
@@ -33,17 +45,6 @@ type Options struct {
 	Header               http.Header
 	DisableTracking      bool
 	DisableHandlerLogger bool
-	DisableParseForm     bool
-}
-
-// Interface is the expected behavior of a server
-type Interface interface {
-	// Serve handles both TLS and non-TLS listeners.  Code in this package takes care of creating
-	// a *tls.Config and TLS listener.
-	Serve(l net.Listener) error
-
-	// Shutdown gracefully shuts down the server
-	Shutdown(context.Context) error
 }
 
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.

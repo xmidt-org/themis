@@ -60,7 +60,7 @@ type ServerIn struct {
 func Unmarshal(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
 	return func(in ServerIn) (*mux.Router, error) {
 		var o Options
-		if err := config.UnmarshalRequired(in.Unmarshaller, configKey, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return nil, err
 		}
 
