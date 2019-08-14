@@ -38,8 +38,11 @@ type Options struct {
 
 // Interface is the expected behavior of a server
 type Interface interface {
+	// Serve handles both TLS and non-TLS listeners.  Code in this package takes care of creating
+	// a *tls.Config and TLS listener.
 	Serve(l net.Listener) error
-	ServeTLS(l net.Listener, cert, key string) error
+
+	// Shutdown gracefully shuts down the server
 	Shutdown(context.Context) error
 }
 

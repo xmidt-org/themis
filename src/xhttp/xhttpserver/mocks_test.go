@@ -2,6 +2,7 @@ package xhttpserver
 
 import (
 	"bufio"
+	"context"
 	"net"
 	"net/http"
 
@@ -109,4 +110,24 @@ type pusherWriter struct {
 type flusherWriter struct {
 	http.ResponseWriter
 	http.Flusher
+}
+
+type mockServer struct {
+	mock.Mock
+}
+
+func (m *mockServer) Serve(l net.Listener) error {
+	return m.Called(l).Error(0)
+}
+
+func (m *mockServer) ExpectServe(p ...interface{}) *mock.Call {
+	return m.On("Serve", p...)
+}
+
+func (m *mockServer) Shutdown(ctx context.Context) error {
+	return m.Called(ctx).Error(0)
+}
+
+func (m *mockServer) ExpectShutdown(p ...interface{}) *mock.Call {
+	return m.On("Shutdown", p...)
 }
