@@ -69,12 +69,3 @@ func (mke missingKeyError) Error() string {
 func NewMissingKeyError(k string) MissingKeyError {
 	return missingKeyError{k: k}
 }
-
-// UnmarshalRequired is a helper function that returns an error if the given key is not present
-func UnmarshalRequired(ku KeyUnmarshaller, k string, v interface{}) error {
-	if !ku.IsSet(k) {
-		return NewMissingKeyError(k)
-	}
-
-	return ku.UnmarshalKey(k, v)
-}
