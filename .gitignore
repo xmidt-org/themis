@@ -1,11 +1,8 @@
-vendor
-pkg
-
 # Ignore build product.
-# TODO: We should not be producing build products in this directory
-src/themis/themis
+themis
 
 bin/
+pkg/
 lib/
 *.out
 *.swp
