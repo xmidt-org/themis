@@ -72,11 +72,11 @@ style:
 
 .PHONY: test
 test:
-	go test -v -race  -coverprofile=cover.out $(APP)/...
+	export GOPATH=$(GOPATH) && go test -v -race  -coverprofile=cover.out ./...
 
 .PHONY: test-cover
 test-cover: test
-	go tool cover -html=cover.out
+	export GOPATH=$(GOPATH) && go tool cover -html=cover.out
 
 .PHONY: codecov
 codecov: test
