@@ -1,7 +1,7 @@
 package configtest
 
 import (
-	"config"
+	"github.com/xmidt-org/themis/config"
 
 	"github.com/stretchr/testify/mock"
 )

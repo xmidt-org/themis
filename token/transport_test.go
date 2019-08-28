@@ -9,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"xhttp/xhttpserver"
+
+	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"

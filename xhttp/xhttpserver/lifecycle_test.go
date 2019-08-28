@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"testing"
 	"time"
-	"xlog/xlogtest"
+
+	"github.com/xmidt-org/themis/xlog/xlogtest"
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"

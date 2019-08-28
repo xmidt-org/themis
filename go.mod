@@ -14,7 +14,8 @@ require (
 	github.com/prometheus/client_golang v1.1.0
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/objx v0.2.0 // indirect
+	github.com/stretchr/testify v1.4.0
 	go.uber.org/dig v1.7.0 // indirect
 	go.uber.org/fx v1.9.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0

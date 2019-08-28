@@ -3,9 +3,10 @@ package token
 import (
 	"context"
 	"crypto/rand"
-	"key"
-	"random"
 	"testing"
+
+	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/random"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

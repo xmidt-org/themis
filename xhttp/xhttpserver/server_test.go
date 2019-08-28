@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-	"xlog"
-	"xlog/xloghttp"
+
+	"github.com/xmidt-org/themis/xlog"
+	"github.com/xmidt-org/themis/xlog/xloghttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
