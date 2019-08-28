@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.0.2]
+- Fixed issues with building themis as a module
+
 ## [v0.0.1]
 - Rename from xmidt-issuer to themis to follow the naming convention
 - Dev mode
@@ -22,5 +25,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.2...HEAD
+[v0.0.2]: https://github.com/xmidt-org/themis/compare/v0.0.1...v0.0.2
 [v0.0.1]: https://github.com/xmidt-org/themis/compare/v0.0.0...v0.0.1
