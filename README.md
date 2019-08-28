@@ -6,7 +6,7 @@
 [![Issue Count](https://codeclimate.com/github/xmidt-org/themis/badges/issue_count.svg)](https://codeclimate.com/github/xmidt-org/themis)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/themis)](https://goreportcard.com/report/github.com/xmidt-org/themis)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/themis/blob/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/xmidt-org/themis.svg)](CHANGELOG.md)
+[![GitHub release](https://img.shields.io/github/v/release/xmidt-org/themis?include_prereleases)](CHANGELOG.md)
 
 The Xmidt server that provides a framework for issueing JWT tokens to connecting devices.
 
