@@ -1,6 +1,5 @@
 DEFAULT: build
 
-GOPATH       := ${CURDIR}
 GOFMT        ?= gofmt
 APP          := themis
 FIRST_GOPATH := $(firstword $(subst :, ,$(shell go env GOPATH)))
@@ -9,13 +8,9 @@ BINARY       := $(FIRST_GOPATH)/bin/$(APP)
 PROGVER = $(shell grep 'applicationVersion.*= ' src/$(APP)/main.go | awk '{print $$3}' | sed -e 's/\"//g')
 RELEASE = 1
 
-.PHONY: glide-install
-glide-install:
-	export GOPATH=$(GOPATH) && cd src && glide install --strip-vendor
-
 .PHONY: build
-build: glide-install
-	export GOPATH=$(GOPATH) && cd src/$(APP) && go build
+build: 
+	go build -o $(BINARY)
 
 rpm:
 	mkdir -p ./.ignore/SOURCES
@@ -43,7 +38,7 @@ endif
 .PHONY: update-version
 update-version:
 	@echo "Update Version $(PROGVER) to $(RUN_ARGS)"
-	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" src/$(APP)/main.go
+	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" $(APP)/main.go
 
 
 .PHONY: install
@@ -51,10 +46,10 @@ install:
 	echo go build -o $(BINARY) $(PROGVER)
 
 .PHONY: release-artifacts
-release-artifacts: glide-install
+release-artifacts: 
 	mkdir -p ./.ignore
-	export GOPATH=$(GOPATH) && cd src/$(APP) && GOOS=darwin GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).darwin-amd64
-	export GOPATH=$(GOPATH) && cd src/$(APP) && GOOS=linux  GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).linux-amd64
+	GOOS=darwin GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).darwin-amd64
+	GOOS=linux  GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).linux-amd64
 
 .PHONY: docker
 docker:
@@ -72,11 +67,11 @@ style:
 
 .PHONY: test
 test:
-	export GOPATH=$(GOPATH) && go test -v -race  -coverprofile=cover.out ./...
+	go test -v -race  -coverprofile=cover.out ./...
 
 .PHONY: test-cover
 test-cover: test
-	export GOPATH=$(GOPATH) && go tool cover -html=cover.out
+	go tool cover -html=cover.out
 
 .PHONY: codecov
 codecov: test
