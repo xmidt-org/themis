@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Time-based claims can be disabled
 - Both the issue and claims servers can be disabled
 - Integrated health via InvisionApp/go-health
+- Converted to a go module: github.com/xmidt-org/themis
 
 
 [Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.0...HEAD
