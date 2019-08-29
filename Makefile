@@ -1,31 +1,36 @@
 DEFAULT: build
 
-GOFMT        ?= gofmt
-APP          := themis
-FIRST_GOPATH := $(firstword $(subst :, ,$(shell go env GOPATH)))
-BINARY       := $(FIRST_GOPATH)/bin/$(APP)
+GO           ?= go
+GOFMT        ?= $(GO)fmt
+FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
+themis    := $(FIRST_GOPATH)/bin/themis
 
-PROGVER = $(shell grep 'applicationVersion.*= ' src/$(APP)/main.go | awk '{print $$3}' | sed -e 's/\"//g')
-RELEASE = 1
+PROGVER = $(shell grep 'applicationVersion.*= ' main.go | awk '{print $$3}' | sed -e 's/\"//g')
+
+.PHONY: go-mod-vendor
+go-mod-vendor:
+	GO111MODULE=on $(GO) mod vendor
 
 .PHONY: build
-build: 
-	go build -o $(BINARY)
+build: go-mod-vendor
+	$(GO) build -o themis
 
 rpm:
-	mkdir -p ./.ignore/SOURCES
-	tar -czf ./.ignore/SOURCES/$(APP)-$(PROGVER).tar.gz --transform 's/^\./$(APP)-$(PROGVER)/' --exclude ./keys --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./src/vendor .
-	cp etc/systemd/$(APP).service ./.ignore/SOURCES/
-	cp etc/$(APP)/$(APP).yaml  ./.ignore/SOURCES/
-	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-		--define "_ver $(PROGVER)" \
-		--define "_releaseno $(RELEASE)" \
-		-ba etc/systemd/$(APP).spec
+	mkdir -p ./OPATH/SOURCES
+	tar -czvf ./OPATH/SOURCES/themis-$(PROGVER).tar.gz . --exclude ./.git --exclude ./OPATH --exclude ./conf --exclude ./deploy --exclude ./vendor
+	cp conf/themis.service ./OPATH/SOURCES/
+	cp conf/themis.yaml  ./OPATH/SOURCES/
+	cp LICENSE ./OPATH/SOURCES/
+	cp NOTICE ./OPATH/SOURCES/
+	cp CHANGELOG.md ./OPATH/SOURCES/
+	rpmbuild --define "_topdir $(CURDIR)/OPATH" \
+    		--define "_version $(PROGVER)" \
+    		--define "_release 1" \
+    		-ba deploy/packaging/themis.spec
 
 .PHONY: version
 version:
 	@echo $(PROGVER)
-
 
 # If the first argument is "update-version"...
 ifeq (update-version,$(firstword $(MAKECMDGOALS)))
@@ -38,40 +43,39 @@ endif
 .PHONY: update-version
 update-version:
 	@echo "Update Version $(PROGVER) to $(RUN_ARGS)"
-	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" $(APP)/main.go
+	sed -i "s/$(PROGVER)/$(RUN_ARGS)/g" main.go
 
 
 .PHONY: install
-install:
-	echo go build -o $(BINARY) $(PROGVER)
+install: go-mod-vendor
+	echo $(GO) build -o $(themis) $(PROGVER)
 
 .PHONY: release-artifacts
-release-artifacts: 
-	mkdir -p ./.ignore
-	GOOS=darwin GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).darwin-amd64
-	GOOS=linux  GOARCH=amd64 go build -o ../../.ignore/$(APP)-$(PROGVER).linux-amd64
+release-artifacts: go-mod-vendor
+	GOOS=darwin GOARCH=amd64 $(GO) build -o ./OPATH/themis-$(PROGVER).darwin-amd64
+	GOOS=linux  GOARCH=amd64 $(GO) build -o ./OPATH/themis-$(PROGVER).linux-amd64
 
 .PHONY: docker
 docker:
-	docker build -f ./deploy/Dockerfile -t $(APP):$(PROGVER) .
+	docker build -f ./deploy/Dockerfile -t themis:$(PROGVER) .
 
 # build docker without running modules
 .PHONY: local-docker
 local-docker:
-	GOOS=linux  GOARCH=amd64 go build -o $(APP)_linux_amd64
-	docker build -f ./deploy/Dockerfile.local -t $(APP):local .
+	GOOS=linux  GOARCH=amd64 $(GO) build -o themis_linux_amd64
+	docker build -f ./deploy/Dockerfile.local -t themis:local .
 
 .PHONY: style
 style:
-	! gofmt -d $$(find . -path ./src/vendor -prune -o -name '*.go' -print) | grep '^'
+	! $(GOFMT) -d $$(find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
 
 .PHONY: test
-test:
-	go test -v -race  -coverprofile=cover.out ./...
+test: go-mod-vendor
+	GO111MODULE=on $(GO) test -v -race  -coverprofile=cover.out ./...
 
 .PHONY: test-cover
 test-cover: test
-	go tool cover -html=cover.out
+	$(GO) tool cover -html=cover.out
 
 .PHONY: codecov
 codecov: test
@@ -83,4 +87,4 @@ it:
 
 .PHONY: clean
 clean:
-	rm -rf ./$(APP) ./.ignore ./coverage.txt ./vendor ./src/vendor
+	rm -rf ./themis ./OPATH ./coverage.txt ./vendor
