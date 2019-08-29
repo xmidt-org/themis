@@ -58,15 +58,14 @@ type Bootstrap struct {
 	//
 	// If not set, the flagset and viper instances emitted into the uber/fx application are uninitialized.
 	Initializer Initializer
-
-	// Optioners is the optional sequence of strategies for constructing uber/fx options based on
-	// the initialized environment.  If supplied, these bootstrappers are invoked after the Initializer.
-	Optioners Optioners
 }
 
 // Provide performs initialization external to the uber/fx App flow, creating the various environmental
 // components that need to exist prior to any providers running.
-func (b Bootstrap) Provide() fx.Option {
+//
+// This method can take zero or more Optioner strategies which can be used to conditionally create components
+// using the environment.
+func (b Bootstrap) Provide(optioners ...Optioner) fx.Option {
 	name := b.Name
 	if len(name) == 0 {
 		name = os.Args[0]
@@ -110,7 +109,7 @@ func (b Bootstrap) Provide() fx.Option {
 		),
 	}
 
-	for _, f := range b.Optioners {
+	for _, f := range optioners {
 		options = append(options, f(e))
 	}
 

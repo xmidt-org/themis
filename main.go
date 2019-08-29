@@ -96,7 +96,10 @@ func main() {
 		b = config.Bootstrap{
 			Name:        applicationName,
 			Initializer: initialize,
-			Optioners: config.Optioners{
+		}
+
+		app = fx.New(
+			b.Provide(
 				xlog.Unmarshaller("log", createPrinter),
 				config.IfKeySet("servers.key",
 					fx.Provide(
@@ -143,11 +146,7 @@ func main() {
 					),
 					fx.Invoke(BuildHealthRoutes),
 				),
-			},
-		}
-
-		app = fx.New(
-			b.Provide(),
+			),
 			provideMetrics(),
 			fx.Provide(
 				xhealth.Unmarshal("health"),
