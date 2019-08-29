@@ -38,7 +38,7 @@ import (
 
 const (
 	applicationName    = "themis"
-	applicationVersion = "0.0.2"
+	applicationVersion = "0.0.3"
 )
 
 func initialize(e config.Environment) error {
