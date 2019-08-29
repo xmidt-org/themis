@@ -51,21 +51,19 @@ type Bootstrap struct {
 
 	// DecodeOptions are the optional Viper options for unmarshalling
 	DecodeOptions []viper.DecoderConfigOption
-
-	// Initializer is the strategy used to setup the flagset, which includes parsing the command line,
-	// and read in any necessary viper configuration.  Any error returned by the Initializer causes application
-	// startup to be short-circuited with the error, which will be availabel via App.Err().
-	//
-	// If not set, the flagset and viper instances emitted into the uber/fx application are uninitialized.
-	Initializer Initializer
 }
 
 // Provide performs initialization external to the uber/fx App flow, creating the various environmental
 // components that need to exist prior to any providers running.
 //
+// The initializer parameter is the strategy used to setup the flagset, which includes parsing the command line,
+// and read in any necessary viper configuration.  Any error returned by the Initializer causes application
+// startup to be short-circuited with the error, which will be availabel via App.Err().  If the initializer is nil,
+// the flagset and viper instances emitted into the uber/fx application are uninitialized.
+//
 // This method can take zero or more Optioner strategies which can be used to conditionally create components
 // using the environment.
-func (b Bootstrap) Provide(optioners ...Optioner) fx.Option {
+func (b Bootstrap) Provide(i Initializer, optioners ...Optioner) fx.Option {
 	name := b.Name
 	if len(name) == 0 {
 		name = os.Args[0]
@@ -87,8 +85,8 @@ func (b Bootstrap) Provide(optioners ...Optioner) fx.Option {
 		}
 	)
 
-	if b.Initializer != nil {
-		if err := b.Initializer(e); err != nil {
+	if i != nil {
+		if err := i(e); err != nil {
 			if b.DisableDiscardOnError {
 				return fx.Error(err)
 			} else {

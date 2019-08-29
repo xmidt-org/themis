@@ -92,74 +92,70 @@ func createPrinter(logger log.Logger, e config.Environment) fx.Printer {
 }
 
 func main() {
-	var (
-		b = config.Bootstrap{
-			Name:        applicationName,
-			Initializer: initialize,
-		}
-
-		app = fx.New(
-			b.Provide(
-				xlog.Unmarshaller("log", createPrinter),
-				config.IfKeySet("servers.key",
-					fx.Provide(
-						fx.Annotated{
-							Name:   "servers.key",
-							Target: xhttpserver.Unmarshal("servers.key"),
-						},
-					),
-					fx.Invoke(BuildKeyRoutes),
+	app := fx.New(
+		config.Bootstrap{
+			Name: applicationName,
+		}.Provide(
+			initialize,
+			xlog.Unmarshaller("log", createPrinter),
+			config.IfKeySet("servers.key",
+				fx.Provide(
+					fx.Annotated{
+						Name:   "servers.key",
+						Target: xhttpserver.Unmarshal("servers.key"),
+					},
 				),
-				config.IfKeySet("servers.issuer",
-					fx.Provide(
-						fx.Annotated{
-							Name:   "servers.issuer",
-							Target: xhttpserver.Unmarshal("servers.issuer"),
-						},
-					),
-					fx.Invoke(BuildIssuerRoutes),
-				),
-				config.IfKeySet("servers.claims",
-					fx.Provide(
-						fx.Annotated{
-							Name:   "servers.claims",
-							Target: xhttpserver.Unmarshal("servers.claims"),
-						},
-					),
-					fx.Invoke(BuildClaimsRoutes),
-				),
-				config.IfKeySet("servers.metrics",
-					fx.Provide(
-						fx.Annotated{
-							Name:   "servers.metrics",
-							Target: xhttpserver.Unmarshal("servers.metrics"),
-						},
-					),
-					fx.Invoke(BuildMetricsRoutes),
-				),
-				config.IfKeySet("servers.health",
-					fx.Provide(
-						fx.Annotated{
-							Name:   "servers.health",
-							Target: xhttpserver.Unmarshal("servers.health"),
-						},
-					),
-					fx.Invoke(BuildHealthRoutes),
-				),
+				fx.Invoke(BuildKeyRoutes),
 			),
-			provideMetrics(),
-			fx.Provide(
-				xhealth.Unmarshal("health"),
-				random.Provide,
-				key.Provide,
-				token.Unmarshal("token"),
-				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
-				xloghttp.ProvideStandardBuilders,
-				provideClientChain,
-				provideServerChainFactory,
-				xhttpclient.Unmarshal("client"),
+			config.IfKeySet("servers.issuer",
+				fx.Provide(
+					fx.Annotated{
+						Name:   "servers.issuer",
+						Target: xhttpserver.Unmarshal("servers.issuer"),
+					},
+				),
+				fx.Invoke(BuildIssuerRoutes),
 			),
-		)
+			config.IfKeySet("servers.claims",
+				fx.Provide(
+					fx.Annotated{
+						Name:   "servers.claims",
+						Target: xhttpserver.Unmarshal("servers.claims"),
+					},
+				),
+				fx.Invoke(BuildClaimsRoutes),
+			),
+			config.IfKeySet("servers.metrics",
+				fx.Provide(
+					fx.Annotated{
+						Name:   "servers.metrics",
+						Target: xhttpserver.Unmarshal("servers.metrics"),
+					},
+				),
+				fx.Invoke(BuildMetricsRoutes),
+			),
+			config.IfKeySet("servers.health",
+				fx.Provide(
+					fx.Annotated{
+						Name:   "servers.health",
+						Target: xhttpserver.Unmarshal("servers.health"),
+					},
+				),
+				fx.Invoke(BuildHealthRoutes),
+			),
+		),
+		provideMetrics(),
+		fx.Provide(
+			xhealth.Unmarshal("health"),
+			random.Provide,
+			key.Provide,
+			token.Unmarshal("token"),
+			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+			xloghttp.ProvideStandardBuilders,
+			provideClientChain,
+			provideServerChainFactory,
+			xhttpclient.Unmarshal("client"),
+		),
 	)
 
 	if err := app.Err(); err != nil {
