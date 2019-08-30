@@ -14,7 +14,7 @@ type ViperOut struct {
 }
 
 // ProvideViper emits the various uber/fx components related to Viper.  This provider can
-// be used standalone.  It is used by Bootstrap.Provide() as well.
+// be used standalone.  It is an alternative to the full Bootstrap workflow.
 func ProvideViper(v *viper.Viper, options ...viper.DecoderConfigOption) func() ViperOut {
 	return func() ViperOut {
 		return ViperOut{

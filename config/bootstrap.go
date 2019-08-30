@@ -35,6 +35,9 @@ type Initializer func(Environment) error
 // Since certain components need to be created prior to the uber/fx dependency injection flow, this type manages
 // a simple workflow for application code to setup these components.  One example of such a component is logging,
 // since most of the time the logging infrastructure should also be used for uber/fx's Logger option.
+//
+// All fields are optional.  The zero value of this type will simply bootstrap the standard command-line environment
+// with all the defaults for the spf13/pflag and spf13/viper packages.
 type Bootstrap struct {
 	// Name is the application name, typically the executable name.  If unset, os.Args[0] is used.
 	// The name is what is passed to NewFlagSet and is the same value passed to Initialize.
@@ -54,15 +57,13 @@ type Bootstrap struct {
 }
 
 // Provide performs initialization external to the uber/fx App flow, creating the various environmental
-// components that need to exist prior to any providers running.
+// components that need to exist prior to any providers running.  The pflag and viper instances are supplied as components, along
+// with any components created by an Optioner strategy.
 //
-// The initializer parameter is the strategy used to setup the flagset, which includes parsing the command line,
+// The initializer parameter is the strategy used to setup the pflag instance, which includes parsing the command line,
 // and read in any necessary viper configuration.  Any error returned by the Initializer causes application
 // startup to be short-circuited with the error, which will be availabel via App.Err().  If the initializer is nil,
 // the flagset and viper instances emitted into the uber/fx application are uninitialized.
-//
-// This method can take zero or more Optioner strategies which can be used to conditionally create components
-// using the environment.
 func (b Bootstrap) Provide(i Initializer, optioners ...Optioner) fx.Option {
 	name := b.Name
 	if len(name) == 0 {
@@ -100,10 +101,9 @@ func (b Bootstrap) Provide(i Initializer, optioners ...Optioner) fx.Option {
 
 	options := []fx.Option{
 		fx.Provide(
-			func() *pflag.FlagSet {
-				return e.FlagSet
+			func() (*pflag.FlagSet, *viper.Viper, Unmarshaller) {
+				return e.FlagSet, e.Viper, e.Unmarshaller
 			},
-			ProvideViper(e.Viper, b.DecodeOptions...),
 		),
 	}
 
