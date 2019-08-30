@@ -9,3 +9,6 @@ lib/
 
 # for VSCode
 .vscode/
+
+# for releases
+.ignore/
