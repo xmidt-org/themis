@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/config/configtest"
 	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/gorilla/mux"
@@ -33,16 +32,14 @@ func testUnmarshalFull(t *testing.T) {
 			fx.Provide(
 				xlog.Provide(xlog.Discard()),
 				config.ProvideViper(
-					configtest.LoadJson(t,
-						`
+					config.Json(`
 						{
 							"server": {
 								"address": "127.0.0.1:0",
 								"disableHTTPKeepAlives": true
 							}
 						}
-					`,
-					),
+					`),
 				),
 				func() alice.Chain {
 					return alice.New(

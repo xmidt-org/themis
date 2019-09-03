@@ -1,16 +1,12 @@
 package xlog
 
 import (
-	"bytes"
-	"errors"
 	"testing"
 
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/config/configtest"
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -21,22 +17,20 @@ func testUnmarshalSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		v = configtest.LoadJson(t, `
-			{
-				"log": {
-					"file": "stdout",
-					"level": "DEBUG"
-				}
-			}`,
-		)
-
 		logger log.Logger
 
 		app = fxtest.New(t,
 			fx.Provide(
-				func() config.Unmarshaller {
-					return config.ViperUnmarshaller{Viper: v}
-				},
+				config.ProvideViper(
+					config.Json(`
+						{
+							"log": {
+								"file": "stdout",
+								"level": "DEBUG"
+							}
+						}`,
+					),
+				),
 				Unmarshal("log"),
 			),
 			fx.Populate(&logger),
@@ -47,127 +41,72 @@ func testUnmarshalSuccess(t *testing.T) {
 	assert.NotNil(logger)
 }
 
+func testUnmarshalWithBufferedPrinter(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		logger  log.Logger
+		printer *BufferedPrinter
+
+		app = fxtest.New(t,
+			Logger(),
+			fx.Provide(
+				config.ProvideViper(
+					config.Json(`
+						{
+							"log": {
+								"file": "stdout",
+								"level": "ERROR"
+							}
+						}`,
+					),
+				),
+				Unmarshal("log"),
+			),
+			fx.Populate(&logger, &printer),
+		)
+	)
+
+	require.NoError(app.Err())
+	assert.NotNil(logger)
+
+	require.NotNil(printer)
+	assert.NotNil(printer.logger)
+}
+
 func testUnmarshalFailure(t *testing.T) {
 	var (
-		assert       = assert.New(t)
-		unmarshaller = new(configtest.Unmarshaller)
+		assert  = assert.New(t)
+		require = require.New(t)
 
 		logger log.Logger
+
+		app = fx.New(
+			fx.Logger(DiscardPrinter{}),
+			fx.Provide(
+				config.ProvideViper(
+					config.Json(`
+						{
+							"log": {
+								"file": "stdout",
+								"maxBackups": "this is not a valid int"
+							}
+						}`,
+					),
+				),
+				Unmarshal("log"),
+			),
+			fx.Populate(&logger),
+		)
 	)
 
-	unmarshaller.ExpectUnmarshalKey("log", mock.AnythingOfType("*xlog.Options")).Once().Return(errors.New("expected"))
-	app := fx.New(
-		fx.Logger(config.DiscardPrinter{}),
-		fx.Provide(
-			func() config.Unmarshaller {
-				return unmarshaller
-			},
-			Unmarshal("log"),
-		),
-		fx.Populate(&logger),
-	)
-
-	assert.Error(app.Err())
+	require.Error(app.Err())
 	assert.Nil(logger)
-	unmarshaller.AssertExpectations(t)
 }
 
 func TestUnmarshal(t *testing.T) {
 	t.Run("Success", testUnmarshalSuccess)
+	t.Run("WithBufferedPrinter", testUnmarshalWithBufferedPrinter)
 	t.Run("Failure", testUnmarshalFailure)
-}
-
-func testUnmarshallerWithPrinter(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		expected  bytes.Buffer
-		component log.Logger
-
-		v = configtest.LoadJson(t, `
-			{
-				"log": {
-					"file": "stdout",
-					"level": "DEBUG"
-				}
-			}`,
-		)
-
-		optioner = Unmarshaller("log", func(_ log.Logger, e config.Environment) fx.Printer {
-			return Printer{Logger: log.NewJSONLogger(&expected)}
-		})
-
-		app = fxtest.New(t,
-			optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
-			fx.Populate(&component),
-		)
-	)
-
-	require.NoError(app.Err())
-	assert.NotNil(component)
-	assert.Greater(expected.Len(), 0)
-}
-
-func testUnmarshallerNoPrinter(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		component log.Logger
-
-		v = configtest.LoadJson(t, `
-			{
-				"log": {
-					"file": "stdout",
-					"level": "DEBUG"
-				}
-			}`,
-		)
-
-		optioner = Unmarshaller("log", nil)
-
-		app = fxtest.New(t,
-			optioner(config.Environment{Unmarshaller: config.ViperUnmarshaller{Viper: v}}),
-			fx.Populate(&component),
-		)
-	)
-
-	require.NoError(app.Err())
-	assert.NotNil(component)
-}
-
-func testUnmarshallerFailure(t *testing.T) {
-	var (
-		assert       = assert.New(t)
-		require      = require.New(t)
-		unmarshaller = new(configtest.Unmarshaller)
-
-		logger log.Logger
-	)
-
-	optioner := Unmarshaller("log", nil)
-	require.NotNil(optioner)
-
-	unmarshaller.ExpectUnmarshalKey("log", mock.AnythingOfType("*xlog.Options")).Once().Return(errors.New("expected"))
-	app := fx.New(
-		fx.Logger(config.DiscardPrinter{}),
-		fx.Provide(
-			func() config.Unmarshaller {
-				return unmarshaller
-			},
-			optioner(config.Environment{Unmarshaller: unmarshaller}),
-		),
-		fx.Populate(&logger),
-	)
-
-	assert.Error(app.Err())
-	assert.Nil(logger)
-	unmarshaller.AssertExpectations(t)
-}
-
-func TestUnmarshaller(t *testing.T) {
-	t.Run("WithPrinter", testUnmarshallerWithPrinter)
-	t.Run("NoPrinter", testUnmarshallerWithPrinter)
-	t.Run("Failure", testUnmarshallerFailure)
 }

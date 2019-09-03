@@ -7,40 +7,32 @@ import (
 	"go.uber.org/fx"
 )
 
+// LogUnmarshalIn defines the set of dependencies for unmarshalling a go-kit logger
+type LogUnmarshalIn struct {
+	fx.In
+
+	// Unmarshaller is the required strategy for unmarshalling an Options
+	Unmarshaller config.Unmarshaller
+
+	// Printer is the optional BufferedPrinter component.  If present, the unmarshalled logger
+	// will be set as this printer's logger.
+	Printer *BufferedPrinter `optional:"true"`
+}
+
 // Unmarshal returns an uber/fx provider function that handles unmarshalling a logger and emitted it as a component.
-func Unmarshal(key string) func(config.Unmarshaller) (log.Logger, error) {
-	return func(u config.Unmarshaller) (log.Logger, error) {
+// If a *BufferedPrinter component is present, the unmarshalled logger will be set as that printer's logger.
+func Unmarshal(key string) func(LogUnmarshalIn) (log.Logger, error) {
+	return func(in LogUnmarshalIn) (log.Logger, error) {
 		var o Options
-		if err := u.UnmarshalKey(key, &o); err != nil {
+		if err := in.Unmarshaller.UnmarshalKey(key, &o); err != nil {
 			return nil, err
 		}
 
-		return New(o)
-	}
-}
-
-// Unmarshaller produces an optioner strategy that loads the logger from configuration and
-// emits it as an uber/fx component.  If supplied, the pf closure is used to construct
-// an fx.Printer which may use the created logger.  If pf is nil, no fx.Printer is configured.
-func Unmarshaller(key string, pf func(log.Logger, config.Environment) fx.Printer) config.Optioner {
-	return func(e config.Environment) fx.Option {
-		logger, err := Unmarshal(key)(e.Unmarshaller)
-		if logger == nil {
-			logger = Default()
+		l, err := New(o)
+		if err == nil && in.Printer != nil {
+			in.Printer.SetLogger(l)
 		}
 
-		options := []fx.Option{
-			fx.Provide(
-				func() (log.Logger, error) { return logger, err },
-			),
-		}
-
-		if pf != nil {
-			options = append(options,
-				fx.Logger(pf(logger, e)),
-			)
-		}
-
-		return fx.Options(options...)
+		return l, err
 	}
 }

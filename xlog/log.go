@@ -155,6 +155,19 @@ func Default() log.Logger {
 	return defaultLogger
 }
 
+var errorLogger = log.WithPrefix(
+	log.NewJSONLogger(
+		log.NewSyncWriter(os.Stderr),
+	),
+	TimestampKey(), log.DefaultTimestampUTC,
+)
+
+// Error returns a default go-kit Logger that sends all output to os.Stderr.  Useful
+// for reporting errors on a crash.
+func Error() log.Logger {
+	return errorLogger
+}
+
 type discardLogger struct{}
 
 func (dl discardLogger) Log(...interface{}) error {
