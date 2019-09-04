@@ -58,6 +58,16 @@ func (bp *BufferedPrinter) Printf(format string, parameters ...interface{}) {
 	}
 }
 
+// Len returns the count of messages currently buffered.  This will always be zero after
+// SetLogger has been called.
+func (bp *BufferedPrinter) Len() (c int) {
+	bp.lock.Lock()
+	c = len(bp.messages)
+	bp.lock.Unlock()
+
+	return
+}
+
 // SetLogger establishes the go-kit Logger that should receive uber/fx output.
 // Any buffered messages are immediately to the supplied logger.  All calls to Printf
 // afterward will not be buffered but sent to the supplied logger.
