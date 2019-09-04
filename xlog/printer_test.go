@@ -3,6 +3,7 @@ package xlog
 import (
 	"bytes"
 	"testing"
+	"errors"
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,7 @@ func testBufferedPrinterBasic(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 		printer *BufferedPrinter
+		dummy string
 
 		output1 bytes.Buffer
 		logger1 = log.NewJSONLogger(&output1)
@@ -56,7 +58,7 @@ func testBufferedPrinterBasic(t *testing.T) {
 					assert.Zero(output2.Len())
 				},
 			),
-			fx.Populate(&printer),
+			fx.Populate(&printer, &dummy),
 		)
 	)
 
@@ -71,6 +73,36 @@ func testBufferedPrinterBasic(t *testing.T) {
 	assert.NotNil(printer.logger)
 }
 
+func testBufferedPrinterHandleError(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+		dummy string
+
+		output bytes.Buffer
+		logger = log.NewJSONLogger(&output)
+
+		app = fx.New(
+			Logger(),
+			fx.Provide(
+				func() (string, error) {
+					return "uh oh!", errors.New("expected")
+				},
+			),
+			fx.Invoke(
+				func(bp *BufferedPrinter) {
+					bp.SetLogger(logger)
+				},
+			),
+			fx.Populate(&dummy),
+		)
+	)
+
+	require.Error(app.Err())
+	assert.Contains(output.String(), "expected")
+}
+
 func TestBufferedPrinter(t *testing.T) {
 	t.Run("Basic", testBufferedPrinterBasic)
+	t.Run("HandleError", testBufferedPrinterHandleError)
 }
