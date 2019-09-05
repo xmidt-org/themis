@@ -107,6 +107,6 @@ token:
 
 log:
   file: stdout
-  level: DEBUG
+  level: INFO
 `
 )

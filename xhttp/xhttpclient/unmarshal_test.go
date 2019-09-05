@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/config/configtest"
+	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,24 +28,22 @@ func testUnmarshalSuccess(t *testing.T) {
 		app = fxtest.New(t,
 			fx.Provide(
 				config.ProvideViper(
-					configtest.LoadJson(t,
-						`
-							{
-								"client": {
-									"transport": {
-										"idleConnTimeout": "1s",
-										"header": {
-											"x-header": ["value"]
-										},
-										"tls": {
-											"insecureSkipVerify": true
-										}
+					config.Json(`
+						{
+							"client": {
+								"transport": {
+									"idleConnTimeout": "1s",
+									"header": {
+										"x-header": ["value"]
 									},
-									"timeout": "10s"
-								}
+									"tls": {
+										"insecureSkipVerify": true
+									}
+								},
+								"timeout": "10s"
 							}
-						`,
-					),
+						}
+					`),
 				),
 				Unmarshal("client"),
 			),
@@ -74,18 +72,16 @@ func testUnmarshalFailure(t *testing.T) {
 
 		c   Interface
 		app = fx.New(
-			fx.Logger(config.DiscardPrinter{}),
+			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
 				config.ProvideViper(
-					configtest.LoadJson(t,
-						`
+					config.Json(`
 							{
 								"client": {
 									"timeout": "this is not a valid duration"
 								}
 							}
-						`,
-					),
+					`),
 				),
 				Unmarshal("client"),
 			),

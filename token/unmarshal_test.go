@@ -1,33 +1,35 @@
 package token
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/config/configtest"
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 )
 
 func testUnmarshalError(t *testing.T) {
 	var (
-		assert = assert.New(t)
-
-		unmarshaller = new(configtest.Unmarshaller)
-		factory      Factory
+		assert  = assert.New(t)
+		factory Factory
 	)
 
-	unmarshaller.ExpectUnmarshalKey("token", mock.AnythingOfType("*token.Options")).Once().Return(errors.New("expected"))
-
 	app := fx.New(
-		fx.Logger(config.DiscardPrinter{}),
+		fx.Logger(xlog.DiscardPrinter{}),
 		fx.Provide(
-			func() config.Unmarshaller { return unmarshaller },
+			config.ProvideViper(
+				config.Json(`
+					{
+						"token": {
+							"nonce": "this is not a valid bool"
+						}
+					}
+				`),
+			),
 			func() key.Registry { return key.NewRegistry(nil) },
 			Unmarshal("token"),
 		),
@@ -36,35 +38,31 @@ func testUnmarshalError(t *testing.T) {
 
 	assert.Error(app.Err())
 	assert.Nil(factory)
-	unmarshaller.AssertExpectations(t)
 }
 
 func testUnmarshalClaimBuilderError(t *testing.T) {
 	var (
-		assert = assert.New(t)
-
-		v = configtest.LoadJson(t,
-			`
-				{
-					"token": {
-						"metadata": {
-							"bad": {
-							}
-						},
-						"remote": {
-							"url": "http://foobar.com"
-						}
-					}
-				}
-			`,
-		)
-
+		assert  = assert.New(t)
 		factory Factory
 
 		app = fx.New(
-			fx.Logger(config.DiscardPrinter{}),
+			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				func() config.Unmarshaller { return config.ViperUnmarshaller{Viper: v} },
+				config.ProvideViper(
+					config.Json(`
+						{
+							"token": {
+								"metadata": {
+									"bad": {
+									}
+								},
+								"remote": {
+									"url": "http://foobar.com"
+								}
+							}
+						}
+					`),
+				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -78,24 +76,21 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 
 func testUnmarshalFactoryError(t *testing.T) {
 	var (
-		assert = assert.New(t)
-
-		v = configtest.LoadJson(t,
-			`
-				{
-					"token": {
-						"alg": "this is not a signing method"
-					}
-				}
-			`,
-		)
-
+		assert  = assert.New(t)
 		factory Factory
 
 		app = fx.New(
-			fx.Logger(config.DiscardPrinter{}),
+			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				func() config.Unmarshaller { return config.ViperUnmarshaller{Viper: v} },
+				config.ProvideViper(
+					config.Json(`
+						{
+							"token": {
+								"alg": "this is not a signing method"
+							}
+						}
+					`),
+				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -109,30 +104,27 @@ func testUnmarshalFactoryError(t *testing.T) {
 
 func testUnmarshalRequestBuilderError(t *testing.T) {
 	var (
-		assert = assert.New(t)
-
-		v = configtest.LoadJson(t,
-			`
-				{
-					"token": {
-						"claims": {
-							"bad": {
-								"header": "X-Bad",
-								"parameter": "bad",
-								"variable": "bad"
-							}
-						}
-					}
-				}
-			`,
-		)
-
+		assert  = assert.New(t)
 		factory Factory
 
 		app = fx.New(
-			fx.Logger(config.DiscardPrinter{}),
+			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				func() config.Unmarshaller { return config.ViperUnmarshaller{Viper: v} },
+				config.ProvideViper(
+					config.Json(`
+						{
+							"token": {
+								"claims": {
+									"bad": {
+										"header": "X-Bad",
+										"parameter": "bad",
+										"variable": "bad"
+									}
+								}
+							}
+						}
+					`),
+				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -146,27 +138,24 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 
 func testUnmarshalSuccess(t *testing.T) {
 	var (
-		assert = assert.New(t)
-
-		v = configtest.LoadJson(t,
-			`
-				{
-					"token": {
-						"claims": {
-							"static": {
-								"value": "foo"
-							}
-						}
-					}
-				}
-			`,
-		)
-
+		assert  = assert.New(t)
 		factory Factory
 
 		app = fxtest.New(t,
 			fx.Provide(
-				func() config.Unmarshaller { return config.ViperUnmarshaller{Viper: v} },
+				config.ProvideViper(
+					config.Json(`
+						{
+							"token": {
+								"claims": {
+									"static": {
+										"value": "foo"
+									}
+								}
+							}
+						}
+					`),
+				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
