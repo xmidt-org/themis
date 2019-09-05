@@ -52,7 +52,7 @@ func (bp *BufferedPrinter) Printf(format string, parameters ...interface{}) {
 	bp.lock.Lock()
 
 	if bp.logger != nil {
-		bp.logger.Log(MessageKey(), message)
+		bp.logger.Log(level.Key(), level.DebugValue(), MessageKey(), message)
 	} else {
 		bp.messages = append(bp.messages, message)
 	}

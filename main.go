@@ -45,7 +45,7 @@ func setupFlagSet(fs *pflag.FlagSet) error {
 	fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
 	fs.Bool("dev", false, "development mode")
 	fs.String("iss", "", "the name of the issuer to put into claims.  Overrides configuration.")
-	fs.BoolP("enable-app-logging", "e", false, "enables logging output from the uber/fx App")
+	fs.BoolP("debug", "d", false, "enables debug logging.  Overrides configuration.")
 	return nil
 }
 
@@ -70,6 +70,10 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 
 	if iss, _ := in.FlagSet.GetString("iss"); len(iss) > 0 {
 		v.Set("issuer.claims.iss", iss)
+	}
+
+	if debug, _ := in.FlagSet.GetBool("debug"); debug {
+		v.Set("log.level", "DEBUG")
 	}
 
 	return nil
