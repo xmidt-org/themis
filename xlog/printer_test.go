@@ -2,8 +2,8 @@ package xlog
 
 import (
 	"bytes"
-	"testing"
 	"errors"
+	"testing"
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func testBufferedPrinterBasic(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 		printer *BufferedPrinter
-		dummy string
+		dummy   string
 
 		output1 bytes.Buffer
 		logger1 = log.NewJSONLogger(&output1)
@@ -77,7 +77,7 @@ func testBufferedPrinterHandleError(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
-		dummy string
+		dummy   string
 
 		output bytes.Buffer
 		logger = log.NewJSONLogger(&output)
