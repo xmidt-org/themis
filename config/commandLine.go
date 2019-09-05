@@ -58,34 +58,43 @@ type FlagSetBuilder func(*pflag.FlagSet) error
 // passed to configure flagset, which includes adding command-line arguments.  If none of the builders
 // parse the command line, and if DisableParse is false, this function will parse the arguments
 // prior to returning the flagset.
-func (cl CommandLine) Provide(builders ...FlagSetBuilder) func() (CommandLineOut, error) {
-	return func() (CommandLineOut, error) {
-		name := os.Args[0]
-		if len(cl.Name) > 0 {
-			name = cl.Name
-		}
-
-		fs := pflag.NewFlagSet(name, cl.ErrorHandling)
-		for _, f := range builders {
-			if err := f(fs); err != nil {
-				return CommandLineOut{}, err
-			}
-		}
-
-		if !cl.DisableParse && !fs.Parsed() {
-			arguments := cl.Arguments
-			if arguments == nil {
-				arguments = os.Args[1:]
-			}
-
-			if err := fs.Parse(arguments); err != nil {
-				return CommandLineOut{}, err
-			}
-		}
-
-		return CommandLineOut{
-			Name:    ApplicationName(name),
-			FlagSet: fs,
-		}, nil
+//
+// This provider will short-circuit application startup using fx.Error if any command-line parsing error occurs.
+func (cl CommandLine) Provide(builders ...FlagSetBuilder) fx.Option {
+	name := os.Args[0]
+	if len(cl.Name) > 0 {
+		name = cl.Name
 	}
+
+	fs := pflag.NewFlagSet(name, cl.ErrorHandling)
+	var builderErrs []error
+	for _, f := range builders {
+		if err := f(fs); err != nil {
+			builderErrs = append(builderErrs, err)
+		}
+	}
+
+	if len(builderErrs) > 0 {
+		return fx.Error(builderErrs...)
+	}
+
+	if !cl.DisableParse && !fs.Parsed() {
+		arguments := cl.Arguments
+		if arguments == nil {
+			arguments = os.Args[1:]
+		}
+
+		if err := fs.Parse(arguments); err != nil {
+			return fx.Error(err)
+		}
+	}
+
+	return fx.Provide(
+		func() CommandLineOut {
+			return CommandLineOut{
+				Name:    ApplicationName(name),
+				FlagSet: fs,
+			}
+		},
+	)
 }

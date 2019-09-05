@@ -82,9 +82,9 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 func main() {
 	app := fx.New(
 		xlog.Logger(),
+		config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
 		provideMetrics(),
 		fx.Provide(
-			config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
 			config.ProvideViper(setupViper),
 			xlog.Unmarshal("log"),
 			xloghttp.ProvideStandardBuilders,
@@ -126,14 +126,13 @@ func main() {
 		),
 	)
 
-	if err := app.Err(); err != nil {
-		if err == pflag.ErrHelp {
-			return
-		}
-
+	switch err := app.Err(); err {
+	case pflag.ErrHelp:
+		return
+	case nil:
+		app.Run()
+	default:
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-
-	app.Run()
 }
