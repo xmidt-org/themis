@@ -39,10 +39,6 @@ type ServerIn struct {
 	Shutdowner   fx.Shutdowner
 	Lifecycle    fx.Lifecycle
 
-	// Chain is an optional component which, if present, decorates all server handlers in the container
-	// Both this field and ChainFactory may be used simultaneously.
-	Chain alice.Chain `optional:"true"`
-
 	// ChainFactory is an optional component which is used to build an alice.Chain for each particular
 	// server based on configuration.  Both this field and Chain may be used simultaneously.
 	ChainFactory ChainFactory `optional:"true"`
@@ -75,7 +71,7 @@ func Unmarshal(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux
 
 		var (
 			serverLogger = NewServerLogger(o, in.Logger)
-			serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...).Extend(in.Chain)
+			serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
 		)
 
 		if in.ChainFactory != nil {
