@@ -1,7 +1,7 @@
 package xhttpserver
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog/xloghttp"
@@ -12,6 +12,15 @@ import (
 	"go.uber.org/fx"
 )
 
+// ServerNotConfiguredError is returned when a required server has no configuration key
+type ServerNotConfiguredError struct {
+	Key string
+}
+
+func (e ServerNotConfiguredError) Error() string {
+	return fmt.Sprintf("No server with key %s is configured.", e.Key)
+}
+
 // ChainFactory is a creation strategy for server-specific alice.Chains that will decorate the
 // server handler.  Chains created by this factory will be appended to the core chain created
 // by NewServerChain.
@@ -20,13 +29,13 @@ import (
 // The most common example of this is metrics, as server metrics might need the name of the
 // server as a label.
 type ChainFactory interface {
-	New(Options) (alice.Chain, error)
+	New(string, Options) (alice.Chain, error)
 }
 
-type ChainFactoryFunc func(Options) (alice.Chain, error)
+type ChainFactoryFunc func(string, Options) (alice.Chain, error)
 
-func (cff ChainFactoryFunc) New(o Options) (alice.Chain, error) {
-	return cff(o)
+func (cff ChainFactoryFunc) New(n string, o Options) (alice.Chain, error) {
+	return cff(n, o)
 }
 
 // ServerIn holds the set of dependencies required to create an HTTP server in the context
@@ -48,55 +57,90 @@ type ServerIn struct {
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 }
 
-// Unmarshal unmarshals a server from the given configuration key and emits a *mux.Router.
-//
-// This function provides a default server name if none is supplied in the options.  This default name
-// is the last dotted element of the configuration key.  This allows multiple servers in a map to naturally
-// take their map keys as default names.  For example, unmarshalling a key of "servers.foo" would yield
-// a default name of "foo".
-func Unmarshal(configKey string, c ...alice.Constructor) func(in ServerIn) (*mux.Router, error) {
-	return func(in ServerIn) (*mux.Router, error) {
-		var o Options
-		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
+// Unmarshal describes how to unmarshal an HTTP server.  This type contains all the non-component information
+// related to server instantiation.
+type Unmarshal struct {
+	// Key is the viper configuration key containing the server Options
+	Key string
+
+	// Name is the string that identifies this server from others within the same application.  If unset,
+	// the Key is used.
+	Name string
+
+	// Optional indicates whether the configuration is required.  If this field is false (the default),
+	// and there is no such configuration Key, an error is returned.
+	Optional bool
+
+	// Chain is an optional set of constructors that will decorate the *mux.Router.  This field is useful for static
+	// decorators, such as inserting known headers into every response.
+	//
+	// This chain cannot depend on components.  In order to leverage dependency injection, create a ChainFactory instead.
+	Chain alice.Chain
+}
+
+func (u Unmarshal) name() string {
+	if len(u.Name) > 0 {
+		return u.Name
+	}
+
+	return u.Key
+}
+
+// Provide unmarshals a server using the Key field and creates a *mux.Router which is the root handler for
+// that server's requests.  This *mux.Router will be decorated with the constructors from NewServerChain as well
+// as any ChainFactory's constructors.
+func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
+	if !in.Unmarshaller.IsSet(u.Key) {
+		if !u.Optional {
+			return nil, ServerNotConfiguredError{Key: u.Key}
+		}
+
+		return nil, nil
+	}
+
+	var o Options
+	if err := in.Unmarshaller.UnmarshalKey(u.Key, &o); err != nil {
+		return nil, err
+	}
+
+	var (
+		serverName   = u.name()
+		serverLogger = log.With(in.Logger, ServerKey(), serverName)
+		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
+	)
+
+	if in.ChainFactory != nil {
+		more, err := in.ChainFactory.New(serverName, o)
+		if err != nil {
 			return nil, err
 		}
 
-		if len(o.Name) == 0 {
-			if pos := strings.LastIndexByte(configKey, '.'); pos >= 0 {
-				o.Name = configKey[pos+1:]
-			} else {
-				o.Name = configKey
-			}
-		}
+		serverChain = serverChain.Extend(more)
+	}
 
-		var (
-			serverLogger = NewServerLogger(o, in.Logger)
-			serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
+	var (
+		router = mux.NewRouter()
+		server = New(
+			o,
+			serverLogger,
+			serverChain.Extend(u.Chain).Then(router),
 		)
+	)
 
-		if in.ChainFactory != nil {
-			more, err := in.ChainFactory.New(o)
-			if err != nil {
-				return nil, err
-			}
+	in.Lifecycle.Append(fx.Hook{
+		OnStart: OnStart(o, server, serverLogger, func() { in.Shutdowner.Shutdown() }),
+		OnStop:  OnStop(server, serverLogger),
+	})
 
-			serverChain = serverChain.Extend(more)
-		}
+	return router, nil
+}
 
-		var (
-			router = mux.NewRouter()
-			server = New(
-				o,
-				serverLogger,
-				serverChain.Append(c...).Then(router),
-			)
-		)
-
-		in.Lifecycle.Append(fx.Hook{
-			OnStart: OnStart(o, server, serverLogger, func() { in.Shutdowner.Shutdown() }),
-			OnStop:  OnStop(server, serverLogger),
-		})
-
-		return router, nil
+// Annotated is like Unmarshal, save that it emits a named *mux.Router.  This method is appropriate
+// for applications with multiple servers.  The name of the returned *mux.Router is either the Name field (if set)
+// or the Key field (if Name is empty).
+func (u Unmarshal) Annotated() fx.Annotated {
+	return fx.Annotated{
+		Name:   u.name(),
+		Target: u.Provide,
 	}
 }

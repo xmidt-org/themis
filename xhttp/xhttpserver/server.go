@@ -26,7 +26,6 @@ type Interface interface {
 // Options represent the configurable options for creating a server, typically unmarshalled from an
 // external source.
 type Options struct {
-	Name    string
 	Address string
 	Network string
 	Tls     *Tls
