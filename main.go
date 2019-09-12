@@ -96,26 +96,11 @@ func main() {
 			provideClientChain,
 			provideServerChainFactory,
 			xhttpclient.Unmarshal("client"),
-			fx.Annotated{
-				Name:   "servers.key",
-				Target: xhttpserver.Unmarshal("servers.key"),
-			},
-			fx.Annotated{
-				Name:   "servers.issuer",
-				Target: xhttpserver.Unmarshal("servers.issuer"),
-			},
-			fx.Annotated{
-				Name:   "servers.claims",
-				Target: xhttpserver.Unmarshal("servers.claims"),
-			},
-			fx.Annotated{
-				Name:   "servers.metrics",
-				Target: xhttpserver.Unmarshal("servers.metrics"),
-			},
-			fx.Annotated{
-				Name:   "servers.health",
-				Target: xhttpserver.Unmarshal("servers.health"),
-			},
+			xhttpserver.Unmarshal{Key: "servers.key"}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.issuer"}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.claims"}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.metrics"}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.health"}.Annotated(),
 		),
 		fx.Invoke(
 			BuildKeyRoutes,

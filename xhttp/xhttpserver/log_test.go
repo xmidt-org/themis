@@ -20,29 +20,14 @@ func TestServerKey(t *testing.T) {
 }
 
 func TestNewServerLogger(t *testing.T) {
-	t.Run("WithoutName", func(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
 		var (
 			assert  = assert.New(t)
 			require = require.New(t)
 
 			output bytes.Buffer
 			base   = log.NewJSONLogger(&output)
-			logger = NewServerLogger(Options{}, base)
-		)
-
-		require.NotNil(logger)
-		logger.Log("foo", "bar")
-		assert.Greater(output.Len(), 0)
-	})
-
-	t.Run("WithName", func(t *testing.T) {
-		var (
-			assert  = assert.New(t)
-			require = require.New(t)
-
-			output bytes.Buffer
-			base   = log.NewJSONLogger(&output)
-			logger = NewServerLogger(Options{Name: "test"}, base)
+			logger = NewServerLogger("test", Options{}, base)
 		)
 
 		require.NotNil(logger)
@@ -58,7 +43,7 @@ func TestNewServerLogger(t *testing.T) {
 
 			output bytes.Buffer
 			base   = log.NewJSONLogger(&output)
-			logger = NewServerLogger(Options{Name: "test"}, base, "port", 1234)
+			logger = NewServerLogger("test", Options{}, base, "port", 1234)
 		)
 
 		require.NotNil(logger)

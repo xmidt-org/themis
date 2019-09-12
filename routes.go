@@ -23,10 +23,10 @@ type ServerChainIn struct {
 }
 
 func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
-	return xhttpserver.ChainFactoryFunc(func(o xhttpserver.Options) (alice.Chain, error) {
+	return xhttpserver.ChainFactoryFunc(func(name string, o xhttpserver.Options) (alice.Chain, error) {
 		var (
 			curryLabel = prometheus.Labels{
-				ServerLabel: o.Name,
+				ServerLabel: name,
 			}
 
 			serverLabellers = xmetricshttp.NewServerLabellers(
@@ -85,7 +85,9 @@ type IssuerRoutesIn struct {
 }
 
 func BuildIssuerRoutes(in IssuerRoutesIn) {
-	in.Router.Handle("/issue", in.Handler).Methods("GET")
+	if in.Router != nil {
+		in.Router.Handle("/issue", in.Handler).Methods("GET")
+	}
 }
 
 type ClaimsRoutesIn struct {
@@ -95,7 +97,9 @@ type ClaimsRoutesIn struct {
 }
 
 func BuildClaimsRoutes(in ClaimsRoutesIn) {
-	in.Router.Handle("/claims", in.Handler).Methods("GET")
+	if in.Router != nil {
+		in.Router.Handle("/claims", in.Handler).Methods("GET")
+	}
 }
 
 type MetricsRoutesIn struct {

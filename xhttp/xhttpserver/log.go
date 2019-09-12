@@ -18,10 +18,10 @@ func ServerKey() interface{} {
 }
 
 // NewServerLogger returns a go-kit Logger enriched with information about the server.
-func NewServerLogger(o Options, base log.Logger, extra ...interface{}) log.Logger {
+func NewServerLogger(key string, o Options, base log.Logger, extra ...interface{}) log.Logger {
 	var parameters []interface{}
-	if len(o.Name) > 0 {
-		parameters = append(parameters, ServerKey(), o.Name)
+	if len(key) > 0 {
+		parameters = append(parameters, ServerKey(), key)
 	}
 
 	parameters = append(parameters, extra...)
