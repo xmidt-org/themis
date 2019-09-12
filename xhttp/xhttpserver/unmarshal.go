@@ -105,7 +105,7 @@ func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
 
 	var (
 		serverName   = u.name()
-		serverLogger = NewServerLogger(serverName, o, in.Logger)
+		serverLogger = log.With(in.Logger, ServerKey(), serverName)
 		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
 	)
 
