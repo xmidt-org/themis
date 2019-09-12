@@ -11,6 +11,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTCPKeepAliveListener(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+	)
+
+	tcpListener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(err)
+
+	defer tcpListener.Close()
+
+	keepAliveListener := tcpKeepAliveListener{
+		TCPListener: tcpListener.(*net.TCPListener),
+		period:      3 * time.Minute,
+	}
+
+	acceptDone := make(chan struct{})
+	go func() {
+		defer close(acceptDone)
+		c, err := keepAliveListener.Accept()
+		assert.NoError(err)
+		if err == nil {
+			c.Close()
+		}
+	}()
+
+	dialDone := make(chan struct{})
+	go func() {
+		defer close(dialDone)
+		address := keepAliveListener.Addr()
+		c, err := net.Dial(address.Network(), address.String())
+		assert.NoError(err)
+		if err == nil {
+			c.Close()
+		}
+	}()
+
+	select {
+	case <-acceptDone:
+	case <-time.After(1 * time.Second):
+		assert.Fail("Accept did not complete")
+	}
+
+	select {
+	case <-dialDone:
+	case <-time.After(1 * time.Second):
+		assert.Fail("Dial did not complete")
+	}
+}
+
 func testNewListenerTlsError(t *testing.T) {
 	var (
 		assert = assert.New(t)

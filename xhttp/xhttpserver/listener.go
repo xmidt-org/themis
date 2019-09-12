@@ -19,6 +19,10 @@ type tcpKeepAliveListener struct {
 }
 
 func (l tcpKeepAliveListener) Accept() (net.Conn, error) {
+	return l.AcceptTCP()
+}
+
+func (l tcpKeepAliveListener) AcceptTCP() (*net.TCPConn, error) {
 	conn, err := l.TCPListener.AcceptTCP()
 	if err != nil {
 		return nil, err
