@@ -33,14 +33,14 @@ func testUnmarshalSuccess(t *testing.T) {
 							"client": {
 								"transport": {
 									"idleConnTimeout": "1s",
-									"header": {
-										"x-header": ["value"]
-									},
 									"tls": {
 										"insecureSkipVerify": true
 									}
 								},
-								"timeout": "10s"
+								"timeout": "10s",
+								"header": {
+									"x-header": ["value"]
+								}
 							}
 						}
 					`),

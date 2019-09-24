@@ -31,12 +31,19 @@ type Transport struct {
 	MaxResponseHeaderBytes int64
 	TlsHandshakeTimeout    time.Duration
 	Tls                    *Tls
-	Header                 http.Header
 }
 
 // Options represents the set of configurable options for an HTTP client
 type Options struct {
-	Timeout   time.Duration
+	// Timeout is the http.Client timeout
+	Timeout time.Duration
+
+	// Header is an optional set of HTTP headers applied to all outgoing requests
+	// made through any client created with these options.
+	Header http.Header
+
+	// Transport describes the http.Transport created for this client when a custom
+	// RoundTripper is not supplied.  If this is unset, a default http.Transport is created.
 	Transport *Transport
 }
 
@@ -56,28 +63,25 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 // is nil, this function returns a default http.Transport instance.  Otherwise, an http.Transport
 // is returned with its fields set from the given Transport options.
 func NewRoundTripper(t *Transport) http.RoundTripper {
-	var rt http.RoundTripper
 	if t == nil {
-		rt = new(http.Transport)
-	} else {
-		rt = RequestHeaders{Header: t.Header}.Then(&http.Transport{
-			DisableKeepAlives:      t.DisableKeepAlives,
-			DisableCompression:     t.DisableCompression,
-			MaxIdleConns:           t.MaxIdleConns,
-			MaxIdleConnsPerHost:    t.MaxIdleConnsPerHost,
-			MaxConnsPerHost:        t.MaxConnsPerHost,
-			MaxResponseHeaderBytes: t.MaxResponseHeaderBytes,
-
-			IdleConnTimeout:       t.IdleConnTimeout,
-			ResponseHeaderTimeout: t.ResponseHeaderTimeout,
-			ExpectContinueTimeout: t.ExpectContinueTimeout,
-			TLSHandshakeTimeout:   t.TlsHandshakeTimeout,
-
-			TLSClientConfig: NewTlsConfig(t.Tls),
-		})
+		return new(http.Transport)
 	}
 
-	return rt
+	return &http.Transport{
+		DisableKeepAlives:      t.DisableKeepAlives,
+		DisableCompression:     t.DisableCompression,
+		MaxIdleConns:           t.MaxIdleConns,
+		MaxIdleConnsPerHost:    t.MaxIdleConnsPerHost,
+		MaxConnsPerHost:        t.MaxConnsPerHost,
+		MaxResponseHeaderBytes: t.MaxResponseHeaderBytes,
+
+		IdleConnTimeout:       t.IdleConnTimeout,
+		ResponseHeaderTimeout: t.ResponseHeaderTimeout,
+		ExpectContinueTimeout: t.ExpectContinueTimeout,
+		TLSHandshakeTimeout:   t.TlsHandshakeTimeout,
+
+		TLSClientConfig: NewTlsConfig(t.Tls),
+	}
 }
 
 // New fully constructs an http client from a set of options.  NewRoundTripper is used to create the http.RoundTripper.
@@ -89,7 +93,7 @@ func New(o Options) Interface {
 // when a custom RoundTripper, including decoration, is desired.
 func NewCustom(o Options, rt http.RoundTripper) Interface {
 	return &http.Client{
-		Transport: rt,
+		Transport: RequestHeaders{Header: o.Header}.Then(rt),
 		Timeout:   o.Timeout,
 	}
 }
