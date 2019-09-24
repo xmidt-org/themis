@@ -55,3 +55,16 @@ func (ch Chain) ThenFunc(rtf RoundTripperFunc) http.RoundTripper {
 
 	return ch.Then(rtf)
 }
+
+// A ChainFactory can be used to tailor a Chain of decorators for a specific client.  This factory
+// type is primarily useful when an application has multiple HTTP client objects.  For cases where
+// there is only (1) HTTP client, a Chain component works better.
+type ChainFactory interface {
+	NewClientChain(string, Options) (Chain, error)
+}
+
+type ChainFactoryFunc func(string, Options) (Chain, error)
+
+func (cff ChainFactoryFunc) NewClientChain(name string, o Options) (Chain, error) {
+	return cff(name, o)
+}

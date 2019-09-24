@@ -45,7 +45,7 @@ func testUnmarshalSuccess(t *testing.T) {
 						}
 					`),
 				),
-				Unmarshal("client"),
+				Unmarshal{Key: "client"}.Provide,
 			),
 			fx.Populate(&c),
 		)
@@ -83,7 +83,7 @@ func testUnmarshalFailure(t *testing.T) {
 							}
 					`),
 				),
-				Unmarshal("client"),
+				Unmarshal{Key: "client"}.Provide,
 			),
 			fx.Populate(&c),
 		)

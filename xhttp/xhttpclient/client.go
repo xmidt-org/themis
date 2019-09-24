@@ -31,9 +31,7 @@ type Transport struct {
 	MaxResponseHeaderBytes int64
 	TlsHandshakeTimeout    time.Duration
 	Tls                    *Tls
-
-	// Header is a set of static HTTP headers added to every request
-	Header http.Header
+	Header                 http.Header
 }
 
 // Options represents the set of configurable options for an HTTP client
@@ -54,20 +52,15 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 	}
 }
 
-// NewRoundTripper assembles an http.RoundTripper given a set of configuration options.
-// The returned round tripper will be backed by an http.Transport, decorated with any
-// constructors that were supplied.  If the Transport options is nil, a default http.Transport
-// is used.
-func NewRoundTripper(t *Transport, c ...Constructor) http.RoundTripper {
-	var (
-		delegate *http.Transport
-		chain    Chain
-	)
-
-	if t != nil {
-		chain = chain.Append(RequestHeaders{Header: t.Header}.Then)
-
-		delegate = &http.Transport{
+// NewRoundTripper creates an http.RoundTripper from a set of Transport options.  If the Transport
+// is nil, this function returns a default http.Transport instance.  Otherwise, an http.Transport
+// is returned with its fields set from the given Transport options.
+func NewRoundTripper(t *Transport) http.RoundTripper {
+	var rt http.RoundTripper
+	if t == nil {
+		rt = new(http.Transport)
+	} else {
+		rt = RequestHeaders{Header: t.Header}.Then(&http.Transport{
 			DisableKeepAlives:      t.DisableKeepAlives,
 			DisableCompression:     t.DisableCompression,
 			MaxIdleConns:           t.MaxIdleConns,
@@ -81,18 +74,22 @@ func NewRoundTripper(t *Transport, c ...Constructor) http.RoundTripper {
 			TLSHandshakeTimeout:   t.TlsHandshakeTimeout,
 
 			TLSClientConfig: NewTlsConfig(t.Tls),
-		}
-	} else {
-		delegate = new(http.Transport)
+		})
 	}
 
-	return chain.Append(c...).Then(delegate)
+	return rt
 }
 
-// New assembles an http client from a set of configuration options
-func New(o Options, c ...Constructor) Interface {
+// New fully constructs an http client from a set of options.  NewRoundTripper is used to create the http.RoundTripper.
+func New(o Options) Interface {
+	return NewCustom(o, NewRoundTripper(o.Transport))
+}
+
+// NewCustom uses a set of options and a supplied RoundTripper to create an http client.  Use this function
+// when a custom RoundTripper, including decoration, is desired.
+func NewCustom(o Options, rt http.RoundTripper) Interface {
 	return &http.Client{
-		Transport: NewRoundTripper(o.Transport, c...),
+		Transport: rt,
 		Timeout:   o.Timeout,
 	}
 }
