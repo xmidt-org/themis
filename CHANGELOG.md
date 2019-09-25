@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Refactored config and xlog packages to remove some magic and makes things more obvious
+- Allow named HTTP client components
+- Simplify HTTP client/server component providers
 
 ## [v0.0.2]
 - Fixed issues with building themis as a module
