@@ -167,14 +167,3 @@ var errorLogger = log.WithPrefix(
 func Error() log.Logger {
 	return errorLogger
 }
-
-type discardLogger struct{}
-
-func (dl discardLogger) Log(...interface{}) error {
-	return nil
-}
-
-// Discard() returns a go-kit logger that simply ignores any calls to Log
-func Discard() log.Logger {
-	return discardLogger{}
-}

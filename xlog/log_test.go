@@ -252,14 +252,3 @@ func TestDefault(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal(defaultLogger, Default())
 }
-
-func TestDiscard(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-		logger  = Discard()
-	)
-
-	require.NotNil(logger)
-	assert.NoError(logger.Log(MessageKey(), "foo", ErrorKey(), "bar"))
-}

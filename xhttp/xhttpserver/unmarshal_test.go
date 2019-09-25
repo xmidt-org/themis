@@ -8,6 +8,7 @@ import (
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
 
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,7 @@ func testUnmarshalProvideFull(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -92,7 +93,7 @@ func testUnmarshalProvideOptional(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(),
 				Unmarshal{
 					Key:      "server",
@@ -123,7 +124,7 @@ func testUnmarshalProvideRequired(t *testing.T) {
 		app = fx.New(
 			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(),
 				Unmarshal{Key: "server"}.Provide,
 			),
@@ -145,7 +146,7 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 		app = fx.New(
 			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -176,7 +177,7 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		app = fx.New(
 			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -226,7 +227,7 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -289,7 +290,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{

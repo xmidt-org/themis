@@ -9,6 +9,7 @@ import (
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
 
+	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
@@ -201,7 +202,7 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		app = fx.New(
 			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -344,7 +345,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 		c   Interface
 		app = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(xlog.Discard()),
+				xlog.Provide(log.NewNopLogger()),
 				config.ProvideViper(
 					config.Json(`
 						{
