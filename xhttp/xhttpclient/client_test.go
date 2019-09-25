@@ -125,3 +125,23 @@ func TestNew(t *testing.T) {
 	require.IsType((*http.Client)(nil), c)
 	assert.Equal(12*time.Second, c.(*http.Client).Timeout)
 }
+
+func TestNewCustom(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		rt = new(http.Transport)
+		c  = NewCustom(Options{
+			Transport: &Transport{
+				DisableKeepAlives: true,
+			},
+			Timeout: 24 * time.Minute,
+		}, rt)
+	)
+
+	require.NotNil(c)
+	require.IsType((*http.Client)(nil), c)
+	assert.Equal(24*time.Minute, c.(*http.Client).Timeout)
+	assert.Equal(rt, c.(*http.Client).Transport)
+}

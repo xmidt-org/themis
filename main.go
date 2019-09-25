@@ -95,7 +95,7 @@ func main() {
 			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			provideClientChain,
 			provideServerChainFactory,
-			xhttpclient.Unmarshal("client"),
+			xhttpclient.Unmarshal{Key: "client"}.Provide,
 			xhttpserver.Unmarshal{Key: "servers.key"}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.issuer"}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.claims"}.Annotated(),
