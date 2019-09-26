@@ -104,10 +104,6 @@ func testNewListenerSimple(t *testing.T) {
 			Network:              "tcp4",
 			DisableTCPKeepAlives: true,
 		},
-		Options{
-			Network:              "tcp6",
-			DisableTCPKeepAlives: true,
-		},
 	}
 
 	for i, record := range testData {
