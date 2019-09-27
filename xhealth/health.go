@@ -11,11 +11,17 @@ import (
 
 // Options holds the available configuration options for the health infrastructure
 type Options struct {
+	// DisableLogging controls whether the created health service logs anything.  The default is false,
+	// meaning logging is enabled.
 	DisableLogging bool
-	Custom         map[string]interface{}
+
+	// Custom is an optional map passed to NewHandler that is included in all responses to health checks
+	Custom map[string]interface{}
 }
 
-// New constructs an IHealth instance for the given environment
+// New constructs an IHealth instance for the given environment.  If either the DisableLogging option field
+// is set or the given logger is nil, logging will be disabled on the returned health object.  The listener
+// is optional.
 func New(o Options, logger log.Logger, listener health.IStatusListener) (health.IHealth, error) {
 	h := health.New()
 	if o.DisableLogging || logger == nil {
