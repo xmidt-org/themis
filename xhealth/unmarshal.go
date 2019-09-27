@@ -9,15 +9,33 @@ import (
 	"go.uber.org/fx"
 )
 
+// HealthIn defines the set of dependencies for instantiating an InVision health service
+// and binding that service to the application lifecycle.
 type HealthIn struct {
 	fx.In
 
-	Logger         log.Logger
-	Unmarshaller   config.Unmarshaller
-	Lifecycle      fx.Lifecycle
+	// Logger is the required go-kit logger that will receive health logging output
+	Logger log.Logger
+
+	// Unmarshaller is the required configuration unmarshaller strategy
+	Unmarshaller config.Unmarshaller
+
+	// Lifecycle is used to bind the health service the the uber/fx App lifecycle
+	Lifecycle fx.Lifecycle
+
+	// StatusListener is the optional listener for health status changes
 	StatusListener health.IStatusListener `optional:"true"`
+
+	// Config is an optional check.  If both this field and Configs are set, both fields
+	// are added.
+	Config *health.Config `optional:"true"`
+
+	// Configs is an optional slice of checks.  If both this field and Config are set, both
+	// fields are added.
+	Configs []*health.Config `optional:"true"`
 }
 
+// HealthOut defines the components emitted by this package
 type HealthOut struct {
 	fx.Out
 
@@ -37,6 +55,18 @@ func Unmarshal(configKey string) func(HealthIn) (HealthOut, error) {
 		h, err := New(o, in.Logger, in.StatusListener)
 		if err != nil {
 			return HealthOut{}, err
+		}
+
+		if in.Config != nil {
+			if err := h.AddCheck(in.Config); err != nil {
+				return HealthOut{}, err
+			}
+		}
+
+		if len(in.Configs) > 0 {
+			if err := h.AddChecks(in.Configs); err != nil {
+				return HealthOut{}, err
+			}
 		}
 
 		in.Lifecycle.Append(fx.Hook{

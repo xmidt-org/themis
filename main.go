@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	health "github.com/InVisionApp/go-health"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
@@ -103,6 +105,17 @@ func main() {
 			xhttpserver.Unmarshal{Key: "servers.health"}.Annotated(),
 		),
 		fx.Invoke(
+			xhealth.ApplyChecks(
+				&health.Config{
+					Name:     applicationName,
+					Interval: 24 * time.Hour,
+					Checker: xhealth.NopCheckable{
+						Details: map[string]interface{}{
+							"StartTime": time.Now().UTC().Format(time.RFC3339),
+						},
+					},
+				},
+			),
 			BuildKeyRoutes,
 			BuildIssuerRoutes,
 			BuildClaimsRoutes,
