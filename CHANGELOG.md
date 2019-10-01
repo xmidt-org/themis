@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.0.3]
+- updated Makefile
+- updated conf directory
+
+
 - Refactored config and xlog packages to remove some magic and makes things more obvious
 - Allow named HTTP client components
 - Simplify HTTP client/server component providers
@@ -28,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.3...HEAD
+[v0.0.3]: https://github.com/xmidt-org/themis/compare/v0.0.2...v0.0.3
 [v0.0.2]: https://github.com/xmidt-org/themis/compare/v0.0.1...v0.0.2
 [v0.0.1]: https://github.com/xmidt-org/themis/compare/v0.0.0...v0.0.1
