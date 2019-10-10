@@ -1,10 +1,10 @@
 %define AutoReqProv: no
 %define __os_install_post %{nil}
 
-Name:       themis
+Name:       rbl_themis
 Version:    %{_version}
 Release:    %{_release}%{?dist}
-Summary:    The Xmidt authentication JWT issuer for connecting devices.
+Summary:   The Xmidt authentication JWT issuer for connecting devices in RBL mode. 
 
 Vendor:     Comcast
 Packager:   Comcast
@@ -19,7 +19,7 @@ BuildRequires: systemd
 BuildRequires: golang >= 1.12
 
 %description
-The Xmidt authentication JWT issuer for connecting devices.
+The Xmidt authentication JWT issuer for connecting devices in RBL mode. 
 
 %build
 GO111MODULE=on go build -o $RPM_SOURCE_DIR/%{name} %{_topdir}/..

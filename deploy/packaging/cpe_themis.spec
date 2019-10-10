@@ -4,7 +4,7 @@
 Name:       cpe_themis
 Version:    %{_version}
 Release:    %{_release}%{?dist}
-Summary:    The Xmidt authentication JWT issuer for connecting devices.
+Summary:    The Xmidt authentication JWT issuer for connecting devices in CPE mode.
 
 Vendor:     Comcast
 Packager:   Comcast
