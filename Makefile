@@ -22,13 +22,12 @@ rpm:
 	# CPE service 
 	tar -czf ./.ignore/SOURCES/cpe_themis-$(PROGVER).tar.gz --transform 's/^\./cpe_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/cpe_themis.service ./.ignore/SOURCES
-	cp cpe_themis.yaml  ./.ignore/SOURCES
 
-	#  RBL service
+	# RBL service
 	tar -czf ./.ignore/SOURCES/rbl_themis-$(PROGVER).tar.gz --transform 's/^\./rbl_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/rbl_themis.service ./.ignore/SOURCES
-	cp rbl_themis.yaml  ./.ignore/SOURCES
 
+	cp themis.yaml  ./.ignore/SOURCES
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
 	cp CHANGELOG.md ./.ignore/SOURCES
@@ -39,9 +38,9 @@ rpm:
     		-ba deploy/packaging/cpe_themis.spec
 
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-    		--define "_version $(PROGVER)" \
-    		--define "_release 1" \
-    		-ba deploy/packaging/rbl_themis.spec
+     		--define "_version $(PROGVER)" \
+     		--define "_release 1" \
+     		-ba deploy/packaging/rbl_themis.spec
 
 .PHONY: version
 version:
