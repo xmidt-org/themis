@@ -19,18 +19,15 @@ build: go-mod-vendor
 rpm:
 	mkdir -p ./.ignore/SOURCES
 
-	cpe_service=cpe_$(APP)
-	rbl_service=rbl_$(APP)
-
 	# CPE service 
-	tar -czf ./.ignore/SOURCES/$(cpe_service)-$(PROGVER).tar.gz --transform 's/^\./$(cpe_service)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/$(cpe_service).service ./.ignore/SOURCES
-	cp $(cpe_service).yaml  ./.ignore/SOURCES
+	tar -czf ./.ignore/SOURCES/cpe_themis-$(PROGVER).tar.gz --transform 's/^\./cpe_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/cpe_themis.service ./.ignore/SOURCES
+	cp cpe_themis.yaml  ./.ignore/SOURCES
 
 	#  RBL service
-	tar -czf ./.ignore/SOURCES/$(rbl_service)-$(PROGVER).tar.gz --transform 's/^\./$(rbl_service)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/$(rbl_service).service ./.ignore/SOURCES
-	cp $(rbl_service).yaml  ./.ignore/SOURCES
+	tar -czf ./.ignore/SOURCES/rbl_themis-$(PROGVER).tar.gz --transform 's/^\./rbl_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/rbl_themis.service ./.ignore/SOURCES
+	cp rbl_themis.yaml  ./.ignore/SOURCES
 
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
@@ -39,12 +36,12 @@ rpm:
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
     		--define "_version $(PROGVER)" \
     		--define "_release 1" \
-    		-ba deploy/packaging/$(cpe_service).spec
+    		-ba deploy/packaging/cpe_themis.spec
 
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
     		--define "_version $(PROGVER)" \
     		--define "_release 1" \
-    		-ba deploy/packaging/$(rbl_service).spec
+    		-ba deploy/packaging/rbl_themis.spec
 
 .PHONY: version
 version:
