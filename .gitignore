@@ -12,3 +12,6 @@ lib/
 
 # for releases
 .ignore/
+
+# vendor package
+vendor/

@@ -18,16 +18,33 @@ build: go-mod-vendor
 
 rpm:
 	mkdir -p ./.ignore/SOURCES
-	tar -czf ./.ignore/SOURCES/$(APP)-$(PROGVER).tar.gz --transform 's/^\./$(APP)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/$(APP).service ./.ignore/SOURCES
-	cp $(APP).yaml  ./.ignore/SOURCES
+
+	cpe_service=cpe_$(APP)
+	rbl_service=rbl_$(APP)
+
+	# CPE service 
+	tar -czf ./.ignore/SOURCES/$(cpe_service)-$(PROGVER).tar.gz --transform 's/^\./$(cpe_service)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/cpe-$(APP).service ./.ignore/SOURCES
+	cp $(cpe_service).yaml  ./.ignore/SOURCES
+
+	#  RBL service
+	tar -czf ./.ignore/SOURCES/$(rbl_service)-$(PROGVER).tar.gz --transform 's/^\./$(rbl_service)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/$(rbl_service).service ./.ignore/SOURCES
+	cp $(rbl_service).yaml  ./.ignore/SOURCES
+
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
 	cp CHANGELOG.md ./.ignore/SOURCES
+
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
     		--define "_version $(PROGVER)" \
     		--define "_release 1" \
-    		-ba deploy/packaging/$(APP).spec
+    		-ba deploy/packaging/$(cpe_service).spec
+
+	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
+    		--define "_version $(PROGVER)" \
+    		--define "_release 1" \
+    		-ba deploy/packaging/$(rbl_service).spec
 
 .PHONY: version
 version:

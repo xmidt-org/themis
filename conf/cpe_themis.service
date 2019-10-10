@@ -1,0 +1,17 @@
+[Unit]
+Description=The themis JWT issuer CPE-mode service
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=simple
+PIDFile=/run/cpe_themis.pid
+ExecStartPre=/usr/bin/rm -f /run/cpe_themis.pid
+ExecStart=/usr/bin/cpe_themis
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutStopSec=10
+KillMode=process
+PrivateTmp=true
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
