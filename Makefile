@@ -24,7 +24,7 @@ rpm:
 
 	# CPE service 
 	tar -czf ./.ignore/SOURCES/$(cpe_service)-$(PROGVER).tar.gz --transform 's/^\./$(cpe_service)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/cpe-$(APP).service ./.ignore/SOURCES
+	cp conf/$(cpe_service).service ./.ignore/SOURCES
 	cp $(cpe_service).yaml  ./.ignore/SOURCES
 
 	#  RBL service
