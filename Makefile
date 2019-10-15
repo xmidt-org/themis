@@ -29,6 +29,7 @@ rpm:
 	cp conf/rbl_themis.service ./.ignore/SOURCES
 	cp themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
 
+	# Standalone-mode service - All other XMiDT services are setup this way
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
 	cp CHANGELOG.md ./.ignore/SOURCES
@@ -42,6 +43,11 @@ rpm:
      		--define "_version $(PROGVER)" \
      		--define "_release 1" \
      		-ba deploy/packaging/rbl_themis.spec
+
+	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
+     		--define "_version $(PROGVER)" \
+     		--define "_release 1" \
+     		-ba deploy/packaging/themis.spec
 
 .PHONY: version
 version:
