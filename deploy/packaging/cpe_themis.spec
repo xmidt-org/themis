@@ -1,10 +1,10 @@
 %define AutoReqProv: no
 %define __os_install_post %{nil}
 
-Name:       themis
+Name:       cpe_themis
 Version:    %{_version}
 Release:    %{_release}%{?dist}
-Summary:    The Xmidt authentication JWT issuer for connecting devices in standalone mode.
+Summary:    The Xmidt authentication JWT issuer for connecting devices in CPE mode.
 
 Vendor:     Comcast
 Packager:   Comcast
@@ -19,7 +19,7 @@ BuildRequires: systemd
 BuildRequires: golang >= 1.12
 
 %description
-The Xmidt authentication JWT issuer for connecting devices in standalone mode
+The Xmidt authentication JWT issuer for connecting devices in CPE mode.
 
 %build
 GO111MODULE=on go build -o $RPM_SOURCE_DIR/%{name} %{_topdir}/..

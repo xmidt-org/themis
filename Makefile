@@ -18,16 +18,40 @@ build: go-mod-vendor
 
 rpm:
 	mkdir -p ./.ignore/SOURCES
+
+	# CPE service 
+	tar -czf ./.ignore/SOURCES/cpe_themis-$(PROGVER).tar.gz --transform 's/^\./cpe_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/cpe_themis.service ./.ignore/SOURCES
+	cp themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
+
+	# RBL service
+	tar -czf ./.ignore/SOURCES/rbl_themis-$(PROGVER).tar.gz --transform 's/^\./rbl_themis-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
+	cp conf/rbl_themis.service ./.ignore/SOURCES
+	cp themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
+
+	# Standalone-mode service - All other XMiDT services are setup this way
 	tar -czf ./.ignore/SOURCES/$(APP)-$(PROGVER).tar.gz --transform 's/^\./$(APP)-$(PROGVER)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/$(APP).service ./.ignore/SOURCES
-	cp $(APP).yaml  ./.ignore/SOURCES
+	cp conf/themis.service ./.ignore/SOURCES
+	cp themis.yaml  ./.ignore/SOURCES
+
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
 	cp CHANGELOG.md ./.ignore/SOURCES
+
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
     		--define "_version $(PROGVER)" \
     		--define "_release 1" \
-    		-ba deploy/packaging/$(APP).spec
+    		-ba deploy/packaging/cpe_themis.spec
+
+	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
+     		--define "_version $(PROGVER)" \
+     		--define "_release 1" \
+     		-ba deploy/packaging/rbl_themis.spec
+
+	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
+     		--define "_version $(PROGVER)" \
+     		--define "_release 1" \
+     		-ba deploy/packaging/$(APP).spec
 
 .PHONY: version
 version:

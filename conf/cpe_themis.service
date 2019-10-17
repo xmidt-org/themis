@@ -1,12 +1,12 @@
 [Unit]
-Description=The themis JWT issuer service in standalone mode
+Description=The themis JWT issuer CPE-mode service
 After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=simple
-PIDFile=/run/themis.pid
-ExecStartPre=/usr/bin/rm -f /run/themis.pid
-ExecStart=/usr/bin/themis
+PIDFile=/run/cpe_themis.pid
+ExecStartPre=/usr/bin/rm -f /run/cpe_themis.pid
+ExecStart=/usr/bin/cpe_themis -f /etc/cpe_themis/cpe_themis.yaml
 ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutStopSec=10
 KillMode=process

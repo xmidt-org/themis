@@ -1,12 +1,12 @@
 [Unit]
-Description=The themis JWT issuer service in standalone mode
+Description=The themis JWT issuer RBL-mode service
 After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=simple
-PIDFile=/run/themis.pid
-ExecStartPre=/usr/bin/rm -f /run/themis.pid
-ExecStart=/usr/bin/themis
+PIDFile=/run/rbl_themis.pid
+ExecStartPre=/usr/bin/rm -f /run/rbl_themis.pid
+ExecStart=/usr/bin/rbl_themis -f /etc/rbl_themis/rbl_themis.yaml
 ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutStopSec=10
 KillMode=process
