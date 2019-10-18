@@ -40,7 +40,7 @@ import (
 
 const (
 	applicationName    = "themis"
-	applicationVersion = "0.0.3"
+	applicationVersion = "0.1.0"
 )
 
 func setupFlagSet(fs *pflag.FlagSet) error {
