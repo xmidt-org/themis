@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.1.0]
+- Added logic to create RPMs per themis running mode
+
+
+
 ## [v0.0.3]
 - updated Makefile
 - updated conf directory
@@ -34,7 +39,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.1.0...HEAD
+[v0.1.0]: https://github.com/xmidt-org/themis/compare/v0.0.3...v0.1.0
 [v0.0.3]: https://github.com/xmidt-org/themis/compare/v0.0.2...v0.0.3
 [v0.0.2]: https://github.com/xmidt-org/themis/compare/v0.0.1...v0.0.2
 [v0.0.1]: https://github.com/xmidt-org/themis/compare/v0.0.0...v0.0.1
