@@ -4,13 +4,130 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 var (
 	ErrTlsCertificateRequired         = errors.New("Both a certificateFile and keyFile are required")
 	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
+
+type InvalidCertificateError struct {
+	Certificate *x509.Certificate
+}
+
+func (ice InvalidCertificateError) Error() string {
+	return fmt.Sprintf(
+		"Certificate with common name [%s] and DNS names {%s} is not valid",
+		ice.Certificate.Subject.CommonName,
+		strings.Join(ice.Certificate.DNSNames, ","),
+	)
+}
+
+// PeerVerify allows common checks against a client-side certificate to be configured externally.  Any constraint that matches
+// will result in a valid peer cert.
+type PeerVerify struct {
+	// RequiredDNSSuffixes enumerates any DNS suffixes that are checked.  A DNSName field of at least (1) peer cert
+	// must have one of these suffixes.  If this field is not supplied, no DNS suffix checking is performed.
+	//
+	// If any DNS suffix matches, that is sufficient for the peer cert to be valid.  No further checking is done in that case.
+	RequiredDNSSuffixes []string
+
+	// RequiredCommonNames lists the subject common names that at least (1) peer cert must have.  If not supplied,
+	// no checking is done on the common name.
+	//
+	// If any common name matches, that is sufficient for the peer cert to be valid.  No further checking is done in that case.
+	RequiredCommonNames []string
+}
+
+// PeerVerifier is a verification strategy for a peer (client) certificate.
+type PeerVerifier func(peerCert *x509.Certificate, verifiedChains [][]*x509.Certificate) error
+
+// peerVerifier is the internal implementation of crypto/tls.Config.VerifyPeerCertificate
+type peerVerifier struct {
+	requiredDNSSuffixes []string
+	requiredCommonNames []string
+	extra               []PeerVerifier
+}
+
+func (pv *peerVerifier) verifyParsedCertificate(cert *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
+	// always give application-layer code power of veto first ...
+	for _, ef := range pv.extra {
+		if err := ef(cert, verifiedChains); err != nil {
+			return err
+		}
+	}
+
+	for _, suffix := range pv.requiredDNSSuffixes {
+		for _, dnsName := range cert.DNSNames {
+			if strings.HasSuffix(strings.ToLower(dnsName), suffix) {
+				return nil
+			}
+		}
+	}
+
+	for _, commonName := range pv.requiredCommonNames {
+		if cert.Subject.CommonName == commonName {
+			return nil
+		}
+	}
+
+	return InvalidCertificateError{Certificate: cert}
+}
+
+func (pv *peerVerifier) verifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	// once we've verified *any* cert, we don't continue to verify.  we do, however, want to keep
+	// parsing certs since if any cert isn't valid, we want to fail the verification.
+	verified := false
+
+	for _, rawCert := range rawCerts {
+		cert, err := x509.ParseCertificate(rawCert)
+		if err != nil {
+			return err
+		}
+
+		if !verified {
+			err = pv.verifyParsedCertificate(cert, verifiedChains)
+			if err != nil {
+				return err
+			}
+
+			verified = true
+		}
+	}
+
+	return nil
+}
+
+// NewVerifyPeerCertificate produces a peer cert verification closure given configuration and application-layer logic.
+// This function will return a nil function if no peer verification is configured in the Tls instance AND there are no
+// application-layer PeerVerifiers supplied.
+func NewVerifyPeerCertificate(t *Tls, extra ...PeerVerifier) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	pv := &peerVerifier{
+		extra: extra,
+	}
+
+	if t != nil {
+		if len(t.PeerVerify.RequiredDNSSuffixes) > 0 {
+			pv.requiredDNSSuffixes = append(pv.requiredDNSSuffixes, t.PeerVerify.RequiredDNSSuffixes...)
+			for i := range pv.requiredDNSSuffixes {
+				pv.requiredDNSSuffixes[i] = strings.ToLower(pv.requiredDNSSuffixes[i])
+			}
+		}
+
+		if len(t.PeerVerify.RequiredCommonNames) > 0 {
+			pv.requiredCommonNames = append(pv.requiredCommonNames, t.PeerVerify.RequiredCommonNames...)
+		}
+	}
+
+	if len(pv.extra) == 0 && len(pv.requiredDNSSuffixes) == 0 && len(pv.requiredCommonNames) == 0 {
+		return nil
+	}
+
+	return pv.verifyPeerCertificate
+}
 
 // Tls represents the set of configurable options for a serverside tls.Config associated with a server.
 type Tls struct {
@@ -21,11 +138,15 @@ type Tls struct {
 	NextProtos              []string
 	MinVersion              uint16
 	MaxVersion              uint16
+	PeerVerify              PeerVerify
 }
 
 // NewTlsConfig produces a *tls.Config from a set of configuration options.  If the supplied set of options
 // is nil, this function returns nil with no error.
-func NewTlsConfig(t *Tls) (*tls.Config, error) {
+//
+// If supplied, the PeerVerifier strategies will be executed as part of peer verification.  This allows application-layer
+// logic to be injected.
+func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 	if t == nil {
 		return nil, nil
 	}
@@ -45,10 +166,11 @@ func NewTlsConfig(t *Tls) (*tls.Config, error) {
 	}
 
 	tc := &tls.Config{
-		MinVersion: t.MinVersion,
-		MaxVersion: t.MaxVersion,
-		ServerName: t.ServerName,
-		NextProtos: nextProtos,
+		MinVersion:            t.MinVersion,
+		MaxVersion:            t.MaxVersion,
+		ServerName:            t.ServerName,
+		NextProtos:            nextProtos,
+		VerifyPeerCertificate: NewVerifyPeerCertificate(t, extra...),
 	}
 
 	if cert, err := tls.LoadX509KeyPair(t.CertificateFile, t.KeyFile); err != nil {

@@ -36,8 +36,8 @@ func (l tcpKeepAliveListener) AcceptTCP() (*net.TCPConn, error) {
 // NewListener constructs a net.Listener appropriate for the server configuration.  This function
 // binds to the address specified in the options or an autoselected address if that field is one
 // of the values mentioned at https://godoc.org/net#Listen.
-func NewListener(ctx context.Context, o Options, lcfg net.ListenConfig) (net.Listener, error) {
-	tc, err := NewTlsConfig(o.Tls)
+func NewListener(ctx context.Context, o Options, lcfg net.ListenConfig, extra ...PeerVerifier) (net.Listener, error) {
+	tc, err := NewTlsConfig(o.Tls, extra...)
 	if err != nil {
 		return nil, err
 	}
