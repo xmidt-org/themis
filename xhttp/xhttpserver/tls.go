@@ -29,17 +29,18 @@ func (ice InvalidCertificateError) Error() string {
 // PeerVerify allows common checks against a client-side certificate to be configured externally.  Any constraint that matches
 // will result in a valid peer cert.
 type PeerVerify struct {
-	// RequiredDNSSuffixes enumerates any DNS suffixes that are checked.  A DNSName field of at least (1) peer cert
+	// DNSSuffixes enumerates any DNS suffixes that are checked.  A DNSName field of at least (1) peer cert
 	// must have one of these suffixes.  If this field is not supplied, no DNS suffix checking is performed.
+	// Matching is case insensitive.
 	//
 	// If any DNS suffix matches, that is sufficient for the peer cert to be valid.  No further checking is done in that case.
-	RequiredDNSSuffixes []string
+	DNSSuffixes []string
 
-	// RequiredCommonNames lists the subject common names that at least (1) peer cert must have.  If not supplied,
-	// no checking is done on the common name.
+	// CommonNames lists the subject common names that at least (1) peer cert must have.  If not supplied,
+	// no checking is done on the common name.  Matching common names is case sensitive.
 	//
 	// If any common name matches, that is sufficient for the peer cert to be valid.  No further checking is done in that case.
-	RequiredCommonNames []string
+	CommonNames []string
 }
 
 // PeerVerifier is a verification strategy for a peer (client) certificate.
@@ -47,9 +48,9 @@ type PeerVerifier func(peerCert *x509.Certificate, verifiedChains [][]*x509.Cert
 
 // peerVerifier is the internal implementation of crypto/tls.Config.VerifyPeerCertificate
 type peerVerifier struct {
-	requiredDNSSuffixes []string
-	requiredCommonNames []string
-	extra               []PeerVerifier
+	dnsSuffixes []string
+	commonNames []string
+	extra       []PeerVerifier
 }
 
 func (pv *peerVerifier) verifyParsedCertificate(cert *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
@@ -60,7 +61,7 @@ func (pv *peerVerifier) verifyParsedCertificate(cert *x509.Certificate, verified
 		}
 	}
 
-	for _, suffix := range pv.requiredDNSSuffixes {
+	for _, suffix := range pv.dnsSuffixes {
 		for _, dnsName := range cert.DNSNames {
 			if strings.HasSuffix(strings.ToLower(dnsName), suffix) {
 				return nil
@@ -68,7 +69,7 @@ func (pv *peerVerifier) verifyParsedCertificate(cert *x509.Certificate, verified
 		}
 	}
 
-	for _, commonName := range pv.requiredCommonNames {
+	for _, commonName := range pv.commonNames {
 		if cert.Subject.CommonName == commonName {
 			return nil
 		}
@@ -110,19 +111,19 @@ func NewVerifyPeerCertificate(t *Tls, extra ...PeerVerifier) func(rawCerts [][]b
 	}
 
 	if t != nil {
-		if len(t.PeerVerify.RequiredDNSSuffixes) > 0 {
-			pv.requiredDNSSuffixes = append(pv.requiredDNSSuffixes, t.PeerVerify.RequiredDNSSuffixes...)
-			for i := range pv.requiredDNSSuffixes {
-				pv.requiredDNSSuffixes[i] = strings.ToLower(pv.requiredDNSSuffixes[i])
+		if len(t.PeerVerify.DNSSuffixes) > 0 {
+			pv.dnsSuffixes = append(pv.dnsSuffixes, t.PeerVerify.DNSSuffixes...)
+			for i := range pv.dnsSuffixes {
+				pv.dnsSuffixes[i] = strings.ToLower(pv.dnsSuffixes[i])
 			}
 		}
 
-		if len(t.PeerVerify.RequiredCommonNames) > 0 {
-			pv.requiredCommonNames = append(pv.requiredCommonNames, t.PeerVerify.RequiredCommonNames...)
+		if len(t.PeerVerify.CommonNames) > 0 {
+			pv.commonNames = append(pv.commonNames, t.PeerVerify.CommonNames...)
 		}
 	}
 
-	if len(pv.extra) == 0 && len(pv.requiredDNSSuffixes) == 0 && len(pv.requiredCommonNames) == 0 {
+	if len(pv.extra) == 0 && len(pv.dnsSuffixes) == 0 && len(pv.commonNames) == 0 {
 		return nil
 	}
 
