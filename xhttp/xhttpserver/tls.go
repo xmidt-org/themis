@@ -13,7 +13,7 @@ var (
 	ErrUnableToAddClientCACertificate = errors.New("Unable to add client CA certificate")
 )
 
-// PeerVerifyError represents a verification error for strategies in this package
+// PeerVerifyError represents a verification error for a particular certificate
 type PeerVerifyError struct {
 	Certificate *x509.Certificate
 	Reason      string
@@ -158,7 +158,7 @@ type Tls struct {
 	NextProtos              []string
 	MinVersion              uint16
 	MaxVersion              uint16
-	PeerVerifyOptions       PeerVerifyOptions
+	PeerVerify              PeerVerifyOptions
 }
 
 // NewTlsConfig produces a *tls.Config from a set of configuration options.  If the supplied set of options
@@ -192,7 +192,7 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 		NextProtos: nextProtos,
 	}
 
-	if pvs := NewPeerVerifiers(t.PeerVerifyOptions, extra...); len(pvs) > 0 {
+	if pvs := NewPeerVerifiers(t.PeerVerify, extra...); len(pvs) > 0 {
 		tc.VerifyPeerCertificate = pvs.VerifyPeerCertificate
 	}
 
