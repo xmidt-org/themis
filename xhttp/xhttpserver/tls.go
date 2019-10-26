@@ -105,7 +105,7 @@ func NewConfiguredPeerVerifier(pvo PeerVerifyOptions) *ConfiguredPeerVerifier {
 // a given peer cert to be considered valid.
 type PeerVerifiers []PeerVerifier
 
-// Verify allows a PeerVerifies to itself be used as a PeerVerifier
+// Verify allows a PeerVerifiers to itself be used as a PeerVerifier
 func (pvs PeerVerifiers) Verify(peerCert *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
 	for _, pv := range pvs {
 		if err := pv.Verify(peerCert, verifiedChains); err != nil {
