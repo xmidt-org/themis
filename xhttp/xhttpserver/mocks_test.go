@@ -3,6 +3,8 @@ package xhttpserver
 import (
 	"bufio"
 	"context"
+	"crypto/x509"
+	"math/big"
 	"net"
 	"net/http"
 
@@ -130,4 +132,20 @@ func (m *mockServer) Shutdown(ctx context.Context) error {
 
 func (m *mockServer) ExpectShutdown(p ...interface{}) *mock.Call {
 	return m.On("Shutdown", p...)
+}
+
+func stubPeerCert(serialNumber int64) *x509.Certificate {
+	return &x509.Certificate{
+		SerialNumber: big.NewInt(serialNumber),
+	}
+}
+
+func stubChain(serialNumber int64) [][]*x509.Certificate {
+	return [][]*x509.Certificate{
+		[]*x509.Certificate{
+			&x509.Certificate{
+				SerialNumber: big.NewInt(serialNumber),
+			},
+		},
+	}
 }
