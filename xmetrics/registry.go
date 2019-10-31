@@ -232,7 +232,10 @@ func New(o Options) (Registry, error) {
 	}
 
 	if !o.DisableProcessCollector {
-		var pco prometheus.ProcessCollectorOpts
+		pco := prometheus.ProcessCollectorOpts{
+			Namespace: o.DefaultNamespace,
+		}
+
 		if err := pr.Register(prometheus.NewProcessCollector(pco)); err != nil {
 			return nil, err
 		}
