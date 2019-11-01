@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.2.1]
+- Use metrics namespace from config
+
+
+
 ## [v0.2.0]
 - added configurable and application-injectable peer verification for MTLS
 
@@ -49,7 +54,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.2.1...HEAD
+[v0.2.1]: https://github.com/xmidt-org/themis/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/xmidt-org/themis/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/xmidt-org/themis/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/xmidt-org/themis/compare/v0.0.3...v0.1.0
