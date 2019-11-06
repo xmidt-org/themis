@@ -1,9 +1,11 @@
 package token
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -200,9 +202,61 @@ func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value 
 	return err
 }
 
+type DecodeClaimsError struct {
+	URL        string
+	StatusCode int
+	Err        error
+}
+
+func (dce *DecodeClaimsError) Unwrap() error {
+	return dce.Err
+}
+
+func (dce *DecodeClaimsError) nestedErrorText() string {
+	if dce.Err != nil {
+		return dce.Err.Error()
+	}
+
+	return ""
+}
+
+func (dce *DecodeClaimsError) Error() string {
+	return fmt.Sprintf(
+		"Failed to decode remote claims from [%s]: statusCode=%d, err=%s",
+		dce.URL,
+		dce.StatusCode,
+		dce.nestedErrorText(),
+	)
+}
+
+func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
+	var output bytes.Buffer
+	fmt.Fprintf(
+		&output,
+		`{"url": "%s", "statusCode": %d, "err": "%s"}`,
+		dce.URL,
+		dce.StatusCode,
+		dce.nestedErrorText(),
+	)
+
+	return output.Bytes(), nil
+}
+
 func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (interface{}, error) {
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		err := &DecodeClaimsError{
+			StatusCode: response.StatusCode,
+		}
+
+		if response.Request != nil {
+			err.URL = response.Request.URL.String()
+		}
+
 		return nil, err
 	}
 
