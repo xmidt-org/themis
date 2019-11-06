@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.3.0]
+- Allow metrics and health servers to be disabled
+- Allow only a claims server to be configured
+- Require an issuer server if a keys server is configured, and vice versa
+
+
+
 ## [v0.2.1]
 - Use metrics namespace from config
 
@@ -54,7 +61,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/xmidt-org/themis/compare/v0.2.1...v0.3.0
 [v0.2.1]: https://github.com/xmidt-org/themis/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/xmidt-org/themis/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/xmidt-org/themis/compare/v0.1.0...v0.1.1

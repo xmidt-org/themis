@@ -1,3 +1,1 @@
-- Allow metrics and health servers to be disabled
-- Allow only a claims server to be configured
-- Require an issuer server if a keys server is configured, and vice versa
+
