@@ -98,11 +98,11 @@ func main() {
 			provideClientChain,
 			provideServerChainFactory,
 			xhttpclient.Unmarshal{Key: "client"}.Provide,
-			xhttpserver.Unmarshal{Key: "servers.key"}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.issuer"}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.claims"}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.metrics"}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.health"}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.key", Optional: true}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.issuer", Optional: true}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.claims", Optional: true}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
 		),
 		fx.Invoke(
 			xhealth.ApplyChecks(
@@ -121,6 +121,7 @@ func main() {
 			BuildClaimsRoutes,
 			BuildMetricsRoutes,
 			BuildHealthRoutes,
+			CheckServerRequirements,
 		),
 	)
 
