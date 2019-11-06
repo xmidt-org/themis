@@ -65,6 +65,11 @@ func (cpv *ConfiguredPeerVerifier) Verify(peerCert *x509.Certificate, _ [][]*x50
 				return nil
 			}
 		}
+
+		// Allow the common name to be suffixed by a DNS suffix
+		if strings.HasSuffix(strings.ToLower(peerCert.Subject.CommonName), suffix) {
+			return nil
+		}
 	}
 
 	for _, commonName := range cpv.commonNames {

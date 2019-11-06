@@ -49,6 +49,16 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 		{
 			peerCert: x509.Certificate{
 				Subject: pkix.Name{
+					CommonName: "PCTEST-another.thing.org",
+				},
+			},
+			options: PeerVerifyOptions{
+				DNSSuffixes: []string{"another.thing.org", "something.net"},
+			},
+		},
+		{
+			peerCert: x509.Certificate{
+				Subject: pkix.Name{
 					CommonName: "A Great Organization",
 				},
 			},
