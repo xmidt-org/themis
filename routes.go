@@ -73,7 +73,7 @@ type KeyRoutesIn struct {
 }
 
 func BuildKeyRoutes(in KeyRoutesIn) {
-	if in.Router != nil {
+	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/keys/{kid}", in.Handler).Methods("GET")
 	}
 }
@@ -85,7 +85,7 @@ type IssuerRoutesIn struct {
 }
 
 func BuildIssuerRoutes(in IssuerRoutesIn) {
-	if in.Router != nil {
+	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/issue", in.Handler).Methods("GET")
 	}
 }
@@ -97,7 +97,7 @@ type ClaimsRoutesIn struct {
 }
 
 func BuildClaimsRoutes(in ClaimsRoutesIn) {
-	if in.Router != nil {
+	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/claims", in.Handler).Methods("GET")
 	}
 }
@@ -109,7 +109,9 @@ type MetricsRoutesIn struct {
 }
 
 func BuildMetricsRoutes(in MetricsRoutesIn) {
-	in.Router.Handle("/metrics", in.Handler).Methods("GET")
+	if in.Router != nil && in.Handler != nil {
+		in.Router.Handle("/metrics", in.Handler).Methods("GET")
+	}
 }
 
 type HealthRoutesIn struct {
@@ -119,5 +121,7 @@ type HealthRoutesIn struct {
 }
 
 func BuildHealthRoutes(in HealthRoutesIn) {
-	in.Router.Handle("/health", in.Handler).Methods("GET")
+	if in.Router != nil && in.Handler != nil {
+		in.Router.Handle("/health", in.Handler).Methods("GET")
+	}
 }
