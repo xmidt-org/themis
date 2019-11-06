@@ -111,6 +111,7 @@ type httpClient interface {
 // is passed as the payload.
 type remoteClaimBuilder struct {
 	endpoint endpoint.Endpoint
+	url      string
 	extra    map[string]interface{}
 }
 
@@ -169,7 +170,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		),
 	)
 
-	return &remoteClaimBuilder{endpoint: c.Endpoint(), extra: metadata}, nil
+	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
 }
 
 // NewClaimBuilders constructs a ClaimBuilders from configuration.  The returned instance is typically

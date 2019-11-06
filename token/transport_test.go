@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
@@ -387,6 +389,102 @@ func TestBuildRequest(t *testing.T) {
 	t.Run("Failure", testBuildRequestFailure)
 }
 
+func testDecodeClaimsErrorUnwrap(t *testing.T) {
+	var (
+		assert       = assert.New(t)
+		unwrappedErr = errors.New("unwrapped")
+	)
+
+	assert.Nil(
+		errors.Unwrap(&DecodeClaimsError{}),
+	)
+
+	assert.Equal(
+		unwrappedErr,
+		errors.Unwrap(&DecodeClaimsError{Err: unwrappedErr}),
+	)
+}
+
+func testDecodeClaimsErrorError(t *testing.T) {
+	t.Run("NoNested", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			errText = (&DecodeClaimsError{
+				URL:        "https://testy.com/foo?bar=1",
+				StatusCode: 511,
+			}).Error()
+		)
+
+		assert.Contains(errText, "https://testy.com/foo?bar=1")
+		assert.Contains(errText, "511")
+	})
+
+	t.Run("WithNested", func(t *testing.T) {
+		var (
+			assert  = assert.New(t)
+			errText = (&DecodeClaimsError{
+				URL:        "ftp://something.net",
+				StatusCode: 499,
+				Err:        errors.New("this is a nested error"),
+			}).Error()
+		)
+
+		assert.Contains(errText, "ftp://something.net")
+		assert.Contains(errText, "499")
+		assert.Contains(errText, "this is a nested error")
+	})
+}
+
+func testDecodeClaimsErrorMarshalJSON(t *testing.T) {
+	testData := []struct {
+		err      error
+		expected string
+	}{
+		{
+			err: &DecodeClaimsError{
+				StatusCode: 475,
+				URL:        "http://comcast.testy.test/moo",
+			},
+			expected: `{
+				"url": "http://comcast.testy.test/moo",
+				"statusCode": 475,
+				"err": ""
+			}`,
+		},
+		{
+			err: &DecodeClaimsError{
+				StatusCode: 314,
+				URL:        "http://pi.numbers.com",
+				Err:        errors.New("this is a nested error"),
+			},
+			expected: `{
+				"url": "http://pi.numbers.com",
+				"statusCode": 314,
+				"err": "this is a nested error"
+			}`,
+		},
+	}
+
+	for i, record := range testData {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var (
+				assert  = assert.New(t)
+				require = require.New(t)
+			)
+
+			actual, err := json.Marshal(record.err)
+			require.NoError(err)
+			assert.JSONEq(record.expected, string(actual))
+		})
+	}
+}
+
+func TestDecodeClaimsError(t *testing.T) {
+	t.Run("Unwrap", testDecodeClaimsErrorUnwrap)
+	t.Run("Error", testDecodeClaimsErrorError)
+	t.Run("MarshalJSON", testDecodeClaimsErrorMarshalJSON)
+}
+
 func testDecodeServerRequestSuccess(t *testing.T) {
 	var (
 		assert  = assert.New(t)
@@ -483,7 +581,8 @@ func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 				require = require.New(t)
 
 				response = &http.Response{
-					Body: ioutil.NopCloser(strings.NewReader(record.body)),
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(strings.NewReader(record.body)),
 				}
 			)
 
@@ -498,17 +597,45 @@ func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	var (
 		assert   = assert.New(t)
+		require  = require.New(t)
 		response = &http.Response{
-			Body: ioutil.NopCloser(strings.NewReader("this is not JSON")),
+			StatusCode: 523,
+			Body:       ioutil.NopCloser(strings.NewReader("this is not JSON")),
+			Request:    httptest.NewRequest("POST", "http://schmoogle.com", nil),
 		}
 	)
 
 	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
 	assert.Nil(v)
-	assert.Error(err)
+	require.Error(err)
+	require.IsType((*DecodeClaimsError)(nil), err)
+
+	dce := err.(*DecodeClaimsError)
+	assert.Equal(523, dce.StatusCode)
+	assert.Equal("http://schmoogle.com", dce.URL)
+	assert.Nil(dce.Err)
+}
+
+func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {
+	var (
+		assert   = assert.New(t)
+		require  = require.New(t)
+		response = &http.Response{
+			StatusCode: 466,
+			Body: ioutil.NopCloser(
+				iotest.TimeoutReader(strings.NewReader("gibberish")),
+			),
+			Request: httptest.NewRequest("POST", "http://cantreadbody.com", nil),
+		}
+	)
+
+	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
+	assert.Nil(v)
+	require.Error(err)
 }
 
 func TestDecodeRemoteClaimsResponse(t *testing.T) {
 	t.Run("Success", testDecodeRemoteClaimsResponseSuccess)
 	t.Run("Failure", testDecodeRemoteClaimsResponseFailure)
+	t.Run("BodyError", testDecodeRemoteClaimsResponseBodyError)
 }
