@@ -121,6 +121,9 @@ func CheckServerRequirements(k KeyRoutesIn, i IssuerRoutesIn, c ClaimsRoutesIn) 
 		if c.Router == nil {
 			return errors.New("A claims server is required if no keys or issuer server is configured")
 		}
+
+		// Only a claims server is allowed
+		return nil
 	}
 
 	if k.Router != nil {
