@@ -396,12 +396,12 @@ func testDecodeClaimsErrorUnwrap(t *testing.T) {
 	)
 
 	assert.Nil(
-		errors.Unwrap(&DecodeClaimsError{}),
+		(&DecodeClaimsError{}).Unwrap(),
 	)
 
 	assert.Equal(
 		unwrappedErr,
-		errors.Unwrap(&DecodeClaimsError{Err: unwrappedErr}),
+		(&DecodeClaimsError{Err: unwrappedErr}).Unwrap(),
 	)
 }
 
