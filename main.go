@@ -121,6 +121,7 @@ func main() {
 			BuildClaimsRoutes,
 			BuildMetricsRoutes,
 			BuildHealthRoutes,
+			CheckServerRequirements,
 		),
 	)
 

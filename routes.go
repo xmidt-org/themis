@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/token"
 	"github.com/xmidt-org/themis/xhealth"
@@ -100,6 +102,36 @@ func BuildClaimsRoutes(in ClaimsRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/claims", in.Handler).Methods("GET")
 	}
+}
+
+// CheckServerRequirements is an fx.Invoke function that does post-configuration verification
+// that we have required servers.  The valid server configurations are:
+//
+//    Both keys and issuer present.  Claims is optional in this case
+//    Neither keys or issuer present.  Claims is required in this case
+//
+// Any other arrangements results in an error.
+func CheckServerRequirements(k KeyRoutesIn, i IssuerRoutesIn, c ClaimsRoutesIn) error {
+	if k.Router != nil && i.Router != nil {
+		// all good ... no need to check anything else
+		return nil
+	}
+
+	if k.Router == nil && i.Router == nil {
+		if c.Router == nil {
+			return errors.New("A claims server is required if no keys or issuer server is configured")
+		}
+	}
+
+	if k.Router != nil {
+		return errors.New("If a keys server is configured, an issuer server must be configured")
+	}
+
+	if i.Router != nil {
+		return errors.New("If an issuer server is configured, a keys server must be configured")
+	}
+
+	return nil
 }
 
 type MetricsRoutesIn struct {
