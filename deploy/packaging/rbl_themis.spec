@@ -11,7 +11,7 @@ Packager:   Comcast
 Group:      System Environment/Daemons
 License:    ASL 2.0
 URL:        https://github.com/xmidt-org/themis
-Source0:    %{name}-%{_version}.tar.gz
+Source0:    %{name}-%{_version}-%{_release}.tar.gz
 
 Prefix:     /opt
 BuildRoot:  %{_tmppath}/%{name}
@@ -22,7 +22,7 @@ BuildRequires: golang >= 1.12
 The Xmidt authentication JWT issuer for connecting devices in RBL mode. 
 
 %build
-GO111MODULE=on go build -o $RPM_SOURCE_DIR/%{name} %{_topdir}/..
+GO111MODULE=on go build -ldflags "-X 'main.BuildTime=`date -u '+%Y-%m-%d %H:%M:%S'`' -X main.GitCommit=`git rev-parse --short HEAD` -X main.Version=%{_version}" -o $RPM_SOURCE_DIR/%{name} %{_topdir}/..
 
 %install
 echo rm -rf %{buildroot}
