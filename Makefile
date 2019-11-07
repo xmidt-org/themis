@@ -45,15 +45,15 @@ rpm:
 
 	# CPE service
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-    		--define "_version $(RPM_VERSION)" \
-    		--define "_release $(RPM_RELEASE)" \
-    		-ba deploy/packaging/cpe_themis.spec
+			--define "_version $(RPM_VERSION)" \
+			--define "_release $(RPM_RELEASE)" \
+			-ba deploy/packaging/cpe_themis.spec
 
 	# RBL service
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-    		--define "_version $(RPM_VERSION)" \
-    		--define "_release $(RPM_RELEASE)" \
-    		-ba deploy/packaging/rbl_themis.spec
+			--define "_version $(RPM_VERSION)" \
+			--define "_release $(RPM_RELEASE)" \
+			-ba deploy/packaging/rbl_themis.spec
 
 	# Standalone-mode service - All other XMiDT services are setup this way
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
