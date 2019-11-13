@@ -38,13 +38,13 @@ type tcpConn struct {
 	release     func()
 }
 
-func (tc tcpConn) Release() {
+func (tc *tcpConn) Release() {
 	if tc.release != nil {
 		tc.releaseOnce.Do(tc.release)
 	}
 }
 
-func (tc tcpConn) Close() error {
+func (tc *tcpConn) Close() error {
 	if tc.release != nil {
 		tc.releaseOnce.Do(tc.release)
 	}
@@ -59,13 +59,13 @@ type tlsConn struct {
 	release     func()
 }
 
-func (tc tlsConn) Release() {
+func (tc *tlsConn) Release() {
 	if tc.release != nil {
 		tc.releaseOnce.Do(tc.release)
 	}
 }
 
-func (tc tlsConn) Close() error {
+func (tc *tlsConn) Close() error {
 	if tc.release != nil {
 		tc.releaseOnce.Do(tc.release)
 	}
@@ -141,13 +141,13 @@ func (l *Listener) Accept() (net.Conn, error) {
 
 		if l.maxConnections > 0 {
 			if l.tlsConfig != nil {
-				return tlsConn{
+				return &tlsConn{
 					Conn:    tls.Server(conn, l.tlsConfig),
 					release: l.releaseConn,
 				}, nil
 			}
 
-			return tcpConn{
+			return &tcpConn{
 				TCPConn: conn,
 				release: l.releaseConn,
 			}, nil
