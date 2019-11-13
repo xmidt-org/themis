@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"math/big"
 	"testing"
 )
 
@@ -18,6 +19,7 @@ func generateX509Cert(t *testing.T) (*x509.Certificate, *rsa.PrivateKey, []byte)
 	}
 
 	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1234),
 		Subject: pkix.Name{
 			CommonName: "Comcast CA",
 		},
