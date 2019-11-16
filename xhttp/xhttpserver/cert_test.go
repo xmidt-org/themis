@@ -2,6 +2,8 @@ package xhttpserver
 
 import (
 	"crypto/tls"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -89,6 +91,8 @@ lXYEav2EZPgq1TS0ACvfgzbFhdPHUD7jY54qJMaRoiMuci0XlA1PJ9ovCFTcfLQh
 gDSJZ0/AO8WcvMrPaDDv0Q==
 -----END CERTIFICATE-----`)
 
+// addServerCertificate configures a tls.Config to use the prebaked server cert and key.
+// If the given tls.Config is nil, a new one is created.
 func addServerCertificate(t *testing.T, in *tls.Config) *tls.Config {
 	cert, err := tls.X509KeyPair(serverCertificate, serverPrivateKey)
 	if err != nil {
@@ -104,4 +108,37 @@ func addServerCertificate(t *testing.T, in *tls.Config) *tls.Config {
 
 	out.Certificates = append(out.Certificates, cert)
 	return out
+}
+
+// createServerFiles creates a certificate file and a key file as temporary files.
+// The prebaked key and certificate are used.
+func createServerFiles(t *testing.T) (certificateFilePath, keyFilePath string) {
+	certificateFile, err := ioutil.TempFile("", "server.*.cert")
+	if err != nil {
+		t.Fatalf("Unable to create server certificate file: %s", err)
+	}
+
+	certificateFilePath = certificateFile.Name()
+	_, err = certificateFile.Write(serverCertificate)
+	certificateFile.Close()
+	if err != nil {
+		os.Remove(certificateFilePath)
+		t.Fatalf("Unable to write server certificate file '%s': %s", certificateFilePath, err)
+	}
+
+	keyFile, err := ioutil.TempFile("", "server.*.key")
+	if err != nil {
+		t.Fatalf("Unable to create server key file: %s", err)
+	}
+
+	keyFilePath = keyFile.Name()
+	_, err = keyFile.Write(serverPrivateKey)
+	keyFile.Close()
+	if err != nil {
+		os.Remove(certificateFilePath)
+		os.Remove(keyFilePath)
+		t.Fatalf("Unable to write server key file '%s': %s", keyFilePath, err)
+	}
+
+	return
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"os"
 	"strconv"
 	"testing"
 
@@ -461,14 +462,14 @@ func testNewTlsConfigLoadCertificateError(t *testing.T) {
 	assert.Error(err)
 }
 
-func testNewTlsConfigSimple(t *testing.T) {
+func testNewTlsConfigSimple(t *testing.T, certificateFile, keyFile string) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
 		tc, err = NewTlsConfig(&Tls{
-			CertificateFile: "server.cert",
-			KeyFile:         "server.key",
+			CertificateFile: certificateFile,
+			KeyFile:         keyFile,
 		})
 	)
 
@@ -482,7 +483,7 @@ func testNewTlsConfigSimple(t *testing.T) {
 	assert.NotEmpty(tc.NameToCertificate)
 }
 
-func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T) {
+func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T, certificateFile, keyFile string) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
@@ -491,8 +492,8 @@ func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T) {
 			MinVersion:      1,
 			MaxVersion:      3,
 			ServerName:      "test",
-			CertificateFile: "server.cert",
-			KeyFile:         "server.key",
+			CertificateFile: certificateFile,
+			KeyFile:         keyFile,
 			NextProtos:      []string{"http/1.0"},
 		})
 	)
@@ -507,15 +508,15 @@ func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T) {
 	assert.NotEmpty(tc.NameToCertificate)
 }
 
-func testNewTlsConfigWithClientCACertificateFile(t *testing.T) {
+func testNewTlsConfigWithClientCACertificateFile(t *testing.T, certificateFile, keyFile string) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
 		tc, err = NewTlsConfig(&Tls{
-			CertificateFile:         "server.cert",
-			KeyFile:                 "server.key",
-			ClientCACertificateFile: "server.cert",
+			CertificateFile:         certificateFile,
+			KeyFile:                 keyFile,
+			ClientCACertificateFile: certificateFile,
 			PeerVerify: PeerVerifyOptions{
 				CommonNames: []string{"Hippies, Inc."},
 			},
@@ -534,13 +535,13 @@ func testNewTlsConfigWithClientCACertificateFile(t *testing.T) {
 	assert.Equal(tls.RequireAndVerifyClientCert, tc.ClientAuth)
 }
 
-func testNewTlsConfigLoadClientCACertificateError(t *testing.T) {
+func testNewTlsConfigLoadClientCACertificateError(t *testing.T, certificateFile, keyFile string) {
 	var (
 		assert = assert.New(t)
 
 		tc, err = NewTlsConfig(&Tls{
-			CertificateFile:         "server.cert",
-			KeyFile:                 "server.key",
+			CertificateFile:         certificateFile,
+			KeyFile:                 keyFile,
 			ClientCACertificateFile: "nosuch",
 		})
 	)
@@ -549,14 +550,14 @@ func testNewTlsConfigLoadClientCACertificateError(t *testing.T) {
 	assert.Error(err)
 }
 
-func testNewTlsConfigAppendClientCACertificateError(t *testing.T) {
+func testNewTlsConfigAppendClientCACertificateError(t *testing.T, certificateFile, keyFile string) {
 	var (
 		assert = assert.New(t)
 
 		tc, err = NewTlsConfig(&Tls{
-			CertificateFile:         "server.cert",
-			KeyFile:                 "server.key",
-			ClientCACertificateFile: "server.key", // not a certificate, but still valid PEM
+			CertificateFile:         certificateFile,
+			KeyFile:                 keyFile,
+			ClientCACertificateFile: keyFile, // not a certificate, but still valid PEM
 		})
 	)
 
@@ -565,13 +566,34 @@ func testNewTlsConfigAppendClientCACertificateError(t *testing.T) {
 }
 
 func TestNewTlsConfig(t *testing.T) {
+	certificateFile, keyFile := createServerFiles(t)
+	defer os.Remove(certificateFile)
+	defer os.Remove(keyFile)
+
+	t.Logf("Using certificate file '%s' and key file '%s'", certificateFile, keyFile)
+
 	t.Run("Nil", testNewTlsConfigNil)
 	t.Run("NoCertificateFile", testNewTlsConfigNoCertificateFile)
 	t.Run("NoKeyFile", testNewTlsConfigNoKeyFile)
 	t.Run("LoadCertificateError", testNewTlsConfigLoadCertificateError)
-	t.Run("Simple", testNewTlsConfigSimple)
-	t.Run("WithoutClientCACertificateFile", testNewTlsConfigWithoutClientCACertificateFile)
-	t.Run("WithClientCACertificateFile", testNewTlsConfigWithClientCACertificateFile)
-	t.Run("LoadClientCACertificateError", testNewTlsConfigLoadClientCACertificateError)
-	t.Run("AppendClientCACertificateError", testNewTlsConfigAppendClientCACertificateError)
+
+	t.Run("Simple", func(t *testing.T) {
+		testNewTlsConfigSimple(t, certificateFile, keyFile)
+	})
+
+	t.Run("WithoutClientCACertificateFile", func(t *testing.T) {
+		testNewTlsConfigWithoutClientCACertificateFile(t, certificateFile, keyFile)
+	})
+
+	t.Run("WithClientCACertificateFile", func(t *testing.T) {
+		testNewTlsConfigWithClientCACertificateFile(t, certificateFile, keyFile)
+	})
+
+	t.Run("LoadClientCACertificateError", func(t *testing.T) {
+		testNewTlsConfigLoadClientCACertificateError(t, certificateFile, keyFile)
+	})
+
+	t.Run("AppendClientCACertificateError", func(t *testing.T) {
+		testNewTlsConfigAppendClientCACertificateError(t, certificateFile, keyFile)
+	})
 }
