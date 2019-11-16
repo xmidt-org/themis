@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -31,132 +29,36 @@ type TlsConn interface {
 	VerifyHostname(string) error
 }
 
-type tcpConn struct {
-	*net.TCPConn
-
-	releaseOnce sync.Once
-	release     func()
-}
-
-func (tc *tcpConn) Release() {
-	if tc.release != nil {
-		tc.releaseOnce.Do(tc.release)
-	}
-}
-
-func (tc *tcpConn) Close() error {
-	if tc.release != nil {
-		tc.releaseOnce.Do(tc.release)
-	}
-
-	return tc.TCPConn.Close()
-}
-
-type tlsConn struct {
-	*tls.Conn
-
-	releaseOnce sync.Once
-	release     func()
-}
-
-func (tc *tlsConn) Release() {
-	if tc.release != nil {
-		tc.releaseOnce.Do(tc.release)
-	}
-}
-
-func (tc *tlsConn) Close() error {
-	if tc.release != nil {
-		tc.releaseOnce.Do(tc.release)
-	}
-
-	return tc.Conn.Close()
-}
-
-// Listener is a configurable net.Listener that provides the following features via options:
-//     A TCP keep-alive duration
-//     A TLS configuration
-//     A limit on the number of concurrent connections
-//
-// Only TCP connections are supported by this listener.
+// Listener is a configurable net.Listener that provides the following features via options
 type Listener struct {
 	tcpListener        *net.TCPListener
 	tcpKeepAlivePeriod time.Duration
 	tlsConfig          *tls.Config
-
-	// maxConnections is the maximum number of active connections allowed through this listener.
-	// if nonpositive, no limit is imposed.
-	maxConnections int32
-
-	// count is the current count of active connections.  unused if maxConnections is nonpositive.
-	count int32
-}
-
-func (l *Listener) checkAccept() bool {
-	if l.maxConnections > 0 {
-		if atomic.AddInt32(&l.count, 1) > l.maxConnections {
-			atomic.AddInt32(&l.count, -1)
-			return false
-		}
-	}
-
-	return true
-}
-
-func (l *Listener) releaseConn() {
-	atomic.AddInt32(&l.count, -1)
-}
-
-func (l *Listener) configure(c *net.TCPConn) error {
-	if l.tcpKeepAlivePeriod > 0 {
-		err := c.SetKeepAlive(true)
-		if err == nil {
-			err = c.SetKeepAlivePeriod(l.tcpKeepAlivePeriod)
-		}
-
-		if err != nil {
-			c.Close()
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (l *Listener) Accept() (net.Conn, error) {
-	for {
-		conn, err := l.tcpListener.AcceptTCP()
+	conn, err := l.tcpListener.AcceptTCP()
+	if err != nil {
+		return nil, err
+	}
+
+	if l.tcpKeepAlivePeriod > 0 {
+		err := conn.SetKeepAlive(true)
+		if err == nil {
+			err = conn.SetKeepAlivePeriod(l.tcpKeepAlivePeriod)
+		}
+
 		if err != nil {
-			return nil, err
-		}
-
-		if !l.checkAccept() {
 			conn.Close()
-			continue
-		}
-
-		if err := l.configure(conn); err != nil {
 			return nil, err
-		}
-
-		if l.maxConnections > 0 {
-			if l.tlsConfig != nil {
-				return &tlsConn{
-					Conn:    tls.Server(conn, l.tlsConfig),
-					release: l.releaseConn,
-				}, nil
-			}
-
-			return &tcpConn{
-				TCPConn: conn,
-				release: l.releaseConn,
-			}, nil
-		} else if l.tlsConfig != nil {
-			return tls.Server(conn, l.tlsConfig), nil
-		} else {
-			return conn, nil
 		}
 	}
+
+	if l.tlsConfig != nil {
+		return tls.Server(conn, l.tlsConfig), nil
+	}
+
+	return conn, nil
 }
 
 func (l *Listener) Close() error {
@@ -188,9 +90,8 @@ func NewListener(ctx context.Context, o Options, lcfg net.ListenConfig, tcfg *tl
 	}
 
 	listener := &Listener{
-		tcpListener:    tcpListener,
-		tlsConfig:      tcfg,
-		maxConnections: o.MaxConnections,
+		tcpListener: tcpListener,
+		tlsConfig:   tcfg,
 	}
 
 	if !o.DisableTCPKeepAlives {

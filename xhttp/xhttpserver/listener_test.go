@@ -22,7 +22,7 @@ func testNewListenerInvalidAddress(t *testing.T) {
 	}
 }
 
-func testNewListenerSimple(t *testing.T) {
+func testNewListenerNonTLS(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
@@ -71,7 +71,7 @@ func testNewListenerSimple(t *testing.T) {
 	assert.Equal(expectedMessage, actualMessage)
 }
 
-func testNewListenerSimpleTls(t *testing.T) {
+func testNewListenerTLS(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
@@ -124,6 +124,6 @@ func testNewListenerSimpleTls(t *testing.T) {
 
 func TestNewListener(t *testing.T) {
 	t.Run("InvalidAddress", testNewListenerInvalidAddress)
-	t.Run("Simple", testNewListenerSimple)
-	t.Run("SimpleTls", testNewListenerSimpleTls)
+	t.Run("NonTLS", testNewListenerNonTLS)
+	t.Run("TLS", testNewListenerTLS)
 }
