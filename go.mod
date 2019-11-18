@@ -9,6 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/gorilla/mux v1.7.3
+	github.com/hashicorp/consul/api v1.3.0
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
