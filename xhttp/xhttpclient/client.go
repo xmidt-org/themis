@@ -59,10 +59,10 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 	}
 }
 
-// NewRoundTripper creates an http.RoundTripper from a set of Transport options.  If the Transport
+// NewHTTPTransport creates an http.Transport from a set of Transport options.  If the Transport
 // is nil, this function returns a default http.Transport instance.  Otherwise, an http.Transport
 // is returned with its fields set from the given Transport options.
-func NewRoundTripper(t *Transport) http.RoundTripper {
+func NewHTTPTransport(t *Transport) *http.Transport {
 	if t == nil {
 		return new(http.Transport)
 	}
@@ -86,7 +86,7 @@ func NewRoundTripper(t *Transport) http.RoundTripper {
 
 // New fully constructs an http client from a set of options.  NewRoundTripper is used to create the http.RoundTripper.
 func New(o Options) Interface {
-	return NewCustom(o, NewRoundTripper(o.Transport))
+	return NewCustom(o, NewHTTPTransport(o.Transport))
 }
 
 // NewCustom uses a set of options and a supplied RoundTripper to create an http client.  Use this function

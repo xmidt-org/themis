@@ -35,36 +35,36 @@ func TestNewTlsConfig(t *testing.T) {
 	}
 }
 
-func testNewRoundTripperNil(t *testing.T) {
+func testNewHTTPTransportNil(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewRoundTripper(nil)
+		rt = NewHTTPTransport(nil)
 	)
 
 	require.NotNil(rt)
 	assert.Equal(new(http.Transport), rt)
 }
 
-func testNewRoundTripperDefault(t *testing.T) {
+func testNewHTTPTransportDefault(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewRoundTripper(new(Transport))
+		rt = NewHTTPTransport(new(Transport))
 	)
 
 	require.NotNil(rt)
 	assert.Equal(new(http.Transport), rt)
 }
 
-func testNewRoundTripperFull(t *testing.T) {
+func testNewHTTPTransportFull(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewRoundTripper(
+		rt = NewHTTPTransport(
 			&Transport{
 				DisableKeepAlives:      true,
 				DisableCompression:     true,
@@ -102,10 +102,10 @@ func testNewRoundTripperFull(t *testing.T) {
 	)
 }
 
-func TestNewRoundTripper(t *testing.T) {
-	t.Run("Nil", testNewRoundTripperNil)
-	t.Run("Default", testNewRoundTripperDefault)
-	t.Run("Full", testNewRoundTripperFull)
+func TestNewHTTPTransport(t *testing.T) {
+	t.Run("Nil", testNewHTTPTransportNil)
+	t.Run("Default", testNewHTTPTransportDefault)
+	t.Run("Full", testNewHTTPTransportFull)
 }
 
 func TestNew(t *testing.T) {
