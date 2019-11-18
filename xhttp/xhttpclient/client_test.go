@@ -35,36 +35,36 @@ func TestNewTlsConfig(t *testing.T) {
 	}
 }
 
-func testNewHTTPTransportNil(t *testing.T) {
+func testNewHttpTransportNil(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewHTTPTransport(nil)
+		rt = NewHttpTransport(nil)
 	)
 
 	require.NotNil(rt)
 	assert.Equal(new(http.Transport), rt)
 }
 
-func testNewHTTPTransportDefault(t *testing.T) {
+func testNewHttpTransportDefault(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewHTTPTransport(new(Transport))
+		rt = NewHttpTransport(new(Transport))
 	)
 
 	require.NotNil(rt)
 	assert.Equal(new(http.Transport), rt)
 }
 
-func testNewHTTPTransportFull(t *testing.T) {
+func testNewHttpTransportFull(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		rt = NewHTTPTransport(
+		rt = NewHttpTransport(
 			&Transport{
 				DisableKeepAlives:      true,
 				DisableCompression:     true,
@@ -102,10 +102,10 @@ func testNewHTTPTransportFull(t *testing.T) {
 	)
 }
 
-func TestNewHTTPTransport(t *testing.T) {
-	t.Run("Nil", testNewHTTPTransportNil)
-	t.Run("Default", testNewHTTPTransportDefault)
-	t.Run("Full", testNewHTTPTransportFull)
+func TestNewHttpTransport(t *testing.T) {
+	t.Run("Nil", testNewHttpTransportNil)
+	t.Run("Default", testNewHttpTransportDefault)
+	t.Run("Full", testNewHttpTransportFull)
 }
 
 func TestNew(t *testing.T) {

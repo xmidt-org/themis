@@ -67,7 +67,7 @@ func (u Unmarshal) Provide(in ClientUnmarshalIn) (Interface, error) {
 	if in.RoundTripper != nil {
 		rt = in.RoundTripper
 	} else {
-		rt = NewHTTPTransport(o.Transport)
+		rt = NewHttpTransport(o.Transport)
 	}
 
 	chain := in.Chain.Extend(u.Chain)
