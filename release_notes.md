@@ -1,4 +1,1 @@
-- Added a custom xhttpserver.Listener type
-- Added MaxConcurrentRequests enforcement driven by configuration
-- ConstantHandler for static HTTP transaction responses
-- Busy decorator for enforcing MaxConcurrentRequests
+
