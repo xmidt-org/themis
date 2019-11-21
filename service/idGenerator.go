@@ -49,3 +49,10 @@ func (bg Base64IDGenerator) NewID() (string, error) {
 
 	return e.EncodeToString(b), nil
 }
+
+var defaultIDGenerator = Base64IDGenerator{}
+
+// DefaultIDGenerator returns the package default id generation strategy
+func DefaultIDGenerator() IDGenerator {
+	return defaultIDGenerator
+}

@@ -6,14 +6,12 @@ import "go.uber.org/fx"
 type ServiceProvideOut struct {
 	fx.Out
 
-	IDGenerator IDGenerator
-	Registry    *Registry
+	Registry *Registry
 }
 
 // Provide creates the standard components for this package
 func Provide() ServiceProvideOut {
 	return ServiceProvideOut{
-		IDGenerator: Base64IDGenerator{},
-		Registry:    new(Registry),
+		Registry: new(Registry),
 	}
 }
