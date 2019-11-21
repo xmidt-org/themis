@@ -2,8 +2,10 @@ package xhttpserver
 
 import (
 	"context"
+	"crypto/tls"
+	"io"
 	"net"
-	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,189 +13,117 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTCPKeepAliveListener(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-	)
-
-	tcpListener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(err)
-
-	defer tcpListener.Close()
-
-	keepAliveListener := tcpKeepAliveListener{
-		TCPListener: tcpListener.(*net.TCPListener),
-		period:      3 * time.Minute,
-	}
-
-	acceptDone := make(chan struct{})
-	go func() {
-		defer close(acceptDone)
-		c, err := keepAliveListener.Accept()
-		assert.NoError(err)
-		if err == nil {
-			c.Close()
-		}
-	}()
-
-	dialDone := make(chan struct{})
-	go func() {
-		defer close(dialDone)
-		address := keepAliveListener.Addr()
-		c, err := net.Dial(address.Network(), address.String())
-		assert.NoError(err)
-		if err == nil {
-			c.Close()
-		}
-	}()
-
-	select {
-	case <-acceptDone:
-	case <-time.After(1 * time.Second):
-		assert.Fail("Accept did not complete")
-	}
-
-	select {
-	case <-dialDone:
-	case <-time.After(1 * time.Second):
-		assert.Fail("Dial did not complete")
-	}
-}
-
-func testNewListenerTlsError(t *testing.T) {
-	var (
-		assert = assert.New(t)
-
-		l, err = NewListener(
-			context.Background(),
-			Options{
-				Tls: &Tls{},
-			},
-			net.ListenConfig{},
-		)
-	)
-
+func testNewListenerInvalidAddress(t *testing.T) {
+	assert := assert.New(t)
+	l, err := NewListener(context.Background(), Options{Address: "invalid address"}, net.ListenConfig{}, nil)
 	assert.Error(err)
-	assert.Nil(l)
-}
-
-func testNewListenerListenError(t *testing.T) {
-	var (
-		assert = assert.New(t)
-
-		l, err = NewListener(
-			context.Background(),
-			Options{
-				Network: "this is not a valid network name",
-			},
-			net.ListenConfig{},
-		)
-	)
-
-	assert.Error(err)
-	assert.Nil(l)
-}
-
-func testNewListenerSimple(t *testing.T) {
-	testData := []Options{
-		Options{
-			DisableTCPKeepAlives: true,
-		},
-		Options{
-			Network:              "tcp4",
-			DisableTCPKeepAlives: true,
-		},
-	}
-
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var (
-				assert  = assert.New(t)
-				require = require.New(t)
-
-				l, err = NewListener(context.Background(), record, net.ListenConfig{})
-			)
-
-			require.NoError(err)
-			require.NotNil(l)
-			defer l.Close()
-
-			assert.IsType((*net.TCPListener)(nil), l)
-		})
+	if !assert.Nil(l) {
+		l.Close()
 	}
 }
 
-func testNewListenerKeepAlive(t *testing.T) {
-	testData := []struct {
-		options        Options
-		expectedPeriod time.Duration
-	}{
-		{
-			expectedPeriod: defaultTCPKeepAlivePeriod,
-		},
-		{
-			options: Options{
-				TCPKeepAlivePeriod: 12 * time.Minute,
-			},
-			expectedPeriod: 12 * time.Minute,
-		},
-	}
-
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var (
-				assert  = assert.New(t)
-				require = require.New(t)
-
-				l, err = NewListener(context.Background(), record.options, net.ListenConfig{})
-			)
-
-			require.NoError(err)
-			require.NotNil(l)
-			defer l.Close()
-
-			require.IsType(tcpKeepAliveListener{}, l)
-			assert.Equal(record.expectedPeriod, l.(tcpKeepAliveListener).period)
-		})
-	}
-}
-
-func testNewListenerTls(t *testing.T) {
+func testNewListenerNonTLS(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		l, err = NewListener(
-			context.Background(),
-			Options{
-				Tls: &Tls{
-					CertificateFile: "server.cert",
-					KeyFile:         "server.key",
-				},
-			},
-			net.ListenConfig{},
-		)
+		expectedMessage = []byte("hello, world")
+
+		listenCtx, listenCancel = context.WithTimeout(context.Background(), time.Minute)
+		acceptWait              sync.WaitGroup
 	)
 
+	defer listenCancel()
+	l, err := NewListener(listenCtx, Options{Address: ":0"}, net.ListenConfig{}, nil)
 	require.NoError(err)
 	require.NotNil(l)
+
 	defer l.Close()
+	acceptWait.Add(1)
 
-	// the internal TLS listener type isn't exported, so just make
-	// sure we didn't create a listener or decorator of a known type
+	go func() {
+		defer acceptWait.Done()
+		c, err := l.Accept()
+		if !assert.NoError(err) {
+			if c != nil {
+				c.Close()
+			}
 
-	_, ok := l.(*net.TCPListener)
-	assert.False(ok)
+			return
+		}
 
-	_, ok = l.(tcpKeepAliveListener)
-	assert.False(ok)
+		defer c.Close()
+		assert.IsType((*net.TCPConn)(nil), c)
+		c.Write(expectedMessage)
+	}()
+
+	c, err := net.DialTimeout("tcp", l.Addr().String(), 5*time.Second)
+	require.NoError(err)
+	require.NotNil(c)
+
+	defer c.Close()
+	acceptWait.Wait()
+
+	actualMessage := make([]byte, len(expectedMessage))
+	n, err := io.ReadFull(c, actualMessage)
+	assert.Equal(len(actualMessage), n)
+	assert.NoError(err)
+	assert.Equal(expectedMessage, actualMessage)
+}
+
+func testNewListenerTLS(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		expectedMessage = []byte("hello, world")
+		tlsConfig       = addServerCertificate(t, nil)
+
+		listenCtx, listenCancel = context.WithTimeout(context.Background(), time.Minute)
+		acceptWait              sync.WaitGroup
+	)
+
+	defer listenCancel()
+	l, err := NewListener(listenCtx, Options{Address: ":0"}, net.ListenConfig{}, tlsConfig)
+	require.NoError(err)
+	require.NotNil(l)
+
+	defer l.Close()
+	acceptWait.Add(1)
+
+	go func() {
+		defer acceptWait.Done()
+		c, err := l.Accept()
+		if !assert.NoError(err) {
+			if c != nil {
+				c.Close()
+			}
+
+			return
+		}
+
+		defer c.Close()
+		assert.IsType((*tls.Conn)(nil), c)
+		assert.Implements((*TlsConn)(nil), c)
+		c.Write(expectedMessage)
+	}()
+
+	c, err := tls.Dial("tcp", l.Addr().String(), &tls.Config{InsecureSkipVerify: true})
+	require.NoError(err)
+	require.NotNil(c)
+
+	defer c.Close()
+	acceptWait.Wait()
+
+	actualMessage := make([]byte, len(expectedMessage))
+	n, err := io.ReadFull(c, actualMessage)
+	assert.Equal(len(actualMessage), n)
+	assert.NoError(err)
+	assert.Equal(expectedMessage, actualMessage)
 }
 
 func TestNewListener(t *testing.T) {
-	t.Run("TlsError", testNewListenerTlsError)
-	t.Run("ListenError", testNewListenerListenError)
-	t.Run("Simple", testNewListenerSimple)
-	t.Run("KeepAlive", testNewListenerKeepAlive)
-	t.Run("Tls", testNewListenerTls)
+	t.Run("InvalidAddress", testNewListenerInvalidAddress)
+	t.Run("NonTLS", testNewListenerNonTLS)
+	t.Run("TLS", testNewListenerTLS)
 }

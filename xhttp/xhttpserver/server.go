@@ -34,10 +34,11 @@ type Options struct {
 	DisableHTTPKeepAlives bool
 	MaxHeaderBytes        int
 
-	IdleTimeout       time.Duration
-	ReadHeaderTimeout time.Duration
-	ReadTimeout       time.Duration
-	WriteTimeout      time.Duration
+	IdleTimeout           time.Duration
+	ReadHeaderTimeout     time.Duration
+	ReadTimeout           time.Duration
+	WriteTimeout          time.Duration
+	MaxConcurrentRequests int
 
 	DisableTCPKeepAlives bool
 	TCPKeepAlivePeriod   time.Duration
@@ -51,6 +52,7 @@ type Options struct {
 func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
+		Busy{MaxConcurrentRequests: o.MaxConcurrentRequests}.Then,
 	)
 
 	if !o.DisableTracking {
