@@ -5,6 +5,7 @@ import (
 
 	health "github.com/InVisionApp/go-health"
 	"github.com/go-kit/kit/log"
+	"github.com/xmidt-org/themis/service"
 
 	"go.uber.org/fx"
 )
@@ -41,6 +42,7 @@ type HealthOut struct {
 
 	Health  health.IHealth
 	Handler Handler
+	Checker service.HealthChecker
 }
 
 // Unmarshal returns an uber/fx provider that reads configuration from a Viper
@@ -77,6 +79,10 @@ func Unmarshal(configKey string) func(HealthIn) (HealthOut, error) {
 		return HealthOut{
 			Health:  h,
 			Handler: NewHandler(h, o.Custom),
+			Checker: &Checker{
+				h:      h,
+				custom: o.Custom,
+			},
 		}, nil
 	}
 }
