@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.3.2]
+- Add versioning to themis binaries 
+
+
+
 ## [v0.3.1]
 - Added a custom xhttpserver.Listener type
 - Added MaxConcurrentRequests enforcement driven by configuration
@@ -69,7 +74,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.3.2...HEAD
+[v0.3.2]: https://github.com/xmidt-org/themis/compare/v0.3.2-rc.1...v0.3.2
 [v0.3.1]: https://github.com/xmidt-org/themis/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/xmidt-org/themis/compare/v0.2.1...v0.3.0
 [v0.2.1]: https://github.com/xmidt-org/themis/compare/v0.2.0...v0.2.1
