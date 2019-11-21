@@ -1,1 +1,1 @@
-
+- Add versioning to themis binaries 
