@@ -31,6 +31,8 @@ type Descriptor struct {
 // external service discovery infrastructure.  A Registry instance will accept new service descriptors
 // until Freeze is invoked.  At that point, Describe will fail with ErrRegistryFrozen.  This enforces
 // the constraint that services cannot be described once the application has been started.
+//
+// The zero-value of this type is a valid, empty, unfrozen registry.
 type Registry struct {
 	state uint32
 
