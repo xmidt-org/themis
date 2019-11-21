@@ -17,10 +17,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
-	health "github.com/InVisionApp/go-health"
+	"github.com/InVisionApp/go-health"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
@@ -39,8 +40,13 @@ import (
 )
 
 const (
-	applicationName    = "themis"
-	applicationVersion = "0.3.1"
+	applicationName = "themis"
+)
+
+var (
+	GitCommit = "undefined"
+	Version   = "undefined"
+	BuildTime = "undefined"
 )
 
 func setupFlagSet(fs *pflag.FlagSet) error {
@@ -48,10 +54,15 @@ func setupFlagSet(fs *pflag.FlagSet) error {
 	fs.Bool("dev", false, "development mode")
 	fs.String("iss", "", "the name of the issuer to put into claims.  Overrides configuration.")
 	fs.BoolP("debug", "d", false, "enables debug logging.  Overrides configuration.")
+	fs.BoolP("version", "v", false, "print version and exit")
+
 	return nil
 }
 
 func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
+	if printVersion, _ := in.FlagSet.GetBool("version"); printVersion {
+		printVersionInfo()
+	}
 	if dev, _ := in.FlagSet.GetBool("dev"); dev {
 		v.SetConfigType("yaml")
 		err = v.ReadConfig(strings.NewReader(devMode))
@@ -134,4 +145,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
+}
+
+func printVersionInfo() {
+	fmt.Fprintf(os.Stdout, "%s:\n", applicationName)
+	fmt.Fprintf(os.Stdout, "  version: \t%s\n", Version)
+	fmt.Fprintf(os.Stdout, "  go version: \t%s\n", runtime.Version())
+	fmt.Fprintf(os.Stdout, "  built time: \t%s\n", BuildTime)
+	fmt.Fprintf(os.Stdout, "  git commit: \t%s\n", GitCommit)
+	fmt.Fprintf(os.Stdout, "  os/arch: \t%s/%s\n", runtime.GOOS, runtime.GOARCH)
+	os.Exit(0)
 }
