@@ -42,7 +42,7 @@ type HealthOut struct {
 
 	Health  health.IHealth
 	Handler Handler
-	Checker service.HealthChecker
+	Checker service.Checker
 }
 
 // Unmarshal returns an uber/fx provider that reads configuration from a Viper

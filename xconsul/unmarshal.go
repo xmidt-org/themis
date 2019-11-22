@@ -3,6 +3,7 @@ package xconsul
 import (
 	"github.com/hashicorp/consul/api"
 	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/service"
 	"go.uber.org/fx"
 )
 
@@ -16,6 +17,16 @@ type ConsulUnmarshalIn struct {
 
 	// Unmarshaller is the required configuration unmarshaller used to obtain Options instances
 	Unmarshaller config.Unmarshaller
+
+	// IDGenerator is the service-layer strategy for generating id's.  If supplied, this component
+	// is used to generate service and check ids during registration.  If not supplied, service.DefaultIDGenerator()
+	// is used.
+	IDGenerator service.IDGenerator `optional:"true"`
+
+	// Checker is an optional component that can report service-layer health.
+	// Both this component must be supplied and a TTL configuration section must be set in order
+	// for TTL checks to be autoregistered for all services.
+	Checker service.Checker `optional:"true"`
 }
 
 // Unmarshal specifies all the non-component information for reading configuration to
