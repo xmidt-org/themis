@@ -6,6 +6,7 @@ require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
 	github.com/InVisionApp/go-logger v1.0.1
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/gorilla/mux v1.7.3
