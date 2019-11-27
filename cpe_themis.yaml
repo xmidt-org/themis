@@ -1,0 +1,63 @@
+---
+  # Each server can be configured using the following options:
+  # https://godoc.org/github.com/xmidt-org/themis/xhttp/xhttpserver#Options
+  servers:
+    key:
+      address: :6500
+
+    issuer:
+      address: :6501
+    
+    metrics:
+      address: :6502
+
+    health:
+      address: :6503
+
+  # https://godoc.org/github.com/xmidt-org/themis/xhealth#Options
+  health:
+    disableLogging: false
+    custom:
+      server: "cpe_themis" 
+
+  # https://godoc.org/github.com/xmidt-org/themis/xmetrics#Options
+  prometheus:
+    defaultNamespace: xmidt
+    defaultSubsystem: themis
+
+  # https://godoc.org/github.com/xmidt-org/themis/token#Options
+  token:
+    alg: RS256
+    nonce: true
+    notBeforeDelta: -15s
+    duration: 2h
+    claims:
+      mac:
+        header: X-Midt-Mac-Address
+        parameter: mac
+        required: true
+      iss:
+        value: "themis"
+      trust:
+        value: 1000
+      capabilities:
+        value:
+          - xmidt:issuer:test:.*:all
+    metadata:
+      mac:
+        header: X-Midt-Mac-Address
+        parameter: mac
+        required: true
+    key:
+      kid: cpe_local
+      type: rsa
+      bits: 2048
+    remote:
+      method: "GET"
+      url: "http://localhost:6600/claims"
+  
+  # Full options: https://godoc.org/github.com/xmidt-org/themis/xlog#Options
+  # Detailed Options: https://github.com/natefinch/lumberjack#type-logger
+  log:
+    file: "cpe_themis.log"
+    level: "DEBUG"
