@@ -36,5 +36,5 @@
   # Full options: https://godoc.org/github.com/xmidt-org/themis/xlog#Options
   # Detailed Options: https://github.com/natefinch/lumberjack#type-logger
   log:
-    file: "rbl_themis.log"
+    file: "stdout"
     level: "DEBUG"
