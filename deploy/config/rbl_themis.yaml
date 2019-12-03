@@ -1,0 +1,35 @@
+---
+  # Each server can be configured using the following options:
+  # https://godoc.org/github.com/xmidt-org/themis/xhttp/xhttpserver#Options
+  servers:
+    claims:
+      address: :6600
+
+    metrics:
+      address: :6601
+
+    health:
+      address: :6602
+
+  # https://godoc.org/github.com/xmidt-org/themis/xhealth#Options
+  health:
+    disableLogging: false
+    custom:
+      server: "rbl_themis" 
+
+  # https://godoc.org/github.com/xmidt-org/themis/xmetrics#Options
+  prometheus:
+    defaultNamespace: xmidt
+    defaultSubsystem: rbl_themis
+
+  # https://godoc.org/github.com/xmidt-org/themis/token#Options
+  token:
+    claims:
+      custom: 
+        value: "remote_claim"
+  
+  # Full options: https://godoc.org/github.com/xmidt-org/themis/xlog#Options
+  # Detailed Options: https://github.com/natefinch/lumberjack#type-logger
+  log:
+    file: "stdout"
+    level: "DEBUG"

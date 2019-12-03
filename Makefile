@@ -27,17 +27,17 @@ rpm:
 	# CPE service 
 	tar -czf ./.ignore/SOURCES/cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/cpe_themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
+	cp deploy/config/cpe_themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
 
 	# RBL service
 	tar -czf ./.ignore/SOURCES/rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/rbl_themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
+	cp deploy/config/rbl_themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
 
 	# Standalone-mode service - All other XMiDT services are setup this way
 	tar -czf ./.ignore/SOURCES/$(APP)-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./$(APP)-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES
+	cp deploy/config/themis.yaml  ./.ignore/SOURCES
 
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
@@ -47,19 +47,19 @@ rpm:
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
 			--define "_version $(RPM_VERSION)" \
 			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/cpe_themis.spec
+			-ba deploy/rpm/packaging/cpe_themis.spec
 
 	# RBL service
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
 			--define "_version $(RPM_VERSION)" \
 			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/rbl_themis.spec
+			-ba deploy/rpm/packaging/rbl_themis.spec
 
 	# Standalone-mode service - All other XMiDT services are setup this way
 	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
 			--define "_version $(RPM_VERSION)" \
 			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/$(APP).spec
+			-ba deploy/rpm/packaging/$(APP).spec
 
 .PHONY: version
 version:
@@ -95,15 +95,23 @@ docker:
 		--build-arg VERSION=$(PROGVER) \
 		--build-arg GITCOMMIT=$(GITCOMMIT) \
 		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
+		-f ./deploy/docker/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
 
-.PHONY: local-docker
-local-docker:
+.PHONY: cpe-docker
+cpe-docker:
 	docker build \
-		--build-arg VERSION=$(PROGVER)+local \
+		--build-arg VERSION=$(PROGVER) \
 		--build-arg GITCOMMIT=$(GITCOMMIT) \
 		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/Dockerfile.local -t $(DOCKER_ORG)/$(APP):local .
+		-f ./deploy/docker/modes/cpe/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
+
+.PHONY: rbl-docker
+rbl-docker:
+	docker build \
+		--build-arg VERSION=$(PROGVER) \
+		--build-arg GITCOMMIT=$(GITCOMMIT) \
+		--build-arg BUILDTIME='$(BUILDTIME)' \
+		-f ./deploy/docker/modes/rbl/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
 
 .PHONY: style
 style:
@@ -120,10 +128,6 @@ test-cover: test
 .PHONY: codecov
 codecov: test
 	curl -s https://codecov.io/bash | bash
-
-.PHONEY: it
-it:
-	./it.sh
 
 .PHONY: clean
 clean:

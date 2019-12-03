@@ -1,0 +1,23 @@
+version: '3.4'
+services:
+  rbl_themis:
+    image: rbl_themis:local
+    ports:
+      - 6600:6600
+      - 6601:6601
+      - 6602:6602
+    volumes:
+      - ../../config/rbl_themis.yaml:/themis/rbl_themis.yaml
+  cpe_themis:
+    image: cpe_themis:local
+    ports:
+      - 6500:6500
+      - 6501:6501
+      - 6502:6502
+      - 6503:6503
+    depends_on:
+      - rbl_themis
+    volumes:
+      - ./cpe/cpe_themis.yaml:/themis/cpe_themis.yaml
+      # this has its own config due to docker compose 
+      # inter-container communication

@@ -10,11 +10,12 @@
 
 ## Summary
 
-A JWT issuer for the CPE devices that connect to the XMiDT cluster.
+A JWT token issuer for devices that connect to the XMiDT cluster.
 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
+- [Details](#details)
 - [How to Install](#how-to-install)
 - [Usage](#usage)
 - [Contributing](#contributing)
@@ -23,6 +24,40 @@ A JWT issuer for the CPE devices that connect to the XMiDT cluster.
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
 By participating, you agree to this Code.
+
+## Details
+Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
+
+
+### Running modes driven by configuration
+One of the areas of great flexibility in themis is the configurable origin of claims for outgoing tokens. The claims can be statistically provided in config and/or dynamically by specifying a remote server that serves them.
+
+Static Claims:
+```
+./themis -f themis.yaml
+
+curl -X GET \
+  http://localhost:6501/issue \
+  -H 'X-Midt-Mac-Address: mac:1122334455'
+```
+
+Dynamic claims:
+```
+# configuration file specifies static claims as well as a remote server for dynamic ones
+# Note: CPE stands for Customer Premise Equipment (term used at Comcast to refer to 
+# customer devices) and represents the running mode in which Themis issues JWT tokens
+# to devices
+./themis -f cpe_themis.yaml 
+
+
+# Start the server that will serve the claims mentioned above
+# Note: RBL stands for Remote Business Logic which represents a mode in which themis 
+# simply serves claims 
+./themis -f rbl_themis
+
+# make the request and observe the additional claims from the "remote" server
+
+``` 
 
 ## How to Install
 

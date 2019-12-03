@@ -3,22 +3,22 @@
   # https://godoc.org/github.com/xmidt-org/themis/xhttp/xhttpserver#Options
   servers:
     key:
-      address: :6500
+      address: :6700
 
     issuer:
-      address: :6501
+      address: :6701
     
     metrics:
-      address: :6502
+      address: :6702
 
     health:
-      address: :6503
+      address: :6703
 
   # https://godoc.org/github.com/xmidt-org/themis/xhealth#Options
   health:
     disableLogging: false
     custom:
-      server: "cpe_themis" 
+      server: "themis" 
 
   # https://godoc.org/github.com/xmidt-org/themis/xmetrics#Options
   prometheus:
@@ -49,13 +49,10 @@
         parameter: mac
         required: true
     key:
-      kid: cpe_local
+      kid: local
       type: rsa
       bits: 2048
-    remote:
-      method: "GET"
-      url: "http://localhost:6600/claims"
-  
+      
   # Full options: https://godoc.org/github.com/xmidt-org/themis/xlog#Options
   # Detailed Options: https://github.com/natefinch/lumberjack#type-logger
   log:
