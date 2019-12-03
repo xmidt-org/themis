@@ -251,7 +251,6 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		err := &DecodeClaimsError{
 			StatusCode: response.StatusCode,
-			Err:        errors.New(string(body)),
 		}
 
 		if response.Request != nil {
