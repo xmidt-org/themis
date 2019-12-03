@@ -16,68 +16,100 @@ A JWT token issuer for devices that connect to the XMiDT cluster.
 
 - [Code of Conduct](#code-of-conduct)
 - [Details](#details)
-- [How to Install](#how-to-install)
-- [Usage](#usage)
+- [Build](#build)
+- [Deploy](#deploy)
 - [Contributing](#contributing)
 
 ## Code of Conduct
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
-By participating, you agree to this Code.
+By participating, you agree to this code.
 
 ## Details
 Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
 
+### Endpoints
+There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides
 
-### Running modes driven by configuration
-One of the areas of great flexibility in themis is the configurable origin of claims for outgoing tokens. The claims can be statistically provided in config and/or dynamically by specifying a remote server that serves them.
+- GET `/keys/{KID}`
 
-Static Claims:
+This endpoint allows fetching the public portion of the key that themis uses to sign JWT tokens. For example, [Talaria](https://github.com/xmidt-org/talaria) can use this endpoint to verify the signature of tokens which devices present when they attempt to connect to the XMiDT cloud.
+
+Configuration for this endpoint is required when the `issue` endpoint is configured and vice versa.
+
+- POST `/issue`
+
+This is the main and most compute intensive endpoint as it creates JWT tokens based on configuration. XMiDT can be configured such that it only accepts devices that have valid JWT tokens.
+
+- GET `/claims`
+
+Configuring this endpoint is required if no configuration is provided for the previous two.
+
+
+## Build
+There is a single binary for themis and its execution is fully driven by configuration.
+
+### Makefile
+
+The Makefile has the following options you may find helpful:
+* `make build`: builds the Themis binary
+* `make docker`: builds a docker image for themis
+* `make cpe-docker`: builds a docker image for themis in CPE mode
+* `make rbl-docker`: builds a docker image for themis in RBL mode 
+
+* `make test`: runs unit tests with coverage for Themis 
+* `make clean`: deletes previously-built binaries and object files
+
+## Deploy
+At the simplest form, run the binary with the flag specifying the configuration file
 ```
-./themis -f themis.yaml
+./themis -f configuration.yaml
+``` 
 
-curl -X GET \
-  http://localhost:6501/issue \
-  -H 'X-Midt-Mac-Address: mac:1122334455'
+### Docker
+We recommend using docker for local development.
+
+There are two current intended use cases for themis which determine the deployment path.
+
+1) JWT Token claims are provided to Themis through configuration 
+```
+# Build docker image for themis
+# /deploy/config/themis.yaml specifies the static claims 
+docker build -t themis:local -f deploy/docker/Dockerfile
+
+# Run container service
+docker run -p 6701:6701 themis:local
+
+# Request a JWT token 
+curl http://localhost:6701/issue -H 'X-Midt-Mac-Address: mac:1122334455'
 ```
 
-Dynamic claims:
+2) JWT Token claims are provided to themis both through configuration AND a configurable remote server 
+
 ```
-# configuration file specifies static claims as well as a remote server for dynamic ones
+# Build docker image for cpe-themis
+# /deploy/docker/modes/cpe/cpe_themis.yaml specifies static claims as well as a 
+# remote server for dynamic ones
 # Note: CPE stands for Customer Premise Equipment (term used at Comcast to refer to 
 # customer devices) and represents the running mode in which Themis issues JWT tokens
 # to devices
-./themis -f cpe_themis.yaml 
+docker build -t cpe_themis:local -f deploy/docker/modes/cpe/Dockerfile .
 
 
-# Start the server that will serve the claims mentioned above
+# Build docker image for rbl-themis 
+# This will allow running the remote claims server used by cpe-themis
+# /deploy/config/rbl_themis.yaml specifies static claims that the service will serve
 # Note: RBL stands for Remote Business Logic which represents a mode in which themis 
 # simply serves claims 
-./themis -f rbl_themis
+docker build -t rbl_themis:local -f deploy/docker/modes/rbl/Dockerfile .
 
-# make the request and observe the additional claims from the "remote" server
+# Start a cluster of cpe and rbl themises 
+docker-compose -f deploy/docker/modes/docker-compose.yaml up
 
-``` 
-
-## How to Install
-
-### Installation
-- [Docker](https://www.docker.com/) (duh)
-  - `brew install docker`
-
-</br>
-
-### Running
-#### Build the docker image
-```bash
-docker build -t themis:local .
+# Request a JWT token and observe the additional claims from the "remote" server
+# on JWT
+curl http://localhost:6501/issue -H 'X-Midt-Mac-Address: mac:1122334455'
 ```
-This `build.sh` script will build the binary and docker image
-
-## Usage
-Once everything is up and running you can start sending requests. Below are a few examples.
-TODO: Add examples
-
 ## Contributing
 
 Refer to [CONTRIBUTING.md](CONTRIBUTING.md).
