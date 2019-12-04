@@ -71,11 +71,11 @@ We recommend using docker for local development.
 
 There are two current intended use cases for themis which determine the deployment path.
 
-1) JWT Token claims are provided to Themis through configuration 
+#### JWT Token claims are provided to Themis through input and configuration only
 ```
 # Build docker image for themis
 # /deploy/config/themis.yaml specifies the static claims 
-docker build -t themis:local -f deploy/docker/Dockerfile
+docker build -t themis:local -f deploy/docker/Dockerfile .  
 
 # Run container service
 docker run -p 6701:6701 themis:local
@@ -84,7 +84,38 @@ docker run -p 6701:6701 themis:local
 curl http://localhost:6701/issue -H 'X-Midt-Mac-Address: mac:1122334455'
 ```
 
-2) JWT Token claims are provided to themis both through configuration AND a configurable remote server 
+The encoded JWT token you get should look like
+```
+eyJhbGciOiJSUzI1NiIsImtpZCI6ImNwZV9sb2NhbCIsInR5cCI6IkpXVCJ9.eyJjYXBhYmlsaXRpZXMiOlsieG1pZHQ6aXNzdWVyOnRlc3Q6Lio6YWxsIl0sImN1c3RvbSI6InJlbW90ZV9jbGFpbSIsImV4cCI6MTU3NTQzMjY2NSwiaWF0IjoxNTc1NDI1NDY1LCJpc3MiOiJ0aGVtaXMiLCJqdGkiOiJ0dHZ4YlFJeU1jb1FqM1BEaTBPNTJRIiwibWFjIjoibWFjOjExMjIzMzQ0NTUiLCJuYmYiOjE1NzU0MjU0NTAsInRydXN0IjoxMDAwfQ.i2i32z-QIXnwXs7XNX-mSDUIKLTyOyvnl1i9x3Y0heq3XHKVfVAUx6558tBFYsq-KzJMeqTtBzyjNKVOkCSZwBwDRn7YOSBD-pnHpmrBAkzd60lQjSqcjB60Xty44USmzzCRLRnuGUkkz6u0y2YMNQSbcVTif2DeJuJ8oPTUhjZLYo9_jzNGBnpTVcIaVd-70Z1F0W1_WvRA5LjOPqRCbdvA5lM0J6DRKKH33czQiR0Oivd1_4WIQ03-jpJa_WBqLdQU1_BhTXziOFOw7EbB0tiPilJeHfALpSD0mD2c3d4tScmX8qe2IC6UWsaPWziYictS2yu-hYx2JpKd1jiPwg
+```
+
+and this is its decoded structure (props to [jwt.io](https://jwt.io/)!)
+
+```
+### HEADER ###  
+{
+  "alg": "RS256",
+  "kid": "local",
+  "typ": "JWT"
+}
+
+### PAYLOAD (CLAIMS) ###
+{
+  "capabilities": [
+    "xmidt:issuer:test:.*:all"
+  ],
+  "exp": 1575431752,
+  "iat": 1575424552, 
+  "iss": "themis",
+  "jti": "OsFniRKp-D9qTSzYjoBmpw",
+  "mac": "mac:1122334455",
+  "nbf": 1575424537,
+  "trust": 1000
+}
+```
+Note that claims can either be fixed values in the config file (i.e. `trust`) or come from the incoming HTTP request (either as an HTTP header or a query parameter) like `mac`
+
+#### JWT Token claims are provided to themis both through configuration, inputs AND a configurable remote server 
 
 ```
 # Build docker image for cpe-themis
@@ -109,6 +140,24 @@ docker-compose -f deploy/docker/modes/docker-compose.yaml up
 # Request a JWT token and observe the additional claims from the "remote" server
 # on JWT
 curl http://localhost:6501/issue -H 'X-Midt-Mac-Address: mac:1122334455'
+```
+
+In this case, you get an structurally identical JWT token as above with an additional claim from the remote server:
+
+```
+{
+  "capabilities": [
+    "xmidt:issuer:test:.*:all"
+  ],
+  "custom": "remote_claim", <== THIS!
+  "exp": 1575432665,
+  "iat": 1575425465,
+  "iss": "themis",
+  "jti": "ttvxbQIyMcoQj3PDi0O52Q",
+  "mac": "mac:1122334455",
+  "nbf": 1575425450,
+  "trust": 1000
+}
 ```
 ## Contributing
 
