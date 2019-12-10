@@ -57,7 +57,6 @@ type headerParameterRequestBuilder struct {
 	key       string
 	header    string
 	parameter string
-	required  bool
 	setter    func(string, interface{}, *Request)
 }
 
@@ -66,22 +65,11 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 		value := original.Header[hprb.header]
 		if len(value) > 0 {
 			hprb.setter(hprb.key, value[0], tr)
-			return nil
 		}
-	}
-
-	if len(hprb.parameter) > 0 {
+	} else if len(hprb.parameter) > 0 {
 		value := original.Form[hprb.parameter]
 		if len(value) > 0 {
 			hprb.setter(hprb.key, value[0], tr)
-			return nil
-		}
-	}
-
-	if hprb.required {
-		return xhttpserver.MissingValueError{
-			Header:    hprb.header,
-			Parameter: hprb.parameter,
 		}
 	}
 
@@ -91,7 +79,6 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 type variableRequestBuilder struct {
 	key      string
 	variable string
-	required bool
 	setter   func(string, interface{}, *Request)
 }
 
@@ -102,11 +89,7 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 		return nil
 	}
 
-	if vrb.required {
-		return xhttpserver.MissingVariableError{Variable: vrb.variable}
-	}
-
-	return nil
+	return xhttpserver.MissingVariableError{Variable: vrb.variable}
 }
 
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
@@ -125,7 +108,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					key:       name,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
-					required:  value.Required,
 					setter:    claimsSetter,
 				},
 			)
@@ -134,7 +116,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				variableRequestBuilder{
 					key:      name,
 					variable: value.Variable,
-					required: value.Required,
 					setter:   claimsSetter,
 				},
 			)
@@ -152,7 +133,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					key:       name,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
-					required:  value.Required,
 					setter:    metadataSetter,
 				},
 			)
@@ -161,7 +141,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				variableRequestBuilder{
 					key:      name,
 					variable: value.Variable,
-					required: value.Required,
 					setter:   metadataSetter,
 				},
 			)

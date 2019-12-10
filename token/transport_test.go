@@ -12,8 +12,6 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/xmidt-org/themis/xhttp/xhttpserver"
-
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,86 +50,104 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 }
 
 func testNewRequestBuildersSuccess(t *testing.T) {
-	testData := []struct {
-		options Options
-		URL     string
-		header  http.Header
-		URLVars map[string]string
 
-		expected *Request
+	testData := []struct {
+		options      Options
+		uri          string
+		header       http.Header
+		urlVariables map[string]string
+		expected     *Request
 	}{
 		{
-			URL:      "/",
+			uri:      "/test",
 			expected: NewRequest(),
 		},
 		{
 			options: Options{
 				Claims: map[string]Value{
-					"claim1": Value{
-						Header: "Claim1",
+					"fromHeader": Value{
+						Header: "X-Claim",
 					},
-					"claim2": Value{
-						Header:   "Claim2",
-						Required: true,
-					},
-					"claim3": Value{
-						Parameter: "claim3",
-					},
-					"claim4": Value{
-						Parameter: "claim4",
-						Required:  true,
-					},
-					"claim5": Value{
-						Variable: "claim5",
-					},
-					"claim6": Value{
-						Variable: "claim6",
-						Required: true,
+					"missing": Value{
+						Header: "X-Missing",
 					},
 				},
 				Metadata: map[string]Value{
-					"metadata1": Value{
-						Header: "Metadata1",
+					"fromHeader": Value{
+						Header: "X-Metadata",
 					},
-					"metadata2": Value{
-						Header:   "Metadata2",
-						Required: true,
-					},
-					"metadata3": Value{
-						Parameter: "metadata3",
-					},
-					"metadata4": Value{
-						Parameter: "metadata4",
-						Required:  true,
-					},
-					"metadata5": Value{
-						Variable: "metadata5",
-					},
-					"metadata6": Value{
-						Variable: "metadata6",
-						Required: true,
+					"missing": Value{
+						Header: "X-Missing",
 					},
 				},
 			},
-			URL: "/test?claim4=value4&metadata4=value4",
-			URLVars: map[string]string{
-				"claim6":    "value6",
-				"metadata6": "value6",
-			},
+			uri: "/test",
 			header: http.Header{
-				"Claim2":    []string{"value2"},
-				"Metadata2": []string{"value2"},
+				"X-Claim":    []string{"foo"},
+				"X-Metadata": []string{"bar"},
 			},
 			expected: &Request{
 				Claims: map[string]interface{}{
-					"claim2": "value2",
-					"claim4": "value4",
-					"claim6": "value6",
+					"fromHeader": "foo",
 				},
 				Metadata: map[string]interface{}{
-					"metadata2": "value2",
-					"metadata4": "value4",
-					"metadata6": "value6",
+					"fromHeader": "bar",
+				},
+			},
+		},
+		{
+			options: Options{
+				Claims: map[string]Value{
+					"fromParameter": Value{
+						Parameter: "claim",
+					},
+					"missing": Value{
+						Parameter: "missing",
+					},
+				},
+				Metadata: map[string]Value{
+					"fromParameter": Value{
+						Parameter: "metadata",
+					},
+					"missing": Value{
+						Parameter: "missing",
+					},
+				},
+			},
+			uri: "/test?claim=foo&metadata=bar",
+			expected: &Request{
+				Claims: map[string]interface{}{
+					"fromParameter": "foo",
+				},
+				Metadata: map[string]interface{}{
+					"fromParameter": "bar",
+				},
+			},
+		},
+		{
+			options: Options{
+				Claims: map[string]Value{
+					"fromVariable": Value{
+						Variable: "claim",
+					},
+				},
+				Metadata: map[string]Value{
+					"fromVariable": Value{
+						Variable: "metadata",
+					},
+				},
+			},
+			uri: "/test/foo/bar",
+			urlVariables: map[string]string{
+				"claim":    "foo",
+				"metadata": "bar",
+			},
+			expected: &Request{
+				Claims: map[string]interface{}{
+					"fromVariable": "foo",
+				},
+				Metadata: map[string]interface{}{
+					"fromVariable": "bar",
 				},
 			},
 		},
@@ -149,7 +165,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			require.NoError(err)
 
 			actual := NewRequest()
-			original := httptest.NewRequest("GET", record.URL, nil)
+			original := httptest.NewRequest("GET", record.uri, nil)
 			for name, values := range record.header {
 				for _, value := range values {
 					original.Header.Add(name, value)
@@ -157,7 +173,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			}
 
 			require.NoError(original.ParseForm())
-			original = mux.SetURLVars(original, record.URLVars)
+			original = mux.SetURLVars(original, record.urlVariables)
 
 			assert.NoError(rb.Build(original, actual))
 			assert.Equal(*record.expected, *actual)
@@ -165,103 +181,31 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 	}
 }
 
-func testNewRequestBuildersMissing(t *testing.T) {
-	testData := []struct {
-		options         Options
-		expectedErrType interface{}
-	}{
-		{
-			options: Options{
-				Claims: map[string]Value{
-					"missingClaimHeader": Value{
-						Header:   "Missing",
-						Required: true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingValueError{},
-		},
-		{
-			options: Options{
-				Claims: map[string]Value{
-					"missingClaimParameter": Value{
-						Parameter: "missing",
-						Required:  true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingValueError{},
-		},
-		{
-			options: Options{
-				Claims: map[string]Value{
-					"missingClaimVariable": Value{
-						Variable: "missing",
-						Required: true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingVariableError{},
-		},
-		{
-			options: Options{
-				Metadata: map[string]Value{
-					"missingMetadataHeader": Value{
-						Header:   "Missing",
-						Required: true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingValueError{},
-		},
-		{
-			options: Options{
-				Metadata: map[string]Value{
-					"missingMetadataParameter": Value{
-						Parameter: "missing",
-						Required:  true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingValueError{},
-		},
-		{
-			options: Options{
-				Metadata: map[string]Value{
-					"missingMetadataVariable": Value{
-						Variable: "missing",
-						Required: true,
-					},
-				},
-			},
-			expectedErrType: xhttpserver.MissingVariableError{},
-		},
-	}
+func testNewRequestBuildersMissingVariable(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
 
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var (
-				assert  = assert.New(t)
-				require = require.New(t)
+		options = Options{
+			Claims: map[string]Value{
+				"missing": Value{
+					Variable: "missing",
+				},
+			},
+		}
 
-				rb, err = NewRequestBuilders(record.options)
-			)
+		rb, err = NewRequestBuilders(options)
+	)
 
-			require.NoError(err)
-			require.NotEmpty(rb)
-
-			err = rb.Build(httptest.NewRequest("GET", "/", nil), new(Request))
-			require.Error(err)
-			assert.IsType(record.expectedErrType, err)
-		})
-	}
+	require.NoError(err)
+	assert.Error(rb.Build(httptest.NewRequest("GET", "/test", nil), new(Request)))
 }
 
 func TestNewRequestBuilders(t *testing.T) {
 	t.Run("InvalidClaim", testNewRequestBuildersInvalidClaim)
 	t.Run("InvalidMetadata", testNewRequestBuildersInvalidMetadata)
+	t.Run("MissingVariable", testNewRequestBuildersMissingVariable)
 	t.Run("Success", testNewRequestBuildersSuccess)
-	t.Run("Missing", testNewRequestBuildersMissing)
 }
 
 func testBuildRequestSuccess(t *testing.T) {
