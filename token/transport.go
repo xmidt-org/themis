@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/gorilla/mux"
 )
@@ -61,17 +63,30 @@ type headerParameterRequestBuilder struct {
 }
 
 func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Request) error {
+	logger := xlog.Get(original.Context())
+
 	if len(hprb.header) > 0 {
 		value := original.Header[hprb.header]
 		if len(value) > 0 {
 			hprb.setter(hprb.key, value[0], tr)
+			return nil
 		}
-	} else if len(hprb.parameter) > 0 {
+	}
+
+	if len(hprb.parameter) > 0 {
 		value := original.Form[hprb.parameter]
 		if len(value) > 0 {
 			hprb.setter(hprb.key, value[0], tr)
+			return nil
 		}
 	}
+
+	logger.Log(
+		level.Key(), level.WarnValue(),
+		xlog.MessageKey(), "missing value from request",
+		"header", hprb.header,
+		"parameter", hprb.parameter,
+	)
 
 	return nil
 }
@@ -161,7 +176,7 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 }
 
 func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
-	return func(_ context.Context, hr *http.Request) (interface{}, error) {
+	return func(ctx context.Context, hr *http.Request) (interface{}, error) {
 		if err := hr.ParseForm(); err != nil {
 			return nil, err
 		}
