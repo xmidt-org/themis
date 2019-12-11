@@ -12,6 +12,7 @@ import (
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/multierr"
 )
 
 var (
@@ -36,13 +37,12 @@ type RequestBuilders []RequestBuilder
 
 // Build invokes each request builder in sequence.  Prior to invoking any of the chain of builders,
 func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
+	var err error
 	for _, rb := range rbs {
-		if err := rb.Build(original, tr); err != nil {
-			return err
-		}
+		multierr.AppendInto(&err, rb.Build(original, tr))
 	}
 
-	return nil
+	return err
 }
 
 func claimsSetter(key string, value interface{}, tr *Request) {
