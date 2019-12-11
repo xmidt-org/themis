@@ -9,9 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-kit/kit/log/level"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
-	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/gorilla/mux"
 )
@@ -63,8 +61,6 @@ type headerParameterRequestBuilder struct {
 }
 
 func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Request) error {
-	logger := xlog.Get(original.Context())
-
 	if len(hprb.header) > 0 {
 		value := original.Header[hprb.header]
 		if len(value) > 0 {
@@ -80,13 +76,6 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 			return nil
 		}
 	}
-
-	logger.Log(
-		level.Key(), level.WarnValue(),
-		xlog.MessageKey(), "missing value from request",
-		"header", hprb.header,
-		"parameter", hprb.parameter,
-	)
 
 	return nil
 }
