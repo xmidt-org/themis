@@ -28,9 +28,6 @@ type Value struct {
 	// Variable is a URL gorilla/mux variable from with the value is pulled
 	Variable string
 
-	// Required indicates that this value is required.  Only applies to HTTP values.
-	Required bool
-
 	// Value is the statically assigned value from configuration
 	Value interface{}
 }

@@ -1,1 +1,1 @@
-
+- Removed the required option for claims and metadata obtained from HTTP requests
