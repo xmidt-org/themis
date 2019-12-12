@@ -95,7 +95,7 @@ docker:
 		--build-arg VERSION=$(PROGVER) \
 		--build-arg GITCOMMIT=$(GITCOMMIT) \
 		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/docker/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
+		-f ./deploy/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
 
 .PHONY: cpe-docker
 cpe-docker:
@@ -103,7 +103,7 @@ cpe-docker:
 		--build-arg VERSION=$(PROGVER) \
 		--build-arg GITCOMMIT=$(GITCOMMIT) \
 		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/docker/modes/cpe/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
+		-f ./deploy/remote-claims/cpe/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
 
 .PHONY: rbl-docker
 rbl-docker:
@@ -111,7 +111,7 @@ rbl-docker:
 		--build-arg VERSION=$(PROGVER) \
 		--build-arg GITCOMMIT=$(GITCOMMIT) \
 		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/docker/modes/rbl/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
+		-f ./deploy/remote-claims/rbl/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
 
 .PHONY: style
 style:
