@@ -29,7 +29,7 @@ By participating, you agree to this code.
 Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
 
 ### Endpoints
-There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides
+There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides:
 
 - GET `/keys/{KID}`
 
@@ -112,7 +112,7 @@ and this is its decoded structure (props to [jwt.io](https://jwt.io/)!)
   "trust": 1000
 }
 ```
-Note that claims can either be fixed values in the config file (i.e. `trust`) or come from the incoming HTTP request (either as an HTTP header or a query parameter) like `mac`
+Note that claims can either be fixed values in the config file (i.e. `trust`) or come from the incoming HTTP request (either as an HTTP header or a query parameter) like `mac`.
 
 #### JWT Token claims are provided to themis both through configuration, inputs AND a configurable remote server 
 
