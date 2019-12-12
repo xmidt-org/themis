@@ -27,17 +27,17 @@ rpm:
 	# CPE service 
 	tar -czf ./.ignore/SOURCES/cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/cpe_themis.service ./.ignore/SOURCES
-	cp deploy/config/cpe_themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
+	cp deploy/remote-claims/cpe_themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
 
 	# RBL service
 	tar -czf ./.ignore/SOURCES/rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/rbl_themis.service ./.ignore/SOURCES
-	cp deploy/config/rbl_themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
+	cp deploy/remote-claims/rbl_themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
 
 	# Standalone-mode service - All other XMiDT services are setup this way
 	tar -czf ./.ignore/SOURCES/$(APP)-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./$(APP)-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
 	cp conf/themis.service ./.ignore/SOURCES
-	cp deploy/config/themis.yaml  ./.ignore/SOURCES
+	cp themis.yaml  ./.ignore/SOURCES
 
 	cp LICENSE ./.ignore/SOURCES
 	cp NOTICE ./.ignore/SOURCES
