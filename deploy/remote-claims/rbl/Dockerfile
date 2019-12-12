@@ -1,6 +1,6 @@
 FROM golang:1.13.4-alpine3.10 as builder
 
-WORKDIR /themis 
+WORKDIR /themis
 ARG VERSION=undefined
 ARG GITCOMMIT=undefined
 ARG BUILDTIME=undefined
@@ -10,12 +10,11 @@ RUN go build -ldflags "-X 'main.BuildTime=${BUILDTIME}' -X main.GitCommit=${GITC
 
 FROM alpine:3.10
 
-EXPOSE 6500
-EXPOSE 6501
-EXPOSE 6502
-EXPOSE 6503
+EXPOSE 6600
+EXPOSE 6601
+EXPOSE 6602
 
 WORKDIR /themis
 COPY --from=builder /themis/themis .
-COPY deploy/docker/modes/cpe/cpe_themis.yaml .
-ENTRYPOINT ["./themis", "-f", "cpe_themis.yaml"]
+COPY deploy/remote-claims/rbl_themis.yaml .
+ENTRYPOINT ["./themis", "-f", "rbl_themis.yaml"]

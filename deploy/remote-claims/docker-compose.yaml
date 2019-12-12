@@ -7,7 +7,7 @@ services:
       - 6601:6601
       - 6602:6602
     volumes:
-      - ../../config/rbl_themis.yaml:/themis/rbl_themis.yaml
+      - ./rbl_themis.yaml:/themis/rbl_themis.yaml
   cpe_themis:
     image: cpe_themis:local
     ports:

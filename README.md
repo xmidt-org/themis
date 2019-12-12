@@ -56,14 +56,13 @@ The Makefile has the following options you may find helpful:
 * `make docker`: builds a docker image for themis
 * `make cpe-docker`: builds a docker image for themis in CPE mode
 * `make rbl-docker`: builds a docker image for themis in RBL mode 
-
 * `make test`: runs unit tests with coverage for Themis 
 * `make clean`: deletes previously-built binaries and object files
 
 ## Deploy
 At the simplest form, run the binary with the flag specifying the configuration file
 ```
-./themis -f configuration.yaml
+./themis -f themis.yaml
 ``` 
 
 ### Docker
@@ -74,8 +73,8 @@ There are two current intended use cases for themis which determine the deployme
 #### JWT Token claims are provided to Themis through input and configuration only
 ```
 # Build docker image for themis
-# /deploy/config/themis.yaml specifies the static claims 
-docker build -t themis:local -f deploy/docker/Dockerfile .  
+# themis.yaml specifies the static claims 
+docker build -t themis:local -f deploy/Dockerfile .  
 
 # Run container service
 docker run -p 6701:6701 themis:local
@@ -124,7 +123,7 @@ Note that claims can either be fixed values in the config file (i.e. `trust`) or
 # Note: CPE stands for Customer Premise Equipment (term used at Comcast to refer to 
 # customer devices) and represents the running mode in which Themis issues JWT tokens
 # to devices
-docker build -t cpe_themis:local -f deploy/docker/modes/cpe/Dockerfile .
+docker build -t cpe_themis:local -f deploy/remote-claims/cpe/Dockerfile .
 
 
 # Build docker image for rbl-themis 
@@ -132,10 +131,10 @@ docker build -t cpe_themis:local -f deploy/docker/modes/cpe/Dockerfile .
 # /deploy/config/rbl_themis.yaml specifies static claims that the service will serve
 # Note: RBL stands for Remote Business Logic which represents a mode in which themis 
 # simply serves claims 
-docker build -t rbl_themis:local -f deploy/docker/modes/rbl/Dockerfile .
+docker build -t rbl_themis:local -f deploy/remote-claims/rbl/Dockerfile .
 
 # Start a cluster of cpe and rbl themises 
-docker-compose -f deploy/docker/modes/docker-compose.yaml up
+docker-compose -f deploy/remote-claims/docker-compose.yaml up
 
 # Request a JWT token and observe the additional claims from the "remote" server
 # on JWT

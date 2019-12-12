@@ -17,5 +17,5 @@ EXPOSE 6703
 
 WORKDIR /themis
 COPY --from=builder /themis/themis .
-COPY deploy/config/themis.yaml .
+COPY themis.yaml .
 ENTRYPOINT ["./themis", "-f", "themis.yaml"]
