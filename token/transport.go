@@ -12,6 +12,7 @@ import (
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/multierr"
 )
 
 var (
@@ -36,13 +37,12 @@ type RequestBuilders []RequestBuilder
 
 // Build invokes each request builder in sequence.  Prior to invoking any of the chain of builders,
 func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
+	var err error
 	for _, rb := range rbs {
-		if err := rb.Build(original, tr); err != nil {
-			return err
-		}
+		multierr.AppendInto(&err, rb.Build(original, tr))
 	}
 
-	return nil
+	return err
 }
 
 func claimsSetter(key string, value interface{}, tr *Request) {
@@ -57,7 +57,6 @@ type headerParameterRequestBuilder struct {
 	key       string
 	header    string
 	parameter string
-	required  bool
 	setter    func(string, interface{}, *Request)
 }
 
@@ -78,20 +77,12 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 		}
 	}
 
-	if hprb.required {
-		return xhttpserver.MissingValueError{
-			Header:    hprb.header,
-			Parameter: hprb.parameter,
-		}
-	}
-
 	return nil
 }
 
 type variableRequestBuilder struct {
 	key      string
 	variable string
-	required bool
 	setter   func(string, interface{}, *Request)
 }
 
@@ -102,11 +93,7 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 		return nil
 	}
 
-	if vrb.required {
-		return xhttpserver.MissingVariableError{Variable: vrb.variable}
-	}
-
-	return nil
+	return xhttpserver.MissingVariableError{Variable: vrb.variable}
 }
 
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
@@ -125,7 +112,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					key:       name,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
-					required:  value.Required,
 					setter:    claimsSetter,
 				},
 			)
@@ -134,7 +120,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				variableRequestBuilder{
 					key:      name,
 					variable: value.Variable,
-					required: value.Required,
 					setter:   claimsSetter,
 				},
 			)
@@ -152,7 +137,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					key:       name,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
-					required:  value.Required,
 					setter:    metadataSetter,
 				},
 			)
@@ -161,7 +145,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				variableRequestBuilder{
 					key:      name,
 					variable: value.Variable,
-					required: value.Required,
 					setter:   metadataSetter,
 				},
 			)
@@ -182,7 +165,7 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 }
 
 func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
-	return func(_ context.Context, hr *http.Request) (interface{}, error) {
+	return func(ctx context.Context, hr *http.Request) (interface{}, error) {
 		if err := hr.ParseForm(); err != nil {
 			return nil, err
 		}

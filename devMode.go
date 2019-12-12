@@ -64,15 +64,12 @@ token:
     mac:
       header: X-Midt-Mac-Address
       parameter: mac
-      required: true
     serial:
       header: X-Midt-Serial-Number
       parameter: serial
-      required: true
     uuid:
       header: X-Midt-Uuid
       parameter: uuid
-      required: true
     iss:
       value: "development"
     partner-id:
@@ -91,15 +88,12 @@ token:
     mac:
       header: X-Midt-Mac-Address
       parameter: mac
-      required: true
     serial:
       header: X-Midt-Serial-Number
       parameter: serial
-      required: true
     uuid:
       header: X-Midt-Uuid
       parameter: uuid
-      required: true
   key:
     kid: development
     type: rsa

@@ -35,7 +35,6 @@
       mac:
         header: X-Midt-Mac-Address
         parameter: mac
-        required: true
       iss:
         value: "themis"
       trust:
