@@ -1,25 +1,49 @@
-FROM golang:alpine as builder
+FROM docker.io/library/golang:1.14-alpine as builder
+
 MAINTAINER Jack Murdock <jack_murdock@comcast.com>
 
 WORKDIR /go/src/github.com/xmidt-org/themis
-ARG VERSION=undefined
-ARG GITCOMMIT=undefined
-ARG BUILDTIME=undefined
 
-RUN apk update && apk upgrade && \
-    apk add --no-cache bash git openssh
+ARG VERSION=unknown
+ARG GITCOMMIT=unknown
+ARG BUILDTIME=unknown
+
+ADD https://github.com/geofffranks/spruce/releases/download/v1.25.2/spruce-linux-amd64 /usr/local/bin/spruce
+RUN chmod +x /usr/local/bin/spruce
+
+RUN apk add --no-cache --no-progress \
+    ca-certificates \
+    make \
+    git \
+    openssh \
+    gcc \
+    libc-dev \
+    upx
 
 COPY . .
-RUN GO111MODULE=on go build -ldflags "-X 'main.BuildTime=${BUILDTIME}' -X main.GitCommit=${GITCOMMIT} -X main.Version=${VERSION}" -o themis_linux_amd64
+RUN make build
 
-FROM alpine
+FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
-RUN mkdir -p /etc/themis
-VOLUME /etc/themis
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /go/src/github.com/xmidt-org/themis/themis.yaml /_themis.yaml
+COPY --from=builder /go/src/github.com/xmidt-org/themis/themis /themis
+COPY --from=builder /go/src/github.com/xmidt-org/themis/deploy/Dockerfile /go/src/github.com/xmidt-org/themis/NOTICE /go/src/github.com/xmidt-org/themis/LICENSE /go/src/github.com/xmidt-org/themis/CHANGELOG.md /
+COPY --from=builder /go/src/github.com/xmidt-org/themis/deploy/packaging/entrypoint.sh /entrypoint.sh
+COPY --from=builder /go/src/github.com/xmidt-org/themis/deploy/packaging/themis_spruce.yaml /tmp/themis_spruce.yaml
+COPY --from=builder /usr/local/bin/spruce /spruce
 
-EXPOSE 8080
+RUN mkdir /etc/themis/ && touch /etc/themis/themis.yaml && chmod 666 /etc/themis/themis.yaml
 
-COPY --from=builder /go/src/github.com/xmidt-org/themis/themis_linux_amd64 /
-COPY themis.yaml /
-ENTRYPOINT ["/themis_linux_amd64"]
+USER nobody
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+EXPOSE 6500
+EXPOSE 6501
+EXPOSE 6502
+EXPOSE 6503
+EXPOSE 6504
+
+CMD ["/themis"]

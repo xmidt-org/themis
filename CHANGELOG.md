@@ -5,16 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- added docker automation
+- updated release pipeline to use travis
 
 ## [v0.4.0]
 - Removed the required option for claims and metadata obtained from HTTP requests
 
-
-
 ## [v0.3.2]
 - Add versioning to themis binaries 
-
-
 
 ## [v0.3.1]
 - Added a custom xhttpserver.Listener type
@@ -22,40 +20,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ConstantHandler for static HTTP transaction responses
 - Busy decorator for enforcing MaxConcurrentRequests
 
-
-
 ## [v0.3.0]
 - Allow metrics and health servers to be disabled
 - Allow only a claims server to be configured
 - Require an issuer server if a keys server is configured, and vice versa
 
-
-
 ## [v0.2.1]
 - Use metrics namespace from config
-
-
 
 ## [v0.2.0]
 - added configurable and application-injectable peer verification for MTLS
 
-
-
 ## [v0.1.1]
 - Use new paths for systemd start
-
-
 
 ## [v0.1.0]
 - Added logic to create RPMs per themis running mode
 
-
-
 ## [v0.0.3]
 - updated Makefile
 - updated conf directory
-
-
 - Refactored config and xlog packages to remove some magic and makes things more obvious
 - Allow named HTTP client components
 - Simplify HTTP client/server component providers
