@@ -1,0 +1,114 @@
+---
+# The unique fully-qualified-domain-name of the server.  It is provided to
+# the X-Scytale-Server header for showing what server fulfilled the request
+# sent.
+# (Optional)
+server: (( grab $HOSTNAME || "scytale" ))
+
+########################################
+#   Labeling/Tracing via HTTP Headers Configuration
+########################################
+
+# Provides this build number to the X-Scytale-Build header for
+# showing machine version information.  The build number SHOULD
+# match the scheme `version-build` but there is not a strict requirement.
+# (Optional)
+build: (( grab $BUILD || "unkown" ))
+
+# stage is used for doing complex spruce manipulation
+# change this will only effect spruce and the vars referencing it
+stage: (( grab $STAGE || "development" ))
+
+servers:
+  key:
+    address: :6500
+    disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - (( grab server ))
+      X-Midt-Version:
+        - (( grab build ))
+  issuer:
+    address: :6501
+    disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - (( grab server ))
+      X-Midt-Version:
+        - (( grab build ))
+  claims:
+    address: :6502
+    disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - (( grab server ))
+      X-Midt-Version:
+        - (( grab build ))
+        -
+  metrics:
+    address: :6503
+    disableHTTPKeepAlives: true
+
+  health:
+    address: :6504
+    disableHTTPKeepAlives: true
+    header:
+      X-Midt-Server:
+        - (( grab server ))
+      X-Midt-Version:
+        - (( grab build ))
+health:
+  disableLogging: false
+  custom:
+    server: (( grab server ))
+
+prometheus:
+  defaultNamespace: xmidt
+  defaultSubsystem: themis
+
+token:
+  alg: RS256
+  nonce: true
+  notBeforeDelta: -15s
+  duration: 24h
+  claims:
+    mac:
+      header: X-Midt-Mac-Address
+      parameter: mac
+    serial:
+      header: X-Midt-Serial-Number
+      parameter: serial
+    uuid:
+      header: X-Midt-Uuid
+      parameter: uuid
+    iss:
+      value: (( grab stage ))
+    partner-id:
+      value: "comcast"
+    trust:
+      value: 1000
+    sub:
+      value: "client-supplied"
+    aud:
+      value: "XMiDT"
+    capabilities:
+      value:
+        - x1:issuer:test:.*:all
+  metadata:
+    mac:
+      header: X-Midt-Mac-Address
+      parameter: mac
+    serial:
+      header: X-Midt-Serial-Number
+      parameter: serial
+    uuid:
+      header: X-Midt-Uuid
+      parameter: uuid
+  key:
+    kid: (( grab stage ))
+    type: rsa
+    bits: 1024
+
+log:
+  file: "stdout"
+  level: "DEBUG"
