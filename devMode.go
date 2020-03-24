@@ -72,8 +72,6 @@ token:
       parameter: uuid
     iss:
       value: "development"
-    partner-id:
-      value: "comcast"
     trust:
       value: 1000
     sub:

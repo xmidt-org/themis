@@ -67,8 +67,6 @@ token:
       parameter: uuid
     iss:
       value: "development"
-    partner-id:
-      value: "comcast"
     trust:
       value: 1000
     sub:
@@ -88,6 +86,12 @@ token:
     uuid:
       header: X-Midt-Uuid
       parameter: uuid
+  partnerID:
+    claim: partner-id
+    metadata: pid
+    header: X-Midt-Partner-ID
+    parameter: pid
+    default: comcast
   key:
     kid: development
     type: rsa
