@@ -35,12 +35,12 @@ type Value struct {
 // PartnerID describes how to extract the partner id from an HTTP request.  Partner IDs
 // require some special processing.
 type PartnerID struct {
-	// Claim is the name of the claim key for the partner id
+	// Claim is the name of the claim key for the partner id.  If unset, no claim is set.
 	Claim string
 
-	// Metadata indicates whether to include the partner id in metadata that
-	// may be transferred to a remote system
-	Metadata bool
+	// Metadata is the name of the metadata key for the partner id.  If unset, no metadata
+	// is set and thus the partner id won't be transmitted to remote systems.
+	Metadata string
 
 	// Header is the HTTP header containing the partner id
 	Header string

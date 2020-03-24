@@ -94,6 +94,11 @@ token:
     uuid:
       header: X-Midt-Uuid
       parameter: uuid
+  partnerID:
+    claim: partner-id
+    header: X-Midt-Partner-Id
+    parameter: pid
+    default: comcast
   key:
     kid: development
     type: rsa

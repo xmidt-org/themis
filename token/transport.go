@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
@@ -96,6 +97,53 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 	return xhttpserver.MissingVariableError{Variable: vrb.variable}
 }
 
+type partnerIDRequestBuilder struct {
+	PartnerID
+}
+
+func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request) string {
+	var value string
+	if len(prb.Header) > 0 {
+		value = original.Header.Get(prb.Header)
+	}
+
+	if len(value) == 0 && len(prb.Parameter) > 0 {
+		values := original.Form[prb.Parameter]
+		if len(values) > 0 {
+			value = values[0]
+		}
+	}
+
+	if len(value) > 0 {
+		// some post-processing on the partner id value:
+		// don't allow multiple values separated by ","
+		// don't allow the "*" partner id
+		for _, v := range strings.Split(value, ",") {
+			v = strings.TrimSpace(v)
+			if len(v) > 0 && v != "*" {
+				return v // the cleaned partner id
+			}
+		}
+	}
+
+	// return the default as is, without any of the special processing above
+	return prb.Default
+}
+
+func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) error {
+	if partnerID := prb.getPartnerID(original); len(partnerID) > 0 {
+		if len(prb.Claim) > 0 {
+			tr.Claims[prb.Claim] = partnerID
+		}
+
+		if len(prb.Metadata) > 0 {
+			tr.Metadata[prb.Metadata] = partnerID
+		}
+	}
+
+	return nil
+}
+
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
 // and metadata that are HTTP-based are included in the results.  Claims and metadata that are statically
 // assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
@@ -149,6 +197,14 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				},
 			)
 		}
+	}
+
+	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
+		rb = append(rb,
+			partnerIDRequestBuilder{
+				PartnerID: *o.PartnerID,
+			},
+		)
 	}
 
 	return rb, nil
