@@ -32,6 +32,26 @@ type Value struct {
 	Value interface{}
 }
 
+// PartnerID describes how to extract the partner id from an HTTP request.  Partner IDs
+// require some special processing.
+type PartnerID struct {
+	// Claim is the name of the claim key for the partner id
+	Claim string
+
+	// Metadata indicates whether to include the partner id in metadata that
+	// may be transferred to a remote system
+	Metadata bool
+
+	// Header is the HTTP header containing the partner id
+	Header string
+
+	// Parameter is the HTTP parameter containing the partner id
+	Parameter string
+
+	// Default is the default value for the partner id
+	Default string
+}
+
 // Options holds the configurable information for a token Factory
 type Options struct {
 	// Alg is the required JWT signing algorithm to use
@@ -42,10 +62,17 @@ type Options struct {
 
 	// Claims is an optional map of claims to add to every token emitted by this factory.
 	// Any claims here can be overridden by claims within a token Request.
+	//
+	// None of these claims receive any special processing.  They are copied as is from the HTTP request
+	// or statically from configuration.  For special processing around the partner id, set the PartnerID field.
 	Claims map[string]Value
 
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
 	Metadata map[string]Value
+
+	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
+	// performed, though a partner id may still be configured as part of the claims.
+	PartnerID *PartnerID
 
 	// Nonce indicates whether a nonce (jti) should be applied to each token emitted
 	// by this factory.
