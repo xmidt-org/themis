@@ -6,10 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.4.2]
+- fix rpm spec file, fix changelog formatting [#41](https://github.com/xmidt-org/themis/pull/41)
+
 ## [v0.4.1]
 - added docker automation
 - updated release pipeline to use travis
-- added specialized partner id logic
+- added specialized partner id logic [#40](https://github.com/xmidt-org/themis/pull/40)
 
 ## [v0.4.0]
 - Removed the required option for claims and metadata obtained from HTTP requests
@@ -66,10 +69,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.1...HEAD
-[v0.4.1]: https://github.com/xmidt-org/themis/compare/v0.4.1-rc.1...v0.4.1
-[v0.4.0]: https://github.com/xmidt-org/themis/compare/v0.4.0-rc.1...v0.4.0
-[v0.3.2]: https://github.com/xmidt-org/themis/compare/v0.3.2-rc.1...v0.3.2
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.2...HEAD
+[v0.4.2]: https://github.com/xmidt-org/themis/compare/v0.4.1...v0.4.2
+[v0.4.1]: https://github.com/xmidt-org/themis/compare/v0.4.0...v0.4.1
+[v0.4.0]: https://github.com/xmidt-org/themis/compare/v0.3.2...v0.4.0
+[v0.3.2]: https://github.com/xmidt-org/themis/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/xmidt-org/themis/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/xmidt-org/themis/compare/v0.2.1...v0.3.0
 [v0.2.1]: https://github.com/xmidt-org/themis/compare/v0.2.0...v0.2.1
