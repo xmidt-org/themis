@@ -9,8 +9,6 @@ BINARY    	 := $(FIRST_GOPATH)/bin/$(APP)
 
 VERSION ?= $(shell git describe --tag --always --dirty)
 PROGVER = $(shell git describe --tags `git rev-list --tags --max-count=1` | tail -1 | sed 's/v\(.*\)/\1/')
-RPM_VERSION=$(shell echo $(PROGVER) | sed 's/\(.*\)-\(.*\)/\1/')
-RPM_RELEASE=$(shell echo $(PROGVER) | sed -n 's/.*-\(.*\)/\1/p'  | grep . && (echo "$(echo $(PROGVER) | sed 's/.*-\(.*\)/\1/')") || echo "1")
 BUILDTIME = $(shell date -u '+%Y-%m-%d %H:%M:%S')
 GITCOMMIT = $(shell git rev-parse --short HEAD)
 GOBUILDFLAGS = -a -ldflags "-w -s -X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(VERSION)" -o $(APP)
@@ -22,46 +20,6 @@ vendor:
 .PHONY: build
 build: vendor
 	CGO_ENABLED=0 $(GO) build $(GOBUILDFLAGS)
-
-rpm:
-	mkdir -p ./.ignore/SOURCES
-
-	# CPE service 
-	tar -czf ./.ignore/SOURCES/cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./cpe_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/cpe_themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES/cpe_themis.yaml
-
-	# RBL service
-	tar -czf ./.ignore/SOURCES/rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./rbl_themis-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/rbl_themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES/rbl_themis.yaml
-
-	# Standalone-mode service - All other XMiDT services are setup this way
-	tar -czf ./.ignore/SOURCES/$(APP)-$(RPM_VERSION)-$(RPM_RELEASE).tar.gz --transform 's/^\./$(APP)-$(RPM_VERSION)-$(RPM_RELEASE)/' --exclude ./.git --exclude ./.ignore --exclude ./conf --exclude ./deploy --exclude ./vendor --exclude ./vendor .
-	cp conf/themis.service ./.ignore/SOURCES
-	cp themis.yaml  ./.ignore/SOURCES
-
-	cp LICENSE ./.ignore/SOURCES
-	cp NOTICE ./.ignore/SOURCES
-	cp CHANGELOG.md ./.ignore/SOURCES
-
-	# CPE service
-	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-			--define "_version $(RPM_VERSION)" \
-			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/cpe_themis.spec
-
-	# RBL service
-	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-			--define "_version $(RPM_VERSION)" \
-			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/rbl_themis.spec
-
-	# Standalone-mode service - All other XMiDT services are setup this way
-	rpmbuild --define "_topdir $(CURDIR)/.ignore" \
-			--define "_version $(RPM_VERSION)" \
-			--define "_release $(RPM_RELEASE)" \
-			-ba deploy/packaging/$(APP).spec
 
 .PHONY: version
 version:
