@@ -5,8 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.4.1]
 - added docker automation
 - updated release pipeline to use travis
+- added specialized partner id logic
 
 ## [v0.4.0]
 - Removed the required option for claims and metadata obtained from HTTP requests
@@ -63,7 +66,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.1...HEAD
+[v0.4.1]: https://github.com/xmidt-org/themis/compare/v0.4.1-rc.1...v0.4.1
 [v0.4.0]: https://github.com/xmidt-org/themis/compare/v0.4.0-rc.1...v0.4.0
 [v0.3.2]: https://github.com/xmidt-org/themis/compare/v0.3.2-rc.1...v0.3.2
 [v0.3.1]: https://github.com/xmidt-org/themis/compare/v0.3.0...v0.3.1

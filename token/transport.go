@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
+	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
@@ -18,6 +20,53 @@ import (
 var (
 	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
 )
+
+// InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise
+// invalid partner id is submitted
+type InvalidPartnerIDError struct{}
+
+// Error returns the error string associated with an invalid partner id
+func (ipe InvalidPartnerIDError) Error() string {
+	return "invalid partner id"
+}
+
+func (ipe InvalidPartnerIDError) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+// BuildError is the error type usually returned by RequestBuilder.Build to indicate what
+// happened during each request builder.
+type BuildError struct {
+	Err error
+}
+
+// Error returns the nested error's Error text
+func (be BuildError) Error() string {
+	return be.Err.Error()
+}
+
+func (be BuildError) Unwrap() error {
+	return be.Err
+}
+
+// StatusCode returns the largest numeric HTTP status code of any embedded errors,
+// or http.StatusBadRequest is none of the embedded errors reported status codes.
+func (be BuildError) StatusCode() int {
+	statusCode := 0
+	for _, err := range multierr.Errors(be.Err) {
+		if sc, ok := err.(kithttp.StatusCoder); ok {
+			if statusCode < sc.StatusCode() {
+				statusCode = sc.StatusCode()
+			}
+		}
+	}
+
+	if statusCode == 0 {
+		return http.StatusBadRequest
+	}
+
+	return statusCode
+}
 
 // RequestBuilder is a strategy for building a token factory Request from an HTTP request.
 //
@@ -42,7 +91,11 @@ func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
 		multierr.AppendInto(&err, rb.Build(original, tr))
 	}
 
-	return err
+	if err != nil {
+		return BuildError{Err: err}
+	}
+
+	return nil
 }
 
 func claimsSetter(key string, value interface{}, tr *Request) {
@@ -94,6 +147,61 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 	}
 
 	return xhttpserver.MissingVariableError{Variable: vrb.variable}
+}
+
+type partnerIDRequestBuilder struct {
+	PartnerID
+}
+
+func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request) (string, error) {
+	var value string
+	if len(prb.Header) > 0 {
+		value = original.Header.Get(prb.Header)
+	}
+
+	if len(value) == 0 && len(prb.Parameter) > 0 {
+		values := original.Form[prb.Parameter]
+		if len(values) > 0 {
+			value = values[0]
+		}
+	}
+
+	if len(value) > 0 {
+		// some post-processing on the partner id value:
+		// don't allow multiple values separated by ","
+		// don't allow the "*" partner id
+		for _, v := range strings.Split(value, ",") {
+			v = strings.TrimSpace(v)
+			if len(v) > 0 && v != "*" {
+				return v, nil // the cleaned partner id
+			}
+		}
+
+		// a partner id must have at least (1) segment that is not blank and is not the wildcard '*'
+		return "", InvalidPartnerIDError{}
+	}
+
+	// return the default as is, without any of the special processing above
+	return prb.Default, nil
+}
+
+func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) error {
+	partnerID, err := prb.getPartnerID(original)
+	if err != nil {
+		return err
+	}
+
+	if len(partnerID) > 0 {
+		if len(prb.Claim) > 0 {
+			tr.Claims[prb.Claim] = partnerID
+		}
+
+		if len(prb.Metadata) > 0 {
+			tr.Metadata[prb.Metadata] = partnerID
+		}
+	}
+
+	return nil
 }
 
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
@@ -149,6 +257,14 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 				},
 			)
 		}
+	}
+
+	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
+		rb = append(rb,
+			partnerIDRequestBuilder{
+				PartnerID: *o.PartnerID,
+			},
+		)
 	}
 
 	return rb, nil

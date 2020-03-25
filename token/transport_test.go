@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/multierr"
 )
 
 func testNewRequestBuildersInvalidClaim(t *testing.T) {
@@ -50,7 +51,6 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 }
 
 func testNewRequestBuildersSuccess(t *testing.T) {
-
 	testData := []struct {
 		options      Options
 		uri          string
@@ -80,18 +80,26 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Header: "X-Missing",
 					},
 				},
+				PartnerID: &PartnerID{
+					Claim:    "partner-id-claim",
+					Metadata: "partner-id-metadata",
+					Header:   "X-Midt-Partner-ID",
+				},
 			},
 			uri: "/test",
 			header: http.Header{
-				"X-Claim":    []string{"foo"},
-				"X-Metadata": []string{"bar"},
+				"X-Claim":           []string{"foo"},
+				"X-Metadata":        []string{"bar"},
+				"X-Midt-Partner-ID": []string{"test"},
 			},
 			expected: &Request{
 				Claims: map[string]interface{}{
-					"fromHeader": "foo",
+					"fromHeader":       "foo",
+					"partner-id-claim": "test",
 				},
 				Metadata: map[string]interface{}{
-					"fromHeader": "bar",
+					"fromHeader":          "bar",
+					"partner-id-metadata": "test",
 				},
 			},
 		},
@@ -113,14 +121,56 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Parameter: "missing",
 					},
 				},
+				PartnerID: &PartnerID{
+					Claim:     "partner-id-claim",
+					Metadata:  "partner-id-metadata",
+					Parameter: "pid",
+				},
 			},
-			uri: "/test?claim=foo&metadata=bar",
+			uri: "/test?pid=test&claim=foo&metadata=bar",
 			expected: &Request{
 				Claims: map[string]interface{}{
-					"fromParameter": "foo",
+					"fromParameter":    "foo",
+					"partner-id-claim": "test",
 				},
 				Metadata: map[string]interface{}{
-					"fromParameter": "bar",
+					"fromParameter":       "bar",
+					"partner-id-metadata": "test",
+				},
+			},
+		},
+		{
+			options: Options{
+				Claims: map[string]Value{
+					"fromVariable": Value{
+						Variable: "claim",
+					},
+				},
+				Metadata: map[string]Value{
+					"fromVariable": Value{
+						Variable: "metadata",
+					},
+				},
+				PartnerID: &PartnerID{
+					Claim:     "partner-id-claim",
+					Metadata:  "partner-id-metadata",
+					Parameter: "pid",
+					Default:   "test",
+				},
+			},
+			uri: "/test/foo/bar",
+			urlVariables: map[string]string{
+				"claim":    "foo",
+				"metadata": "bar",
+			},
+			expected: &Request{
+				Claims: map[string]interface{}{
+					"fromVariable":     "foo",
+					"partner-id-claim": "test",
+				},
+				Metadata: map[string]interface{}{
+					"fromVariable":        "bar",
+					"partner-id-metadata": "test",
 				},
 			},
 		},
@@ -201,10 +251,51 @@ func testNewRequestBuildersMissingVariable(t *testing.T) {
 	assert.Error(rb.Build(httptest.NewRequest("GET", "/test", nil), new(Request)))
 }
 
+func testNewRequestBuildersInvalidPartnerID(t *testing.T) {
+	testData := []struct {
+		invalidPartnerID string
+	}{
+		{"*"},
+		{"*,,"},
+		{",*,"},
+		{"*,   "},
+	}
+
+	for i, record := range testData {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var (
+				assert  = assert.New(t)
+				require = require.New(t)
+
+				tokenRequest = NewRequest()
+				httpRequest  = httptest.NewRequest("GET", "/test", nil)
+
+				rb, err = NewRequestBuilders(Options{
+					PartnerID: &PartnerID{
+						Header: "Test-Header",
+						Claim:  "test-claim",
+					},
+				})
+			)
+
+			require.NoError(err)
+			httpRequest.Header.Set("Test-Header", record.invalidPartnerID)
+
+			err = rb.Build(httpRequest, tokenRequest)
+			assert.Error(err)
+
+			buildErr, ok := err.(BuildError)
+			require.True(ok)
+			assert.Equal(http.StatusBadRequest, buildErr.StatusCode())
+		})
+	}
+}
+
 func TestNewRequestBuilders(t *testing.T) {
 	t.Run("InvalidClaim", testNewRequestBuildersInvalidClaim)
 	t.Run("InvalidMetadata", testNewRequestBuildersInvalidMetadata)
 	t.Run("MissingVariable", testNewRequestBuildersMissingVariable)
+	t.Run("InvalidPartnerID", testNewRequestBuildersInvalidPartnerID)
 	t.Run("Success", testNewRequestBuildersSuccess)
 }
 
@@ -322,7 +413,11 @@ func testBuildRequestFailure(t *testing.T) {
 				request, actualErr = BuildRequest(httptest.NewRequest("GET", "/", nil), record)
 			)
 
-			require.Equal(expectedErr, actualErr)
+			buildErr, ok := actualErr.(BuildError)
+			require.True(ok)
+
+			assert.Contains(multierr.Errors(buildErr.Err), expectedErr)
+			assert.Equal(http.StatusBadRequest, buildErr.StatusCode())
 			assert.Nil(request)
 		})
 	}
@@ -475,7 +570,11 @@ func testDecodeServerRequestFailure(t *testing.T) {
 	require.NotNil(decoder)
 	v, actualErr := decoder(context.Background(), httptest.NewRequest("GET", "/", nil))
 	assert.Nil(v)
-	assert.Equal(expectedErr, actualErr)
+
+	buildErr, ok := actualErr.(BuildError)
+	require.True(ok)
+
+	assert.Contains(multierr.Errors(buildErr.Err), expectedErr)
 }
 
 func TestDecodeServerRequest(t *testing.T) {
