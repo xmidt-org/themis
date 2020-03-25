@@ -1,5 +1,6 @@
 %define AutoReqProv: no
 %define __os_install_post %{nil}
+%define debug_package %{nil}
 
 Name:       themis
 Version:    {{{ git_tag_version }}}
