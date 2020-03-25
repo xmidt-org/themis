@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.4.3]
+- fix rpm spec file for epel 8 [#42](https://github.com/xmidt-org/themis/pull/42)
+
 ## [v0.4.2]
 - fix rpm spec file, fix changelog formatting [#41](https://github.com/xmidt-org/themis/pull/41)
 
@@ -69,7 +72,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.3...HEAD
+[v0.4.3]: https://github.com/xmidt-org/themis/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/xmidt-org/themis/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/xmidt-org/themis/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/xmidt-org/themis/compare/v0.3.2...v0.4.0
