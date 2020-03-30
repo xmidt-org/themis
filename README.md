@@ -148,7 +148,6 @@ docker run -p 6501:6501 themis:local
 curl http://localhost:6701/issue -H 'X-Midt-Mac-Address: mac:1122334455'
 ```
 
-Explore JWT contents at [jwt.io](https://jwt.io/)
 
 ## Contributing
 
