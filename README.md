@@ -112,7 +112,7 @@ token:
   ...
   metadata:
     ID:
-      header: X-Midt-Device-ID
+      header: X-Midt-Device-Id
 ```
 
 ## Build
