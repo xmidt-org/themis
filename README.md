@@ -23,7 +23,7 @@ A JWT token issuer for devices that connect to the XMiDT cluster.
 ## Code of Conduct
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
-By participating, you agree to this code.
+By participating, you agree to this Code.
 
 ## Details
 Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
