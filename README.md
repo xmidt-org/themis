@@ -10,38 +10,145 @@
 
 ## Summary
 
-A JWT issuer for the CPE devices that connect to the XMiDT cluster.
+A JWT token issuer for devices that connect to the XMiDT cluster.
 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
-- [How to Install](#how-to-install)
-- [Usage](#usage)
+- [Details](#details)
+- [Build](#build)
+- [Deploy](#deploy)
 - [Contributing](#contributing)
 
 ## Code of Conduct
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
-By participating, you agree to this Code.
+By participating, you agree to this code.
 
-## How to Install
+## Details
+Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
 
-### Installation
-- [Docker](https://www.docker.com/) (duh)
-  - `brew install docker`
+### Endpoints
+There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides:
 
-</br>
+- GET `/keys/{KID}`
 
-### Running
-#### Build the docker image
-```bash
-docker build -t themis:local .
+This endpoint allows fetching the public portion of the key that themis uses to sign JWT tokens. For example, [Talaria](https://github.com/xmidt-org/talaria) can use this endpoint to verify the signature of tokens which devices present when they attempt to connect to XMiDT.
+
+Configuration for this endpoint is required when the `issue` endpoint is configured and vice versa.
+
+- POST `/issue`
+
+This is the main and most compute intensive Themis endpoint as it creates JWT tokens based on configuration. 
+
+- GET `/claims`
+
+Configuring this endpoint is required if no configuration is provided for the previous two.
+
+
+### JWT Claims Configuration
+Claims can be configured through the `token.claims`, `partnerID` and `remote` configuration elements. The claim values themselves can come from multiple sources.
+
+#### Fixed values in configuration
 ```
-This `build.sh` script will build the binary and docker image
+token:
+  ...
 
-## Usage
-Once everything is up and running you can start sending requests. Below are a few examples.
-TODO: Add examples
+  claims:
+    capabilities
+      value:
+        - capability0
+        - capability1
+
+```
+The above config would create the claim: 
+``` 
+"capabilities":  ["capability0", "capability1"]
+```
+#### HTTP Header or Parameter 
+```
+token:  
+  ...
+
+  claims:
+    mac:
+      header: X-Midt-Mac-Address
+      parameter: mac
+```
+The value of the `mac` claim would come from the specified header or parameter name of the request to the `/issue` endpoint.
+
+#### PartnerID
+Although it is configured separately, it behaves very similarly to the previous source type.
+
+```
+partnerID:
+  claim: partner-id
+  metadata: pid # only needed when a remote claims server needs this value
+  header: X-Midt-Partner-ID
+  parameter: pid
+  default: comcast
+```
+
+#### Remote claims
+
+```
+remote:
+  method: "POST"
+  url: "http://remote-claims-server.example.com/claims"
+```
+For more informatiom on how to configure Themis to run as your remote claims server, read the next section on Remote Server Claims Configuration.
+
+
+### Remote Server Claims Configuration
+### Using Themis as the remote claims server
+You can do this by configuring only the `claims` server in your configuration file. 
+Claims are configured exactly the same as explained above.
+
+#### Sending data to remote server
+Suppose the remote claims server needs the ID of the device requesting a token in the form of an HTTP Header named `X-Midt-Device-Id`. The `token.metadata` configuration element allows you to specify which values are sent to the remote claims server.
+
+```
+token:
+  ...
+  metadata:
+    ID:
+      header: X-Midt-Device-ID
+```
+
+## Build
+There is a single binary for themis and its execution is fully driven by configuration.
+
+### Makefile
+
+The Makefile has the following options you may find helpful:
+* `make build`: builds the Themis binary
+* `make docker`: builds a docker image for themis
+* `make local-docker`: builds a docker image for themis with the `local` version tag
+* `make test`: runs unit tests with coverage for Themis 
+* `make clean`: deletes previously-built binaries and object files
+
+## Deploy
+At the simplest form, run the binary with the flag specifying the configuration file
+```
+./themis -f themis.yaml
+``` 
+
+### Docker
+We recommend using docker for local development.
+
+```
+# Build docker image for themis
+# themis.yaml specifies the static claims which will be returned in the JWT
+make local-docker
+
+# Run container service
+docker run -p 6501:6501 themis:local
+
+# Request a JWT token
+curl http://localhost:6701/issue -H 'X-Midt-Mac-Address: mac:1122334455'
+
+Explore its contents at [jwt.io](https://jwt.io/)
+```
 
 ## Contributing
 
