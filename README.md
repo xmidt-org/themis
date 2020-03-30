@@ -26,7 +26,7 @@ This project and everyone participating in it are governed by the [XMiDT Code Of
 By participating, you agree to this Code.
 
 ## Details
-Themis provides a flexible strategy to issue JWT tokens to devices that need to connect to the XMiDT cluster. 
+Themis provides a flexible strategy to issue [JWT tokens](https://jwt.io/) to devices that need to connect to the XMiDT cluster. 
 
 ### Endpoints
 There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides:
