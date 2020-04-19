@@ -5,11 +5,14 @@ import (
 	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+
+	"github.com/lestrrat-go/jwx/jwk"
 )
 
 const (
@@ -32,12 +35,15 @@ type Pair interface {
 
 	// WriteVerifyPEMto writes the PEM-encoded verify key to an arbitrary output sink.
 	WriteVerifyPEMTo(io.Writer) (int64, error)
+
+	WriteJWK(io.Writer) (int64, error)
 }
 
 type pair struct {
-	kid       string
-	sign      interface{}
-	verifyPEM []byte
+	kid        string
+	sign       interface{}
+	verifyPEM  []byte
+	jsonWebKey []byte
 }
 
 func (p pair) KID() string {
@@ -53,6 +59,11 @@ func (p pair) WriteVerifyPEMTo(w io.Writer) (int64, error) {
 	return int64(c), err
 }
 
+func (p pair) WriteJWK(w io.Writer) (int64, error) {
+	c, err := w.Write(p.jsonWebKey)
+	return int64(c), err
+}
+
 func NewPair(kid string, key interface{}) (Pair, error) {
 	switch k := key.(type) {
 	case *rsa.PrivateKey:
@@ -61,10 +72,20 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			return nil, err
 		}
 
+		key, err := jwk.New(&k.PublicKey)
+		if err != nil {
+			return nil, err
+		}
+		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
 		return pair{
-			kid:       kid,
-			sign:      key,
-			verifyPEM: verifyPEM,
+			kid:        kid,
+			sign:       key,
+			verifyPEM:  verifyPEM,
+			jsonWebKey: jsonWebKey,
 		}, nil
 
 	case *ecdsa.PrivateKey:
@@ -73,13 +94,32 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			return nil, err
 		}
 
+		key, err := jwk.New(&k.PublicKey)
+		if err != nil {
+			return nil, err
+		}
+		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
 		return pair{
-			kid:       kid,
-			sign:      key,
-			verifyPEM: verifyPEM,
+			kid:        kid,
+			sign:       key,
+			verifyPEM:  verifyPEM,
+			jsonWebKey: jsonWebKey,
 		}, nil
 
 	case []byte:
+		key, err := jwk.New(k)
+		if err != nil {
+			return nil, err
+		}
+		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
 		return pair{
 			kid:  kid,
 			sign: key,
@@ -89,10 +129,21 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 					Bytes: k,
 				},
 			),
+			jsonWebKey: jsonWebKey,
 		}, nil
 
 	case string:
 		keyBytes := []byte(k)
+
+		key, err := jwk.New(keyBytes)
+		if err != nil {
+			return nil, err
+		}
+		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
 		return pair{
 			kid:  kid,
 			sign: keyBytes,
@@ -102,6 +153,7 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 					Bytes: keyBytes,
 				},
 			),
+			jsonWebKey: jsonWebKey,
 		}, nil
 	}
 
