@@ -1,7 +1,8 @@
 package pprof
 
 import (
-	"net/http/pprof"
+	httppprof "net/http/pprof"
+	"runtime/pprof"
 
 	"github.com/gorilla/mux"
 )
@@ -9,9 +10,13 @@ import (
 // BuildRoutes adds the handlers from net/http/pprof, using the standard paths,
 // to the given Router.
 func BuildRoutes(r *mux.Router) {
-	r.HandleFunc("/debug/pprof/", pprof.Index)
-	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	r.HandleFunc("/debug/pprof/", httppprof.Index)
+	for _, p := range pprof.Profiles() {
+		r.HandleFunc("/debug/pprof/"+p.Name(), httppprof.Index)
+	}
+
+	r.HandleFunc("/debug/pprof/cmdline", httppprof.Cmdline)
+	r.HandleFunc("/debug/pprof/profile", httppprof.Profile)
+	r.HandleFunc("/debug/pprof/symbol", httppprof.Symbol)
+	r.HandleFunc("/debug/pprof/trace", httppprof.Trace)
 }
