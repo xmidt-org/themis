@@ -35,6 +35,10 @@ servers:
     address: :8083
     disableHTTPKeepAlives: true
 
+  pprof:
+    address: :9999
+    disableHTTPKeepAlives: true
+
   health:
     address: :8084
     disableHTTPKeepAlives: true

@@ -7,6 +7,7 @@ import (
 	"github.com/xmidt-org/themis/token"
 	"github.com/xmidt-org/themis/xhealth"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/xhttp/xhttpserver/pprof"
 	"github.com/xmidt-org/themis/xmetrics"
 	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
 
@@ -168,6 +169,6 @@ type PprofRoutesIn struct {
 
 func BuildPprofRoutes(in PprofRoutesIn) {
 	if in.Router != nil {
-		xhttpserver.BuildPprofRoutes(in.Router)
+		pprof.BuildRoutes(in.Router)
 	}
 }
