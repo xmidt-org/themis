@@ -160,3 +160,14 @@ func BuildHealthRoutes(in HealthRoutesIn) {
 		in.Router.Handle("/health", in.Handler).Methods("GET")
 	}
 }
+
+type PprofRoutesIn struct {
+	fx.In
+	Router *mux.Router `name:"servers.pprof"`
+}
+
+func BuildPprofRoutes(in PprofRoutesIn) {
+	if in.Router != nil {
+		xhttpserver.BuildPprofRoutes(in.Router)
+	}
+}
