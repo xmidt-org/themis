@@ -100,7 +100,8 @@ For more informatiom on how to configure Themis to run as your remote claims ser
 
 
 ### Remote Server Claims Configuration
-### Using Themis as the remote claims server
+
+#### Using Themis as the remote claims server
 You can do this by configuring only the `claims` server in your configuration file. 
 Claims are configured exactly the same as explained above.
 
