@@ -127,6 +127,11 @@ func TestGenerateRSAPair(t *testing.T) {
 			c, err := pair.WriteVerifyPEMTo(&output)
 			require.NoError(err)
 			assert.True(c > 0)
+
+			output.Reset()
+			c, err = pair.WriteJWK(&output)
+			require.NoError(err)
+			assert.True(c > 0)
 		})
 	}
 }
@@ -150,6 +155,11 @@ func testGenerateECDSAPairSuccess(t *testing.T, bits int) {
 
 	var output bytes.Buffer
 	c, err := pair.WriteVerifyPEMTo(&output)
+	require.NoError(err)
+	assert.True(c > 0)
+
+	output.Reset()
+	c, err = pair.WriteJWK(&output)
 	require.NoError(err)
 	assert.True(c > 0)
 }
@@ -215,6 +225,11 @@ func TestGenerateSecretPair(t *testing.T) {
 
 			var output bytes.Buffer
 			c, err := pair.WriteVerifyPEMTo(&output)
+			require.NoError(err)
+			assert.True(c > 0)
+
+			output.Reset()
+			c, err = pair.WriteJWK(&output)
 			require.NoError(err)
 			assert.True(c > 0)
 		})
