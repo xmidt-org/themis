@@ -72,11 +72,11 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			return nil, err
 		}
 
-		key, err := jwk.New(&k.PublicKey)
+		jwkKey, err := jwk.New(&k.PublicKey)
 		if err != nil {
 			return nil, err
 		}
-		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		jsonWebKey, err := json.MarshalIndent(jwkKey, "", "  ")
 		if err != nil {
 			return nil, err
 		}
@@ -94,11 +94,11 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			return nil, err
 		}
 
-		key, err := jwk.New(&k.PublicKey)
+		jwkKey, err := jwk.New(&k.PublicKey)
 		if err != nil {
 			return nil, err
 		}
-		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		jsonWebKey, err := json.MarshalIndent(jwkKey, "", "  ")
 		if err != nil {
 			return nil, err
 		}
@@ -111,11 +111,11 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 		}, nil
 
 	case []byte:
-		key, err := jwk.New(k)
+		jwkKey, err := jwk.New(k)
 		if err != nil {
 			return nil, err
 		}
-		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		jsonWebKey, err := json.MarshalIndent(jwkKey, "", "  ")
 		if err != nil {
 			return nil, err
 		}
@@ -135,11 +135,11 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 	case string:
 		keyBytes := []byte(k)
 
-		key, err := jwk.New(keyBytes)
+		jwkKey, err := jwk.New(keyBytes)
 		if err != nil {
 			return nil, err
 		}
-		jsonWebKey, err := json.MarshalIndent(key, "", "  ")
+		jsonWebKey, err := json.MarshalIndent(jwkKey, "", "  ")
 		if err != nil {
 			return nil, err
 		}

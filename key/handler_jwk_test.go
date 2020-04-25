@@ -7,13 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/lestrrat/go-jwx/jwk"
-	"github.com/xmidt-org/themis/xlog"
-	"github.com/xmidt-org/themis/xlog/xlogtest"
-
 	"github.com/gorilla/mux"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/themis/xlog"
+	"github.com/xmidt-org/themis/xlog/xlogtest"
 )
 
 func TestNewHandlerJWK(t *testing.T) {
@@ -46,7 +45,7 @@ func TestNewHandlerJWK(t *testing.T) {
 		require.NoError(err)
 		require.NotEmpty(data)
 
-		set, err := jwk.Parse(data)
+		set, err := jwk.ParseBytes(data)
 		require.NoError(err)
 		assert.NotNil(set)
 	})
