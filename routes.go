@@ -77,10 +77,14 @@ type KeyRoutesIn struct {
 }
 
 func BuildKeyRoutes(in KeyRoutesIn) {
-	if in.Router != nil && in.Handler != nil {
-		in.Router.Handle("/keys/{kid}", in.Handler).Methods("GET")
-		in.Router.Handle("/keys/{kid}/key.pem", in.Handler).Methods("GET")
-		in.Router.Handle("/keys/{kid}/key.json", in.HandlerJWK).Methods("GET")
+	if in.Router != nil {
+		keys := in.Router.PathPrefix("/keys/{kid}").Methods("GET").Subrouter()
+
+		keys.Headers("Accept", key.ContentTypePEM).Handler(in.Handler)
+		keys.Headers("Accept", key.ContentTypeJWK).Handler(in.HandlerJWK)
+		keys.Path("").Handler(in.Handler) // default
+		keys.Path("/key.pem").Handler(in.Handler)
+		keys.Path("/key.json").Handler(in.HandlerJWK)
 	}
 }
 
