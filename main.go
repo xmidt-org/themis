@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"strings"
@@ -114,6 +115,7 @@ func main() {
 			xhttpserver.Unmarshal{Key: "servers.claims", Optional: true}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
+			xhttpserver.Unmarshal{Key: "servers.pprof", Optional: true}.Annotated(),
 		),
 		fx.Invoke(
 			xhealth.ApplyChecks(
@@ -132,6 +134,7 @@ func main() {
 			BuildClaimsRoutes,
 			BuildMetricsRoutes,
 			BuildHealthRoutes,
+			BuildPprofRoutes,
 			CheckServerRequirements,
 		),
 	)

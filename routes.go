@@ -7,6 +7,7 @@ import (
 	"github.com/xmidt-org/themis/token"
 	"github.com/xmidt-org/themis/xhealth"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/xhttp/xhttpserver/pprof"
 	"github.com/xmidt-org/themis/xmetrics"
 	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
 
@@ -158,5 +159,16 @@ type HealthRoutesIn struct {
 func BuildHealthRoutes(in HealthRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/health", in.Handler).Methods("GET")
+	}
+}
+
+type PprofRoutesIn struct {
+	fx.In
+	Router *mux.Router `name:"servers.pprof"`
+}
+
+func BuildPprofRoutes(in PprofRoutesIn) {
+	if in.Router != nil {
+		pprof.BuildRoutes(in.Router)
 	}
 }
