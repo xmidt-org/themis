@@ -79,7 +79,8 @@ type KeyRoutesIn struct {
 func BuildKeyRoutes(in KeyRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/keys/{kid}", in.Handler).Methods("GET")
-		in.Router.Handle("/keys/{kid}/jwk.json", in.HandlerJWK).Methods("GET")
+		in.Router.Handle("/keys/{kid}/key.pem", in.Handler).Methods("GET")
+		in.Router.Handle("/keys/{kid}/key.json", in.HandlerJWK).Methods("GET")
 	}
 }
 
