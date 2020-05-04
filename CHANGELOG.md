@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 - remove extra rpm config files [#43](https://github.com/xmidt-org/themis/pull/43)
 - add pprof support [#50](https://github.com/xmidt-org/themis/pull/50)
+- add JWK support [#48](https://github.com/xmidt-org/themis/pull/48)
 
 ## [v0.4.3]
 - fix rpm spec file for epel 8 [#42](https://github.com/xmidt-org/themis/pull/42)
