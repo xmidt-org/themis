@@ -24,16 +24,22 @@ type KeyOut struct {
 
 	// Handler is the http.Handler which can serve key requests to the Registry
 	Handler Handler
+
+	HandlerJWK HandlerJWK
 }
 
 // Provide is an uber/fx style provider for this package's components
 func Provide(in KeyIn) KeyOut {
 	registry := NewRegistry(in.Random)
+	endpoint := NewEndpoint(registry)
 
 	return KeyOut{
 		Registry: registry,
 		Handler: NewHandler(
-			NewEndpoint(registry),
+			endpoint,
+		),
+		HandlerJWK: NewHandlerJWK(
+			endpoint,
 		),
 	}
 }

@@ -71,13 +71,15 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 
 type KeyRoutesIn struct {
 	fx.In
-	Router  *mux.Router `name:"servers.key"`
-	Handler key.Handler
+	Router     *mux.Router `name:"servers.key"`
+	Handler    key.Handler
+	HandlerJWK key.HandlerJWK
 }
 
 func BuildKeyRoutes(in KeyRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
 		in.Router.Handle("/keys/{kid}", in.Handler).Methods("GET")
+		in.Router.Handle("/keys/{kid}/jwk.json", in.HandlerJWK).Methods("GET")
 	}
 }
 

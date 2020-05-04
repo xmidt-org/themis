@@ -10,6 +10,9 @@ require (
 	github.com/go-kit/kit v0.9.0
 	github.com/gorilla/mux v1.7.3
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
+	github.com/lestrrat-go/jwx v0.9.2
+	github.com/lestrrat/go-jwx v0.0.0-20180221005942-b7d4802280ae
+	github.com/lestrrat/go-pdebug v0.0.0-20180220043741-569c97477ae8 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/prometheus/client_golang v1.1.0
