@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v.0.4.4]
 - remove extra rpm config files [#43](https://github.com/xmidt-org/themis/pull/43)
 - add JWK support [#48](https://github.com/xmidt-org/themis/pull/48)
 - add pprof support [#50](https://github.com/xmidt-org/themis/pull/50)
@@ -76,7 +78,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.4...HEAD
+[v0.4.4]: https://github.com/xmidt-org/themis/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/xmidt-org/themis/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/xmidt-org/themis/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/xmidt-org/themis/compare/v0.4.0...v0.4.1
