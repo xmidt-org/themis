@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v.0.4.4]
+## [v0.4.4]
 - remove extra rpm config files [#43](https://github.com/xmidt-org/themis/pull/43)
 - add JWK support [#48](https://github.com/xmidt-org/themis/pull/48)
 - add pprof support [#50](https://github.com/xmidt-org/themis/pull/50)
