@@ -38,7 +38,7 @@ This endpoint allows fetching the public portion of the key that themis uses to 
 
 Configuration for this endpoint is required when the `issue` endpoint is configured and vice versa.
 
-- POST `/issue`
+- GET `/issue`
 
 This is the main and most compute intensive Themis endpoint as it creates JWT tokens based on configuration. 
 
@@ -147,7 +147,7 @@ make local-docker
 docker run -p 6501:6501 themis:local
 
 # Request a JWT token
-curl http://localhost:6701/issue -H 'X-Midt-Mac-Address: mac:1122334455'
+curl http://localhost:6501/issue -H 'X-Midt-Mac-Address: mac:1122334455'
 ```
 
 
