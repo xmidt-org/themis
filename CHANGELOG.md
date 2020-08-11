@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Update mentions of the default branch from 'master' to 'main'. [#58](https://github.com/xmidt-org/themis/pull/58)
 
 ## [v0.4.4]
 - remove extra rpm config files [#43](https://github.com/xmidt-org/themis/pull/43)
