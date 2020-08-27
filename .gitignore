@@ -6,6 +6,8 @@ pkg/
 lib/
 *.out
 *.swp
+coverage.txt
+report.json
 
 # for VSCode
 .vscode/
