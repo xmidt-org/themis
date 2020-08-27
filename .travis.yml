@@ -59,7 +59,8 @@ jobs:
       script: skip
       before_deploy:
         - make release-artifacts
-      deploy: on:
+      deploy:
+        on:
           all_branches: true
           tags: true
         provider: releases
