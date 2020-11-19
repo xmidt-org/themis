@@ -363,8 +363,8 @@ func testNewClaimBuildersBadValue(t *testing.T) {
 	builder, err := NewClaimBuilders(noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
-		Claims: map[string]Value{
-			"bad": Value{}, // the value should have something configured
+		Claims: []Value{
+			{}, // the value should have something configured
 		},
 	})
 
@@ -385,14 +385,17 @@ func testNewClaimBuildersStatic(t *testing.T) {
 	builder, err := NewClaimBuilders(noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
-		Claims: map[string]Value{
-			"static1": Value{
+		Claims: []Value{
+			{
+				Key:   "static1",
 				Value: -72.5,
 			},
-			"static2": Value{
+			{
+				Key:   "static2",
 				Value: []string{"a", "b"},
 			},
-			"http1": Value{
+			{
+				Key:    "http1",
 				Header: "X-Ignore-Me",
 			},
 		},
@@ -429,14 +432,17 @@ func testNewClaimBuildersNoRemote(t *testing.T) {
 		Nonce:          true,
 		Duration:       24 * time.Hour,
 		NotBeforeDelta: 15 * time.Second,
-		Claims: map[string]Value{
-			"static1": Value{
+		Claims: []Value{
+			{
+				Key:   "static1",
 				Value: -72.5,
 			},
-			"static2": Value{
+			{
+				Key:   "static2",
 				Value: []string{"a", "b"},
 			},
-			"http1": Value{
+			{
+				Key:    "http1",
 				Header: "X-Ignore-Me",
 			},
 		},
@@ -488,22 +494,27 @@ func testNewClaimBuildersFull(t *testing.T) {
 			Nonce:          true,
 			Duration:       24 * time.Hour,
 			NotBeforeDelta: 15 * time.Second,
-			Claims: map[string]Value{
-				"static1": Value{
+			Claims: []Value{
+				{
+					Key:   "static1",
 					Value: -72.5,
 				},
-				"static2": Value{
+				{
+					Key:   "static2",
 					Value: []string{"a", "b"},
 				},
-				"http1": Value{
+				{
+					Key:    "http1",
 					Header: "X-Ignore-Me",
 				},
 			},
-			Metadata: map[string]Value{
-				"extra1": Value{
+			Metadata: []Value{
+				{
+					Key:   "extra1",
 					Value: "extra stuff",
 				},
-				"http2": Value{
+				{
+					Key:       "http2",
 					Parameter: "foo",
 				},
 			},
