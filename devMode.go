@@ -65,35 +65,35 @@ token:
   notBeforeDelta: -15s
   duration: 24h
   claims:
-    mac:
+    - key: mac
       header: X-Midt-Mac-Address
       parameter: mac
-    serial:
+    - key: serial
       header: X-Midt-Serial-Number
       parameter: serial
-    uuid:
+    - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
-    iss:
+    - key: iss
       value: "development"
-    trust:
+    - key: trust
       value: 1000
-    sub:
+    - key: sub
       value: "client-supplied"
-    aud:
+    - key: aud
       value: "XMiDT"
-    capabilities:
+    - key: capabilities
       value:
         -
           x1:issuer:test:.*:all
   metadata:
-    mac:
+    - key: mac
       header: X-Midt-Mac-Address
       parameter: mac
-    serial:
+    - key: serial
       header: X-Midt-Serial-Number
       parameter: serial
-    uuid:
+    - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
   partnerID:
