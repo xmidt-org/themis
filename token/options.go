@@ -17,8 +17,11 @@ type RemoteClaims struct {
 	URL string
 }
 
-// Value represents information pulled from either the HTTP request or statically, via config.
+// Value describes how to extract a key/value pair from either an HTTP request or from configuration.
 type Value struct {
+	// Key is the key to use for this value.  Typically, this is the name of a claim.
+	Key string
+
 	// Header is an HTTP header from which the value is pulled
 	Header string
 
@@ -30,6 +33,17 @@ type Value struct {
 
 	// Value is the statically assigned value from configuration
 	Value interface{}
+}
+
+// IsFromHTTP tests if this value is extracted from an HTTP request
+func (v Value) IsFromHTTP() bool {
+	return len(v.Header) > 0 || len(v.Parameter) > 0 || len(v.Variable) > 0
+}
+
+// IsStatic tests if this value is statically configured and does not
+// come from an HTTP request.
+func (v Value) IsStatic() bool {
+	return v.Value != nil
 }
 
 // PartnerID describes how to extract the partner id from an HTTP request.  Partner IDs
@@ -65,10 +79,10 @@ type Options struct {
 	//
 	// None of these claims receive any special processing.  They are copied as is from the HTTP request
 	// or statically from configuration.  For special processing around the partner id, set the PartnerID field.
-	Claims map[string]Value
+	Claims []Value
 
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
-	Metadata map[string]Value
+	Metadata []Value
 
 	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
 	// performed, though a partner id may still be configured as part of the claims.

@@ -209,24 +209,29 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 // assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
 func NewRequestBuilders(o Options) (RequestBuilders, error) {
 	var rb RequestBuilders
-	for name, value := range o.Claims {
-		if len(value.Header) > 0 || len(value.Parameter) > 0 {
+	for _, value := range o.Claims {
+		switch {
+		case len(value.Key) == 0:
+			return nil, ErrMissingKey
+
+		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
 
 			rb = append(rb,
 				headerParameterRequestBuilder{
-					key:       name,
+					key:       value.Key,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
 					setter:    claimsSetter,
 				},
 			)
-		} else if len(value.Variable) > 0 {
+
+		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
-					key:      name,
+					key:      value.Key,
 					variable: value.Variable,
 					setter:   claimsSetter,
 				},
@@ -234,24 +239,29 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		}
 	}
 
-	for name, value := range o.Metadata {
-		if len(value.Header) > 0 || len(value.Parameter) > 0 {
+	for _, value := range o.Metadata {
+		switch {
+		case len(value.Key) == 0:
+			return nil, ErrMissingKey
+
+		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
 
 			rb = append(rb,
 				headerParameterRequestBuilder{
-					key:       name,
+					key:       value.Key,
 					header:    http.CanonicalHeaderKey(value.Header),
 					parameter: value.Parameter,
 					setter:    metadataSetter,
 				},
 			)
-		} else if len(value.Variable) > 0 {
+
+		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
-					key:      name,
+					key:      value.Key,
 					variable: value.Variable,
 					setter:   metadataSetter,
 				},

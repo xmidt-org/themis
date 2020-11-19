@@ -17,6 +17,7 @@ import (
 
 var (
 	ErrRemoteURLRequired = errors.New("A URL for the remote claimer is required")
+	ErrMissingKey        = errors.New("A key is required for all claims and metadata values")
 )
 
 // ClaimBuilder is a strategy for building token claims, given a token Request
@@ -188,16 +189,20 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	if o.Remote != nil {
 		// scan the metadata looking for static values that should be applied when invoking the remote server
 		metadata := make(map[string]interface{})
-		for name, value := range o.Metadata {
-			if len(value.Header) != 0 || len(value.Parameter) != 0 || len(value.Variable) != 0 {
+		for _, value := range o.Metadata {
+			switch {
+			case len(value.Key) == 0:
+				return nil, ErrMissingKey
+
+			case value.IsFromHTTP():
 				continue
-			}
 
-			if value.Value == nil {
-				return nil, fmt.Errorf("A value is required for the static metadata: %s", name)
-			}
+			case !value.IsStatic():
+				return nil, fmt.Errorf("A value is required for the static metadata: %s", value.Key)
 
-			metadata[name] = value.Value
+			default:
+				metadata[value.Key] = value.Value
+			}
 		}
 
 		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
@@ -208,17 +213,20 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		builders = append(builders, remoteClaimBuilder)
 	}
 
-	for name, value := range o.Claims {
-		if len(value.Header) != 0 || len(value.Parameter) != 0 || len(value.Variable) != 0 {
-			// skip any claims derived from HTTP requests
+	for _, value := range o.Claims {
+		switch {
+		case len(value.Key) == 0:
+			return nil, ErrMissingKey
+
+		case value.IsFromHTTP():
 			continue
-		}
 
-		if value.Value == nil {
-			return nil, fmt.Errorf("A value is required for the static claim: %s", name)
-		}
+		case !value.IsStatic():
+			return nil, fmt.Errorf("A value is required for the static claim: %s", value.Key)
 
-		staticClaimBuilder[name] = value.Value
+		default:
+			staticClaimBuilder[value.Key] = value.Value
+		}
 	}
 
 	if len(staticClaimBuilder) > 0 {
