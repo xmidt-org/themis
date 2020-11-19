@@ -52,10 +52,11 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 					config.Json(`
 						{
 							"token": {
-								"metadata": {
-									"bad": {
+								"metadata": [
+									{
+										"key": "bad"
 									}
-								},
+								],
 								"remote": {
 									"url": "http://foobar.com"
 								}
@@ -114,13 +115,14 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 					config.Json(`
 						{
 							"token": {
-								"claims": {
-									"bad": {
+								"claims": [
+									{
+										"key": "bad",
 										"header": "X-Bad",
 										"parameter": "bad",
 										"variable": "bad"
 									}
-								}
+								]
 							}
 						}
 					`),
@@ -147,11 +149,12 @@ func testUnmarshalSuccess(t *testing.T) {
 					config.Json(`
 						{
 							"token": {
-								"claims": {
-									"static": {
+								"claims": [
+									{
+										"key": "static",
 										"value": "foo"
 									}
-								}
+								]
 							}
 						}
 					`),
