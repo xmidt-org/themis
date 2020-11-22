@@ -86,6 +86,12 @@ token:
       value:
         -
           x1:issuer:test:.*:all
+    - key: allowedResources
+      json: '{
+        "allowedPartners": ["comcast"],
+        "allowedServiceAccountIds": ["1234", "5678"]
+      }'
+
   metadata:
     - key: mac
       header: X-Midt-Mac-Address
