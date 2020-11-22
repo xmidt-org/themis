@@ -21,8 +21,9 @@ import (
 func testNewRequestBuildersInvalidClaim(t *testing.T) {
 	assert := assert.New(t)
 	rb, err := NewRequestBuilders(Options{
-		Claims: map[string]Value{
-			"bad": Value{
+		Claims: []Value{
+			{
+				Key:       "bad",
 				Header:    "xxx",
 				Parameter: "yyy",
 				Variable:  "zzz",
@@ -37,8 +38,9 @@ func testNewRequestBuildersInvalidClaim(t *testing.T) {
 func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 	assert := assert.New(t)
 	rb, err := NewRequestBuilders(Options{
-		Metadata: map[string]Value{
-			"bad": Value{
+		Metadata: []Value{
+			{
+				Key:       "bad",
 				Header:    "xxx",
 				Parameter: "yyy",
 				Variable:  "zzz",
@@ -64,19 +66,23 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 		},
 		{
 			options: Options{
-				Claims: map[string]Value{
-					"fromHeader": Value{
+				Claims: []Value{
+					{
+						Key:    "fromHeader",
 						Header: "X-Claim",
 					},
-					"missing": Value{
+					{
+						Key:    "missing",
 						Header: "X-Missing",
 					},
 				},
-				Metadata: map[string]Value{
-					"fromHeader": Value{
+				Metadata: []Value{
+					{
+						Key:    "fromHeader",
 						Header: "X-Metadata",
 					},
-					"missing": Value{
+					{
+						Key:    "missing",
 						Header: "X-Missing",
 					},
 				},
@@ -105,19 +111,23 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 		},
 		{
 			options: Options{
-				Claims: map[string]Value{
-					"fromParameter": Value{
+				Claims: []Value{
+					{
+						Key:       "fromParameter",
 						Parameter: "claim",
 					},
-					"missing": Value{
+					{
+						Key:       "missing",
 						Parameter: "missing",
 					},
 				},
-				Metadata: map[string]Value{
-					"fromParameter": Value{
+				Metadata: []Value{
+					{
+						Key:       "fromParameter",
 						Parameter: "metadata",
 					},
-					"missing": Value{
+					{
+						Key:       "missing",
 						Parameter: "missing",
 					},
 				},
@@ -141,13 +151,15 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 		},
 		{
 			options: Options{
-				Claims: map[string]Value{
-					"fromVariable": Value{
+				Claims: []Value{
+					{
+						Key:      "fromVariable",
 						Variable: "claim",
 					},
 				},
-				Metadata: map[string]Value{
-					"fromVariable": Value{
+				Metadata: []Value{
+					{
+						Key:      "fromVariable",
 						Variable: "metadata",
 					},
 				},
@@ -176,13 +188,15 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 		},
 		{
 			options: Options{
-				Claims: map[string]Value{
-					"fromVariable": Value{
+				Claims: []Value{
+					{
+						Key:      "fromVariable",
 						Variable: "claim",
 					},
 				},
-				Metadata: map[string]Value{
-					"fromVariable": Value{
+				Metadata: []Value{
+					{
+						Key:      "fromVariable",
 						Variable: "metadata",
 					},
 				},
@@ -237,8 +251,9 @@ func testNewRequestBuildersMissingVariable(t *testing.T) {
 		require = require.New(t)
 
 		options = Options{
-			Claims: map[string]Value{
-				"missing": Value{
+			Claims: []Value{
+				{
+					Key:      "missing",
 					Variable: "missing",
 				},
 			},

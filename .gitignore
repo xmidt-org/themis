@@ -8,6 +8,7 @@ lib/
 *.swp
 coverage.txt
 report.json
+*.test
 
 # for VSCode
 .vscode/

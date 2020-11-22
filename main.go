@@ -90,7 +90,7 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 		v.Set("log.level", "DEBUG")
 	}
 
-	return nil
+	return
 }
 
 func main() {
