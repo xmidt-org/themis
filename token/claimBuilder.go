@@ -201,7 +201,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 				return nil, fmt.Errorf("A value is required for the static metadata: %s", value.Key)
 
 			default:
-				metadata[value.Key] = value.Value
+				msg, err := value.RawMessage()
+				if err != nil {
+					return nil, err
+				}
+
+				metadata[value.Key] = msg
 			}
 		}
 
@@ -225,7 +230,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			return nil, fmt.Errorf("A value is required for the static claim: %s", value.Key)
 
 		default:
-			staticClaimBuilder[value.Key] = value.Value
+			msg, err := value.RawMessage()
+			if err != nil {
+				return nil, err
+			}
+
+			staticClaimBuilder[value.Key] = msg
 		}
 	}
 

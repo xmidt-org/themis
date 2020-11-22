@@ -1,6 +1,7 @@
 package token
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/xmidt-org/themis/key"
@@ -31,6 +32,11 @@ type Value struct {
 	// Variable is a URL gorilla/mux variable from with the value is pulled
 	Variable string
 
+	// JSON is the value embedded as a JSON snippet.  If this field is set, Value is ignored.
+	// Using this field is convenient to avoid viper's lowercasing of keys.  It's also handy
+	// to embed arbitrary structures in claims.
+	JSON string
+
 	// Value is the statically assigned value from configuration
 	Value interface{}
 }
@@ -43,7 +49,26 @@ func (v Value) IsFromHTTP() bool {
 // IsStatic tests if this value is statically configured and does not
 // come from an HTTP request.
 func (v Value) IsStatic() bool {
-	return v.Value != nil
+	return len(v.JSON) > 0 || v.Value != nil
+}
+
+// RawMessage precomputes the JSON  for this value.  If the JSON field is set,
+// it is verified by unmarshaling.  Otherwise, the Value field is marshaled.
+func (v Value) RawMessage() (json.RawMessage, error) {
+	switch {
+	case len(v.JSON) > 0:
+		raw := []byte(v.JSON)
+		var m map[string]interface{}
+		err := json.Unmarshal(raw, &m)
+		return json.RawMessage(raw), err
+
+	case v.Value != nil:
+		raw, err := json.Marshal(v.Value)
+		return json.RawMessage(raw), err
+
+	default:
+		return json.RawMessage(nil), nil
+	}
 }
 
 // PartnerID describes how to extract the partner id from an HTTP request.  Partner IDs
