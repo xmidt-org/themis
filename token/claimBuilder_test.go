@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,90 @@ import (
 
 	"github.com/stretchr/testify/suite"
 )
+
+type ClaimBuildersTestSuite struct {
+	suite.Suite
+	expectedCtx context.Context
+	expectedErr error
+}
+
+var _ suite.SetupAllSuite = (*ClaimBuildersTestSuite)(nil)
+
+func (suite *ClaimBuildersTestSuite) SetupSuite() {
+	suite.expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+	suite.expectedErr = errors.New("expected AddClaims error")
+}
+
+func (suite *ClaimBuildersTestSuite) TestSuccess() {
+	for _, count := range []int{0, 1, 2, 5} {
+		suite.Run(fmt.Sprintf("count=%d", count), func() {
+			var (
+				builder         ClaimBuilders
+				expectedRequest = new(Request)
+				expected        = make(map[string]interface{})
+				actual          = make(map[string]interface{})
+			)
+
+			for i := 0; i < count; i++ {
+				i := i
+				expected[strconv.Itoa(i)] = "true"
+				builder = append(builder,
+					ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+						suite.Equal(suite.expectedCtx, actualCtx)
+						suite.True(expectedRequest == actualRequest)
+						target[strconv.Itoa(i)] = "true"
+						return nil
+					}),
+				)
+			}
+
+			suite.Require().NoError(
+				builder.AddClaims(suite.expectedCtx, expectedRequest, actual),
+			)
+
+			suite.Equal(expected, actual)
+		})
+	}
+}
+
+func (suite *ClaimBuildersTestSuite) TestError() {
+	var (
+		expectedRequest = new(Request)
+		expected        = map[string]interface{}{
+			"first": "true",
+		}
+
+		actual = make(map[string]interface{})
+
+		builder = ClaimBuilders{
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+				suite.Equal(suite.expectedCtx, actualCtx)
+				suite.True(expectedRequest == actualRequest)
+				target["first"] = "true"
+				return nil
+			}),
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+				suite.Equal(suite.expectedCtx, actualCtx)
+				suite.True(expectedRequest == actualRequest)
+				return suite.expectedErr
+			}),
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+				suite.Fail("This claim builder should not have been called")
+				return nil
+			}),
+		}
+	)
+
+	suite.Error(
+		builder.AddClaims(suite.expectedCtx, expectedRequest, actual),
+	)
+
+	suite.Equal(expected, actual)
+}
+
+func TestClaimBuilders(t *testing.T) {
+	suite.Run(t, new(ClaimBuildersTestSuite))
+}
 
 type RequestClaimBuilderTestSuite struct {
 	suite.Suite
