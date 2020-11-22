@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.4.5]
 - Refactor configuration to preserve case in claims
 
 ### Changed
@@ -82,7 +84,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted to a go module: github.com/xmidt-org/themis
 
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.5...HEAD
+[v0.4.5]: https://github.com/xmidt-org/themis/compare/v0.4.4...v0.4.5
 [v0.4.4]: https://github.com/xmidt-org/themis/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/xmidt-org/themis/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/xmidt-org/themis/compare/v0.4.1...v0.4.2
