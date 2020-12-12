@@ -1,91 +1,54 @@
-DEFAULT: build
+.PHONY: default build test style docker binaries clean
 
+
+DOCKER       ?= docker
 GO           ?= go
 GOFMT        ?= $(GO)fmt
 APP          := themis
 DOCKER_ORG   := xmidt
-FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
-BINARY    	 := $(FIRST_GOPATH)/bin/$(APP)
 
 VERSION ?= $(shell git describe --tag --always --dirty)
-PROGVER = $(shell git describe --tags `git rev-list --tags --max-count=1` | tail -1 | sed 's/v\(.*\)/\1/')
-BUILDTIME = $(shell date -u '+%Y-%m-%d %H:%M:%S')
+PROGVER ?= $(shell git describe --tags `git rev-list --tags --max-count=1` | tail -1 | sed 's/v\(.*\)/\1/')
+BUILDTIME = $(shell date -u '+%c')
 GITCOMMIT = $(shell git rev-parse --short HEAD)
 GOBUILDFLAGS = -a -ldflags "-w -s -X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(VERSION)" -o $(APP)
 
-.PHONY: vendor
-vendor:
-	$(GO) mod vendor
+default: build
 
-.PHONY: build
-build: vendor
-	CGO_ENABLED=0 $(GO) build $(GOBUILDFLAGS)
+generate:
+	$(GO) generate ./...
+	$(GO) install ./...
 
-.PHONY: version
-version:
-	@echo $(PROGVER)
+test:
+	$(GO) test -v -race  -coverprofile=coverage.txt ./...
+	$(GO) test -v -race  -json ./... > report.json
 
-# If the first argument is "update-version"...
-ifeq (update-version,$(firstword $(MAKECMDGOALS)))
-  # use the rest as arguments for "update-version"
-  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # ...and turn them into do-nothing targets
-  $(eval $(RUN_ARGS):;@:)
-endif
-
-.PHONY: update-version
-update-version:
-	@echo "Update Version $(PROGVER) to $(RUN_ARGS)"
-	git tag v$(RUN_ARGS)
-
-
-.PHONY: install
-install: vendor
-	$(GO) install -ldflags "-w -s -X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(PROGVER)"
-
-.PHONY: release-artifacts
-release-artifacts: vendor
-	mkdir -p ./.ignore
-	GOOS=darwin GOARCH=amd64 $(GO) build -o ./.ignore/$(APP)-$(PROGVER).darwin-amd64 -ldflags "-X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(PROGVER)"
-	GOOS=linux  GOARCH=amd64 $(GO) build -o ./.ignore/$(APP)-$(PROGVER).linux-amd64 -ldflags "-X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(PROGVER)"
-
-.PHONY: docker
-docker:
-	docker build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg GITCOMMIT=$(GITCOMMIT) \
-		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/Dockerfile -t $(DOCKER_ORG)/$(APP):$(PROGVER) .
-
-.PHONY: local-docker
-local-docker:
-	docker build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg GITCOMMIT=$(GITCOMMIT) \
-		--build-arg BUILDTIME='$(BUILDTIME)' \
-		-f ./deploy/Dockerfile -t $(DOCKER_ORG)/$(APP):local .
-
-.PHONY: style
 style:
 	! $(GOFMT) -d $$(find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
 
-.PHONY: test
-test: vendor
-	GO111MODULE=on $(GO) test -v -race  -coverprofile=coverage.txt ./...
-	GO111MODULE=on $(GO) test -v -race  -json ./... > report.json
+check:
+	golangci-lint run -n | tee errors.txt
 
-.PHONY: test-cover
-test-cover: test
-	$(GO) tool cover -html=coverage.txt
+build:
+	CGO_ENABLED=0 $(GO) build $(GOBUILDFLAGS)
 
-.PHONY: codecov
-codecov: test
-	curl -s https://codecov.io/bash | bash
+release: build
+	upx $(APP)
 
-.PHONEY: it
-it:
-	./it.sh
+docker:
+	-$(DOCKER) rmi "$(APP):$(VERSION)"
+	-$(DOCKER) rmi "$(APP):latest"
+	$(DOCKER) build -t "$(APP):$(VERSION)" -t "$(APP):latest" .
 
-.PHONY: clean
+binaries: generate
+	mkdir -p ./.ignore
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO) build -o ./.ignore/$(APP)-$(PROGVER).darwin-amd64 -ldflags "-X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(VERSION)"
+	CGO_ENABLED=0 GOOS=linux  GOARCH=amd64 $(GO) build -o ./.ignore/$(APP)-$(PROGVER).linux-amd64 -ldflags "-X 'main.BuildTime=$(BUILDTIME)' -X main.GitCommit=$(GITCOMMIT) -X main.Version=$(VERSION)"
+
+	upx ./.ignore/$(APP)-$(PROGVER).darwin-amd64
+	upx ./.ignore/$(APP)-$(PROGVER).linux-amd64
+
 clean:
-	rm -rf ./$(APP) ./.ignore ./coverage.txt ./vendor report.json
+	-rm -r .ignore/ $(APP) errors.txt report.json coverage.txt
+
+
