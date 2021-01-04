@@ -36,7 +36,8 @@ _main() {
 
 		if [ ! -s /etc/themis/themis.yaml ]; then
 		  echo "Building out template for file"
-		  /spruce merge /_themis.yaml /tmp/themis_spruce.yaml > /etc/themis/themis.yaml
+		  /spruce merge /themis.yaml /tmp/themis_spruce.yaml > /etc/themis/themis.yaml
+		  cat /etc/themis/themis.yaml
 		fi
 	fi
 
