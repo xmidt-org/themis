@@ -3,7 +3,7 @@
 # the X-Scytale-Server header for showing what server fulfilled the request
 # sent.
 # (Optional)
-server: (( grab $HOSTNAME || "scytale" ))
+server: (( grab $HOSTNAME || "themis" ))
 
 ########################################
 #   Labeling/Tracing via HTTP Headers Configuration
@@ -72,43 +72,47 @@ token:
   notBeforeDelta: -15s
   duration: 24h
   claims:
-    mac:
+    - key: mac
       header: X-Midt-Mac-Address
       parameter: mac
-    serial:
+    - key: serial
       header: X-Midt-Serial-Number
       parameter: serial
-    uuid:
+    - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
-    iss:
-      value: (( grab stage ))
-    partner-id:
-      value: "comcast"
-    trust:
+    - key: iss
+      value: "themis"
+    - key: trust
       value: 1000
-    sub:
+    - key: sub
       value: "client-supplied"
-    aud:
+    - key: aud
       value: "XMiDT"
-    capabilities:
+    - key: capabilities
       value:
         - x1:issuer:test:.*:all
   metadata:
-    mac:
+    - key: mac
       header: X-Midt-Mac-Address
       parameter: mac
-    serial:
+    - key: serial
       header: X-Midt-Serial-Number
       parameter: serial
-    uuid:
+    - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
+  partnerID:
+    claim: partner-id
+    header: X-Midt-Partner-ID
+    parameter: pid
+    default: (( grab $PARTNER_ID || "comcast" ))
+
   key:
-    kid: (( grab stage ))
+    kid: (( grab $KID_NAME || "docker" ))
     type: rsa
     bits: 1024
 
 log:
   file: "stdout"
-  level: "DEBUG"
+  level: (( grab $LOG_LEVEL || "INFO" ))

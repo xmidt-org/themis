@@ -72,9 +72,9 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 		err = v.ReadInConfig()
 	} else {
 		v.SetConfigName(string(in.Name))
+		v.AddConfigPath(fmt.Sprintf("/etc/%s", in.Name))
 		v.AddConfigPath(".")
 		v.AddConfigPath(fmt.Sprintf("$HOME/.%s", in.Name))
-		v.AddConfigPath(fmt.Sprintf("/etc/%s", in.Name))
 		err = v.ReadInConfig()
 	}
 
