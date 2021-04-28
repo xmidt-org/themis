@@ -14,8 +14,11 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/xmidt-org/candlelight v0.0.4
+	github.com/xmidt-org/candlelight v0.0.5-0.20210428205622-a6701c15fe13
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.19.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.19.0
+	go.opentelemetry.io/otel v0.19.0
+	go.opentelemetry.io/otel/trace v0.19.0
 	go.uber.org/fx v1.13.0
 	go.uber.org/multierr v1.5.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
