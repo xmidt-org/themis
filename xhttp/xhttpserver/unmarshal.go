@@ -3,8 +3,10 @@ package xhttpserver
 import (
 	"fmt"
 
+	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog/xloghttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -55,6 +57,8 @@ type ServerIn struct {
 	// ParameterBuiders is an optional component which is used to create contextual request loggers
 	// for use by http.Handler code.
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
+
+	Tracing *candlelight.Tracing `optional:"true"`
 }
 
 // Unmarshal describes how to unmarshal an HTTP server.  This type contains all the non-component information
@@ -118,13 +122,18 @@ func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
 		serverChain = serverChain.Extend(more)
 	}
 
-	var (
-		router = mux.NewRouter()
-		server = New(
-			o,
-			serverLogger,
-			serverChain.Extend(u.Chain).Then(router),
-		)
+	router := mux.NewRouter()
+	if in.Tracing != nil {
+		options := []otelmux.Option{
+			otelmux.WithTracerProvider(in.Tracing.TracerProvider),
+			otelmux.WithPropagators(in.Tracing.Propagator),
+		}
+		router.Use(otelmux.Middleware(u.Name, options...), candlelight.EchoFirstTraceNodeInfo(in.Tracing.Propagator))
+	}
+	var server = New(
+		o,
+		serverLogger,
+		serverChain.Extend(u.Chain).Then(router),
 	)
 
 	in.Lifecycle.Append(fx.Hook{

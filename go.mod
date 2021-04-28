@@ -5,27 +5,18 @@ go 1.12
 require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
 	github.com/InVisionApp/go-logger v1.0.1
-	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-kit/kit v0.9.0
-	github.com/gorilla/mux v1.7.3
-	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
+	github.com/go-kit/kit v0.10.0
+	github.com/gorilla/mux v1.8.0
+	github.com/justinas/alice v1.2.0
 	github.com/lestrrat-go/jwx v0.9.2
-	github.com/lestrrat/go-jwx v0.0.0-20180221005942-b7d4802280ae
-	github.com/lestrrat/go-pdebug v0.0.0-20180220043741-569c97477ae8 // indirect
-	github.com/onsi/ginkgo v1.10.1 // indirect
-	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/prometheus/client_golang v1.1.0
-	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.4.0
-	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.4.0
-	go.uber.org/dig v1.7.0 // indirect
-	go.uber.org/fx v1.9.0
-	go.uber.org/goleak v0.10.0 // indirect
+	github.com/prometheus/client_golang v1.4.1
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.7.1
+	github.com/stretchr/testify v1.7.0
+	github.com/xmidt-org/candlelight v0.0.4
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.19.0
+	go.uber.org/fx v1.13.0
 	go.uber.org/multierr v1.5.0
-	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/tools v0.0.0-20191210221141-98df12377212 // indirect
-	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
