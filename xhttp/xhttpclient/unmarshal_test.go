@@ -6,8 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
@@ -84,6 +87,13 @@ func testUnmarshalProvideFull(t *testing.T) {
 						},
 					),
 				}.Provide,
+				func() *candlelight.Tracing {
+					return &candlelight.Tracing{
+						Enabled:        false,
+						TracerProvider: trace.NewNoopTracerProvider(),
+						Propagator:     propagation.TraceContext{},
+					}
+				},
 			),
 			fx.Populate(&c),
 		)
