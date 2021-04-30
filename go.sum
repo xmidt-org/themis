@@ -674,6 +674,8 @@ github.com/xmidt-org/candlelight v0.0.4 h1:ANyWzFA6ixldopLW+LIWoh9gZZRdUcKbfWjm3
 github.com/xmidt-org/candlelight v0.0.4/go.mod h1:f5aC01FCH/KTT9j4zGrrzaV9vRmtTSDwdS4jrREZAW4=
 github.com/xmidt-org/candlelight v0.0.5-0.20210428205622-a6701c15fe13 h1:kdlHD4lGSLBt3mzt+IUfPcJNcWj6pEX4lBClqijuByI=
 github.com/xmidt-org/candlelight v0.0.5-0.20210428205622-a6701c15fe13/go.mod h1:j9Q2tzrOAywm+JvvVJjlOmlPJvdlRrOyFjLz33SaU1Y=
+github.com/xmidt-org/candlelight v0.0.5-0.20210430204304-e932a747b72b h1:+6M8kKrFkaFJy++Z99kmZ60jSVh2g9PScxs0lTyhskA=
+github.com/xmidt-org/candlelight v0.0.5-0.20210430204304-e932a747b72b/go.mod h1:j9Q2tzrOAywm+JvvVJjlOmlPJvdlRrOyFjLz33SaU1Y=
 github.com/xmidt-org/themis v0.4.4/go.mod h1:0qRYFvKdrQhwjxH/1nAiTgBGT4cegJR76gfEYF5P7so=
 github.com/xmidt-org/webpa-common v1.1.0/go.mod h1:oCpKzOC+9h2vYHVzAU/06tDTQuBN4RZz+rhgIXptpOI=
 github.com/xmidt-org/webpa-common v1.3.2/go.mod h1:oCpKzOC+9h2vYHVzAU/06tDTQuBN4RZz+rhgIXptpOI=

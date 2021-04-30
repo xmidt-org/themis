@@ -33,7 +33,8 @@ type ClientUnmarshalIn struct {
 	// for clients unmarshalled by this instance.  Configuration will be ignored in favor of this component.
 	RoundTripper http.RoundTripper `optional:"true"`
 
-	Tracing *candlelight.Tracing `optional:"true"`
+	// Tracing will be used to set up tracing instrumentation code.
+	Tracing candlelight.Tracing `optional:"true"`
 }
 
 // Unmarshal encompasses all the non-component information for unmarshalling and instantiating
@@ -74,12 +75,10 @@ func (u Unmarshal) Provide(in ClientUnmarshalIn) (Interface, error) {
 		rt = NewRoundTripper(o.Transport)
 	}
 
-	if in.Tracing != nil {
-		rt = otelhttp.NewTransport(rt,
-			otelhttp.WithPropagators(in.Tracing.Propagator),
-			otelhttp.WithTracerProvider(in.Tracing.TracerProvider),
-		)
-	}
+	rt = otelhttp.NewTransport(rt,
+		otelhttp.WithPropagators(in.Tracing.Propagator()),
+		otelhttp.WithTracerProvider(in.Tracing.TracerProvider()),
+	)
 
 	chain := in.Chain.Extend(u.Chain)
 	if in.ChainFactory != nil {

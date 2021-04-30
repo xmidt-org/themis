@@ -8,8 +8,6 @@ import (
 	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -256,12 +254,8 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 						Header: http.Header{"X-Adhoc": []string{"adhoc value"}},
 					}.Then),
 				}.Annotated(),
-				func() *candlelight.Tracing {
-					return &candlelight.Tracing{
-						Enabled:        false,
-						TracerProvider: trace.NewNoopTracerProvider(),
-						Propagator:     propagation.TraceContext{},
-					}
+				func() (candlelight.Tracing, error) {
+					return candlelight.New(candlelight.Config{Provider: "stdout"})
 				},
 			),
 			fx.Invoke(

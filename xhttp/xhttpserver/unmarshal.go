@@ -58,7 +58,8 @@ type ServerIn struct {
 	// for use by http.Handler code.
 	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
 
-	Tracing *candlelight.Tracing `optional:"true"`
+	// Tracing will be used to set up tracing instrumentation code.
+	Tracing candlelight.Tracing `optional:"true"`
 }
 
 // Unmarshal describes how to unmarshal an HTTP server.  This type contains all the non-component information
@@ -123,13 +124,11 @@ func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
 	}
 
 	router := mux.NewRouter()
-	if in.Tracing != nil {
-		options := []otelmux.Option{
-			otelmux.WithTracerProvider(in.Tracing.TracerProvider),
-			otelmux.WithPropagators(in.Tracing.Propagator),
-		}
-		router.Use(otelmux.Middleware(u.Name, options...), candlelight.EchoFirstTraceNodeInfo(in.Tracing.Propagator))
+	options := []otelmux.Option{
+		otelmux.WithTracerProvider(in.Tracing.TracerProvider()),
+		otelmux.WithPropagators(in.Tracing.Propagator()),
 	}
+	router.Use(otelmux.Middleware(u.Name, options...), candlelight.EchoFirstTraceNodeInfo(in.Tracing.Propagator()))
 	var server = New(
 		o,
 		serverLogger,
