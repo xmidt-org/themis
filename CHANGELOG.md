@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [v0.4.7]
 - Migrate to github actions, normalize analysis tools, Dockerfiles and Makefiles. [#67](https://github.com/xmidt-org/themis/pull/67)
 - Add optional OpenTelemetry tracing feature. [#75](https://github.com/xmidt-org/themis/pull/75)
 
@@ -109,7 +112,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Integrated health via InvisionApp/go-health
 - Converted to a go module: github.com/xmidt-org/themis
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.7...HEAD
+[v0.4.7]: https://github.com/xmidt-org/themis/compare/v0.4.6...v0.4.7
 [v0.4.6]: https://github.com/xmidt-org/themis/compare/v0.4.5...v0.4.6
 [v0.4.5]: https://github.com/xmidt-org/themis/compare/v0.4.4...v0.4.5
 [v0.4.4]: https://github.com/xmidt-org/themis/compare/v0.4.3...v0.4.4
