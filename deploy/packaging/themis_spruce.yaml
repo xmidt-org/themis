@@ -130,3 +130,4 @@ tracing:
 
   # endpoint is where trace information should be routed. Applies to zipkin and jaegar.
   endpoint: (( grab $TRACING_PROVIDER_ENDPOINT || "http://zipkin:9411/api/v2/spans" ))
+  
