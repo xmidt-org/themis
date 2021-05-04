@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Migrate to github actions, normalize analysis tools, Dockerfiles and Makefiles. [#67](https://github.com/xmidt-org/themis/pull/67)
+- Add optional OpenTelemetry tracing feature. [#75](https://github.com/xmidt-org/themis/pull/75)
 
 ## [v0.4.6]
 

@@ -24,6 +24,7 @@ import (
 
 	"github.com/InVisionApp/go-health"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
@@ -116,6 +117,16 @@ func main() {
 			xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
 			xhttpserver.Unmarshal{Key: "servers.pprof", Optional: true}.Annotated(),
+			candlelight.New,
+			func(u config.Unmarshaller) (candlelight.Config, error) {
+				var config candlelight.Config
+				err := u.UnmarshalKey("tracing", &config)
+				if err != nil {
+					return candlelight.Config{}, err
+				}
+				config.ApplicationName = applicationName
+				return config, nil
+			},
 		),
 		fx.Invoke(
 			xhealth.ApplyChecks(

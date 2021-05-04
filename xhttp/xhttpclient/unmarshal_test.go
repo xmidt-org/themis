@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
 
@@ -84,6 +85,9 @@ func testUnmarshalProvideFull(t *testing.T) {
 						},
 					),
 				}.Provide,
+				func() (candlelight.Tracing, error) {
+					return candlelight.New(candlelight.Config{Provider: "stdout"})
+				},
 			),
 			fx.Populate(&c),
 		)

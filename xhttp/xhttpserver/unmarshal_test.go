@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
 
@@ -253,6 +254,9 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 						Header: http.Header{"X-Adhoc": []string{"adhoc value"}},
 					}.Then),
 				}.Annotated(),
+				func() (candlelight.Tracing, error) {
+					return candlelight.New(candlelight.Config{Provider: "stdout"})
+				},
 			),
 			fx.Invoke(
 				func(in testUnmarshalAnnotatedFullIn) {
