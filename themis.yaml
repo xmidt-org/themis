@@ -11,6 +11,9 @@ servers:
   issuer:
     address: :6501
     disableHTTPKeepAlives: true
+#   tls:
+#     key: "/etc/themis/key.pem"
+#     certificateFile: "/etc/themis/cert.pem"
     header:
       X-Midt-Server:
         - issuer
