@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+- Migrated to github.com/golang-jwt/jwt to address a security vulnerability. [#78](https://github.com/xmidt-org/themis/pull/78)
 
 ## [v0.4.7]
 - Migrate to github actions, normalize analysis tools, Dockerfiles and Makefiles. [#67](https://github.com/xmidt-org/themis/pull/67)
