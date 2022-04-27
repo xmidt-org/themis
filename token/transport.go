@@ -293,7 +293,10 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
 	return func(ctx context.Context, hr *http.Request) (interface{}, error) {
 		if err := hr.ParseForm(); err != nil {
-			return nil, err
+			return nil, httpError{
+				err:  err,
+				code: http.StatusBadRequest,
+			}
 		}
 
 		tr, err := BuildRequest(hr, rb)
