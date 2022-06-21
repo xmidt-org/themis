@@ -32,7 +32,7 @@ Themis provides a flexible strategy to issue [JWT tokens](https://jwt.io/) to de
 There are three main endpoints (directly mapped to servers `key`, `issuer` and `claims` in configuration) this service provides:
 
 - GET `/keys/{KID}`           - PEM format
-- GET `/keys/{KID}/jwk.json`  - JWK format
+- GET `/keys/{KID}/key.json`  - JWK format
 
 This endpoint allows fetching the public portion of the key that themis uses to sign JWT tokens. For example, [Talaria](https://github.com/xmidt-org/talaria) can use this endpoint to verify the signature of tokens which devices present when they attempt to connect to XMiDT.
 
