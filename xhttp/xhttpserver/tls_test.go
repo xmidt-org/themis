@@ -10,11 +10,11 @@ import (
 	"math/big"
 	"math/rand"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestPeerVerifyError(t *testing.T) {
@@ -26,12 +26,24 @@ func TestPeerVerifyError(t *testing.T) {
 	assert.Equal("expected", err.Error())
 }
 
-func testConfiguredPeerVerifierSuccess(t *testing.T) {
+type ConfiguredPeerVerifierSuite struct {
+	suite.Suite
+}
+
+func (suite *ConfiguredPeerVerifierSuite) newConfiguredPeerVerifier(o PeerVerifyOptions) *ConfiguredPeerVerifier {
+	cpv := NewConfiguredPeerVerifier(o)
+	suite.Require().NotNil(cpv)
+	return cpv
+}
+
+func (suite *ConfiguredPeerVerifierSuite) testVerifySuccess() {
 	testData := []struct {
-		peerCert x509.Certificate
-		options  PeerVerifyOptions
+		description string
+		peerCert    x509.Certificate
+		options     PeerVerifyOptions
 	}{
 		{
+			description: "DNS name",
 			peerCert: x509.Certificate{
 				DNSNames: []string{"test.foobar.com"},
 			},
@@ -40,6 +52,7 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 			},
 		},
 		{
+			description: "multiple DNS names",
 			peerCert: x509.Certificate{
 				DNSNames: []string{"first.foobar.com", "second.something.net"},
 			},
@@ -48,6 +61,7 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 			},
 		},
 		{
+			description: "common name as host name",
 			peerCert: x509.Certificate{
 				Subject: pkix.Name{
 					CommonName: "PCTEST-another.thing.org",
@@ -58,6 +72,7 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 			},
 		},
 		{
+			description: "common name",
 			peerCert: x509.Certificate{
 				Subject: pkix.Name{
 					CommonName: "A Great Organization",
@@ -68,6 +83,7 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 			},
 		},
 		{
+			description: "multiple common names",
 			peerCert: x509.Certificate{
 				Subject: pkix.Name{
 					CommonName: "A Great Organization",
@@ -79,34 +95,30 @@ func testConfiguredPeerVerifierSuccess(t *testing.T) {
 		},
 	}
 
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var (
-				assert  = assert.New(t)
-				require = require.New(t)
-
-				verifier = NewConfiguredPeerVerifier(record.options)
-			)
-
-			require.NotNil(verifier)
-			assert.NoError(verifier.Verify(&record.peerCert, nil))
+	for _, testCase := range testData {
+		suite.Run(testCase.description, func() {
+			verifier := suite.newConfiguredPeerVerifier(testCase.options)
+			suite.NoError(verifier.Verify(&testCase.peerCert, nil))
 		})
 	}
 }
 
-func testConfiguredPeerVerifierFailure(t *testing.T) {
+func (suite *ConfiguredPeerVerifierSuite) testVerifyFailure() {
 	testData := []struct {
-		peerCert x509.Certificate
-		options  PeerVerifyOptions
+		description string
+		peerCert    x509.Certificate
+		options     PeerVerifyOptions
 	}{
 		{
-			peerCert: x509.Certificate{},
+			description: "empty fields",
+			peerCert:    x509.Certificate{},
 			options: PeerVerifyOptions{
 				DNSSuffixes: []string{"foobar.net"},
 				CommonNames: []string{"For Great Justice"},
 			},
 		},
 		{
+			description: "DNS mismatch",
 			peerCert: x509.Certificate{
 				DNSNames: []string{"another.company.com"},
 			},
@@ -116,6 +128,7 @@ func testConfiguredPeerVerifierFailure(t *testing.T) {
 			},
 		},
 		{
+			description: "CommonName mismatch",
 			peerCert: x509.Certificate{
 				Subject: pkix.Name{
 					CommonName: "Villains For Hire",
@@ -127,6 +140,7 @@ func testConfiguredPeerVerifierFailure(t *testing.T) {
 			},
 		},
 		{
+			description: "DNS and CommonName mismatch",
 			peerCert: x509.Certificate{
 				DNSNames: []string{"another.company.com"},
 				Subject: pkix.Name{
@@ -140,34 +154,29 @@ func testConfiguredPeerVerifierFailure(t *testing.T) {
 		},
 	}
 
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var (
-				assert  = assert.New(t)
-				require = require.New(t)
+	for _, testCase := range testData {
+		suite.Run(testCase.description, func() {
+			verifier := suite.newConfiguredPeerVerifier(testCase.options)
 
-				verifier = NewConfiguredPeerVerifier(record.options)
-			)
-
-			require.NotNil(verifier)
-			err := verifier.Verify(&record.peerCert, nil)
-			assert.Error(err)
-			require.IsType(PeerVerifyError{}, err)
-			assert.Equal(&record.peerCert, err.(PeerVerifyError).Certificate)
+			err := verifier.Verify(&testCase.peerCert, nil)
+			suite.Error(err)
 		})
 	}
+}
+
+func (suite *ConfiguredPeerVerifierSuite) TestVerify() {
+	suite.Run("Success", suite.testVerifySuccess)
+	suite.Run("Failure", suite.testVerifyFailure)
+}
+
+func (suite *ConfiguredPeerVerifierSuite) TestNewConfiguredPeerVerifier() {
+	suite.Run("Nil", func() {
+		suite.Nil(NewConfiguredPeerVerifier(PeerVerifyOptions{}))
+	})
 }
 
 func TestConfiguredPeerVerifier(t *testing.T) {
-	t.Run("Success", testConfiguredPeerVerifierSuccess)
-	t.Run("Failure", testConfiguredPeerVerifierFailure)
-}
-
-func TestNewConfiguredPeerVerifier(t *testing.T) {
-	t.Run("Nil", func(t *testing.T) {
-		assert := assert.New(t)
-		assert.Nil(NewConfiguredPeerVerifier(PeerVerifyOptions{}))
-	})
+	suite.Run(t, new(ConfiguredPeerVerifierSuite))
 }
 
 func testPeerVerifiersVerifyPeerCertificate(t *testing.T) {
