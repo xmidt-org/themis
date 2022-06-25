@@ -182,127 +182,126 @@ func TestConfiguredPeerVerifier(t *testing.T) {
 type PeerVerifiersSuite struct {
 	suite.Suite
 
-	key *rsa.PrivateKey
+	key       *rsa.PrivateKey
+	testCerts []*x509.Certificate
+	rawCerts  [][]byte
 }
 
 func (suite *PeerVerifiersSuite) SetupSuite() {
 	var err error
 	suite.key, err = rsa.GenerateKey(rand.Reader, 512)
 	suite.Require().NoError(err)
+
+	suite.testCerts = make([]*x509.Certificate, 3)
+	suite.rawCerts = make([][]byte, len(suite.testCerts))
+
+	for i := 0; i < len(suite.testCerts); i++ {
+		suite.testCerts[i] = &x509.Certificate{
+			SerialNumber: big.NewInt(int64(i + 1)),
+			DNSNames: []string{
+				fmt.Sprintf("host-%d.net", i),
+			},
+			Subject: pkix.Name{
+				CommonName: fmt.Sprintf("Organization #%d", i),
+			},
+		}
+
+		var err error
+		suite.rawCerts[i], err = x509.CreateCertificate(
+			rand.Reader,
+			suite.testCerts[i],
+			suite.testCerts[i],
+			&suite.key.PublicKey,
+			suite.key,
+		)
+
+		suite.Require().NoError(err)
+		suite.Require().NotEmpty(suite.rawCerts[i])
+	}
 }
 
-func (suite *PeerVerifiersSuite) createSelfSignedCertificate(template *x509.Certificate) []byte {
-	if template.SerialNumber == nil {
-		template.SerialNumber = big.NewInt(1)
-	}
-
-	raw, err := x509.CreateCertificate(
-		rand.Reader,
-		template,
-		template,
-		suite.key.PublicKey,
-		suite.key,
+// useCertificate gives some syntactic sugar for expecting a peer cert
+func (suite *PeerVerifiersSuite) useCertificate(expected *x509.Certificate) func(*x509.Certificate) bool {
+	return newCertificateMatcher(
+		suite.T(),
+		expected.Subject.CommonName,
+		expected.DNSNames...,
 	)
+}
 
-	suite.Require().NoError(err)
-	suite.Require().NotEmpty(raw)
-	return raw
+func (suite *PeerVerifiersSuite) expectVerify(expected *x509.Certificate, result error) *mockPeerVerifier {
+	m := new(mockPeerVerifier)
+	m.ExpectVerify(
+		suite.useCertificate(expected),
+	).Return(result)
+
+	return m
 }
 
 func (suite *PeerVerifiersSuite) TestUnparseableCertificate() {
 	var (
 		unparseable = []byte("unparseable")
 
-		m = PeerVerifierFunc(func(*x509.Certificate, [][]*x509.Certificate) error {
-			suite.Fail("This verifier should not have been called due to an unparseable certificate")
-			return nil
-		})
-
+		m  = new(mockPeerVerifier) // no calls
 		pv = PeerVerifiers{m}
 	)
 
 	suite.Error(pv.VerifyPeerCertificate([][]byte{unparseable}, nil))
+	m.AssertExpectations(suite.T())
 }
 
-func (suite *PeerVerifiersSuite) testVerifySuccess() {
-	for l := 0; l < 3; l++ {
-		suite.Run(fmt.Sprintf("len=%d", l), func() {
-			var (
-				callCount int
-				verifier  = PeerVerifierFunc(
-					func(cert *x509.Certificate, _ [][]*x509.Certificate) error {
-						callCount++
-						return nil
-					},
-				)
+func (suite *PeerVerifiersSuite) testVerifySuccess(expected *x509.Certificate) {
+	for count := 0; count < 3; count++ {
+		var pv PeerVerifiers
+		for i := 0; i < count; i++ {
+			pv = append(pv, suite.expectVerify(expected, nil))
+		}
 
-				pv PeerVerifiers
-			)
+		suite.NoError(
+			pv.Verify(expected, nil),
+		)
 
-			for i := 0; i < l; i++ {
-				pv = append(pv, verifier)
-			}
-
-			suite.NoError(pv.Verify(
-				&x509.Certificate{},
-				nil,
-			))
-
-			suite.Equal(l, callCount)
-		})
+		assertPeerVerifierExpectations(suite.T(), pv...)
 	}
 }
 
-func (suite *PeerVerifiersSuite) testVerifyFailure() {
-	for l := 1; l < 4; l++ {
-		suite.Run(fmt.Sprintf("len=%d", l), func() {
-			var (
-				goodCount int
-				good      = PeerVerifierFunc(
-					func(cert *x509.Certificate, _ [][]*x509.Certificate) error {
-						goodCount++
-						return nil
-					},
-				)
+func (suite *PeerVerifiersSuite) testVerifyFailure(expected *x509.Certificate) {
+	for count := 0; count < 3; count++ {
+		var pv PeerVerifiers
 
-				badCount int
-				bad      = PeerVerifierFunc(
-					func(cert *x509.Certificate, _ [][]*x509.Certificate) error {
-						badCount++
-						return errors.New("expected")
-					},
-				)
+		// setup our "good" calls
+		for i := 0; i < count; i++ {
+			pv = append(pv, suite.expectVerify(expected, nil))
+		}
 
-				shouldNotBeCalled = PeerVerifierFunc(
-					func(cert *x509.Certificate, _ [][]*x509.Certificate) error {
-						suite.Fail("This peer verifier should not have been called")
-						return errors.New("this should not have been called")
-					},
-				)
+		// a failure, followed by a verifier that shouldn't be called
+		pv = append(pv,
+			suite.expectVerify(expected, errors.New("expected")),
+			new(mockPeerVerifier),
+		)
 
-				pv PeerVerifiers
-			)
+		suite.Error(
+			pv.Verify(expected, nil),
+		)
 
-			for i := 0; i < l-1; i++ {
-				pv = append(pv, good)
-			}
-
-			pv = append(pv, bad, shouldNotBeCalled)
-
-			suite.Error(pv.Verify(
-				&x509.Certificate{},
-				nil,
-			))
-
-			suite.Equal(l-1, goodCount)
-			suite.Equal(1, badCount)
-		})
+		assertPeerVerifierExpectations(suite.T(), pv...)
 	}
 }
 
 func (suite *PeerVerifiersSuite) TestVerify() {
-	suite.Run("Success", suite.testVerifySuccess)
-	suite.Run("Failure", suite.testVerifyFailure)
+	suite.Run("Success", func() {
+		suite.testVerifySuccess(suite.testCerts[0])
+	})
+
+	suite.Run("Failure", func() {
+		suite.testVerifyFailure(suite.testCerts[0])
+	})
+}
+
+func (suite *PeerVerifiersSuite) testVerifyPeerCertificateAllGood(testCerts []*x509.Certificate, rawCerts [][]byte) {
+}
+
+func (suite *PeerVerifiersSuite) TestVerifyPeerCertificate() {
 }
 
 func TestPeerVerifiers(t *testing.T) {

@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"crypto/x509"
-	"math/big"
 	"net"
 	"net/http"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -134,18 +135,36 @@ func (m *mockServer) ExpectShutdown(p ...interface{}) *mock.Call {
 	return m.On("Shutdown", p...)
 }
 
-func stubPeerCert(serialNumber int64) *x509.Certificate {
-	return &x509.Certificate{
-		SerialNumber: big.NewInt(serialNumber),
+func newCertificateMatcher(t *testing.T, commonName string, dnsNames ...string) func(*x509.Certificate) bool {
+	return func(actual *x509.Certificate) bool {
+		result := assert.Equal(t, commonName, actual.Subject.CommonName, "Subject common names do not match")
+		result = result && assert.Equal(t, dnsNames, actual.DNSNames, "DNS names do not match")
+
+		return result
 	}
 }
 
-func stubChain(serialNumber int64) [][]*x509.Certificate {
-	return [][]*x509.Certificate{
-		[]*x509.Certificate{
-			&x509.Certificate{
-				SerialNumber: big.NewInt(serialNumber),
-			},
-		},
+type mockPeerVerifier struct {
+	mock.Mock
+}
+
+func (m *mockPeerVerifier) Verify(peerCert *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
+	return m.Called(peerCert, verifiedChains).Error(0)
+}
+
+// ExpectVerify sets up the a mocked call to Verify with a peer certificate with the given
+// subject common name and dns names.  Since this package doesn't use any other fields,
+// this expectation suffices for tests.
+func (m *mockPeerVerifier) ExpectVerify(certificateMatcher func(*x509.Certificate) bool) *mock.Call {
+	return m.On(
+		"Verify",
+		mock.MatchedBy(certificateMatcher),
+		[][]*x509.Certificate(nil), // we always pass nil in tests, since we don't use this parameter
+	)
+}
+
+func assertPeerVerifierExpectations(t *testing.T, pvs ...PeerVerifier) {
+	for _, pv := range pvs {
+		pv.(*mockPeerVerifier).AssertExpectations(t)
 	}
 }
