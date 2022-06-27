@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Migrated to github.com/golang-jwt/jwt to address a security vulnerability. [#78](https://github.com/xmidt-org/themis/pull/78)
 - Updated spec file and rpkg version macro to be able to choose when the 'v' is included in the version. [#80](https://github.com/xmidt-org/themis/pull/80)
 - Updated transport.go to send a 400 error if there is an issue parsing the URL. [#47](https://github.com/xmidt-org/themis/issues/47)
+- Allow any peer certificate to pass validation, instead of requiring all of them to pass.  [#91](https://github.com/xmidt-org/themis/issues/91)
 
 
 ## [v0.4.7]
