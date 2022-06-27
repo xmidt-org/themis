@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -137,10 +136,24 @@ func (m *mockServer) ExpectShutdown(p ...interface{}) *mock.Call {
 
 func newCertificateMatcher(t *testing.T, commonName string, dnsNames ...string) func(*x509.Certificate) bool {
 	return func(actual *x509.Certificate) bool {
-		result := assert.Equal(t, commonName, actual.Subject.CommonName, "Subject common names do not match")
-		result = result && assert.Equal(t, dnsNames, actual.DNSNames, "DNS names do not match")
+		t.Logf("Testing cert: Subject.CommonName=%s, DNSNames=%s", actual.Subject.CommonName, actual.DNSNames)
 
-		return result
+		switch {
+		case commonName != actual.Subject.CommonName:
+			return false
+
+		case len(dnsNames) != len(actual.DNSNames):
+			return false
+
+		default:
+			for i := 0; i < len(dnsNames); i++ {
+				if dnsNames[i] != actual.DNSNames[i] {
+					return false
+				}
+			}
+		}
+
+		return true
 	}
 }
 

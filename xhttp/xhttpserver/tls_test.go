@@ -26,6 +26,16 @@ func TestPeerVerifyError(t *testing.T) {
 	assert.Equal("expected", err.Error())
 }
 
+func TestPeerVerifierFunc(t *testing.T) {
+	testCert := new(x509.Certificate)
+	pvf := PeerVerifierFunc(func(actual *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
+		assert.Equal(t, testCert, actual)
+		return nil
+	})
+
+	assert.NoError(t, pvf.Verify(testCert, nil))
+}
+
 type ConfiguredPeerVerifierSuite struct {
 	suite.Suite
 }
@@ -252,39 +262,43 @@ func (suite *PeerVerifiersSuite) TestUnparseableCertificate() {
 
 func (suite *PeerVerifiersSuite) testVerifySuccess(expected *x509.Certificate) {
 	for count := 0; count < 3; count++ {
-		var pv PeerVerifiers
-		for i := 0; i < count; i++ {
-			pv = append(pv, suite.expectVerify(expected, nil))
-		}
+		suite.Run(fmt.Sprintf("verifiers=%d", count), func() {
+			var pv PeerVerifiers
+			for i := 0; i < count; i++ {
+				pv = append(pv, suite.expectVerify(expected, nil))
+			}
 
-		suite.NoError(
-			pv.Verify(expected, nil),
-		)
+			suite.NoError(
+				pv.Verify(expected, nil),
+			)
 
-		assertPeerVerifierExpectations(suite.T(), pv...)
+			assertPeerVerifierExpectations(suite.T(), pv...)
+		})
 	}
 }
 
 func (suite *PeerVerifiersSuite) testVerifyFailure(expected *x509.Certificate) {
 	for count := 0; count < 3; count++ {
-		var pv PeerVerifiers
+		suite.Run(fmt.Sprintf("goodVerifiers=%d", count), func() {
+			var pv PeerVerifiers
 
-		// setup our "good" calls
-		for i := 0; i < count; i++ {
-			pv = append(pv, suite.expectVerify(expected, nil))
-		}
+			// setup our "good" calls
+			for i := 0; i < count; i++ {
+				pv = append(pv, suite.expectVerify(expected, nil))
+			}
 
-		// a failure, followed by a verifier that shouldn't be called
-		pv = append(pv,
-			suite.expectVerify(expected, errors.New("expected")),
-			new(mockPeerVerifier),
-		)
+			// a failure, followed by a verifier that shouldn't be called
+			pv = append(pv,
+				suite.expectVerify(expected, errors.New("expected")),
+				new(mockPeerVerifier),
+			)
 
-		suite.Error(
-			pv.Verify(expected, nil),
-		)
+			suite.Error(
+				pv.Verify(expected, nil),
+			)
 
-		assertPeerVerifierExpectations(suite.T(), pv...)
+			assertPeerVerifierExpectations(suite.T(), pv...)
+		})
 	}
 }
 
@@ -299,9 +313,96 @@ func (suite *PeerVerifiersSuite) TestVerify() {
 }
 
 func (suite *PeerVerifiersSuite) testVerifyPeerCertificateAllGood(testCerts []*x509.Certificate, rawCerts [][]byte) {
+	for count := 0; count < 3; count++ {
+		suite.Run(fmt.Sprintf("verifiers=%d", count), func() {
+			var pv PeerVerifiers
+			for i := 0; i < count; i++ {
+				m := new(mockPeerVerifier)
+				for j := 0; j < len(testCerts); j++ {
+					// maybe is used here because a success short-circuits subsequent calls
+					m.ExpectVerify(suite.useCertificate(testCerts[j])).Return(error(nil)).Maybe()
+				}
+
+				pv = append(pv, m)
+			}
+
+			suite.NoError(
+				pv.VerifyPeerCertificate(rawCerts, nil),
+			)
+
+			assertPeerVerifierExpectations(suite.T(), pv...)
+		})
+	}
+}
+
+func (suite *PeerVerifiersSuite) testVerifyPeerCertificateAllBad(testCerts []*x509.Certificate, rawCerts [][]byte) {
+	for count := 1; count < 3; count++ {
+		suite.Run(fmt.Sprintf("verifiers=%d", count), func() {
+			var pv PeerVerifiers
+			for i := 0; i < count; i++ {
+				m := new(mockPeerVerifier)
+				for j := 0; j < len(testCerts); j++ {
+					// maybe is used here because a failure short-circuits subsequent calls
+					m.ExpectVerify(suite.useCertificate(testCerts[j])).Return(errors.New("expected")).Maybe()
+				}
+
+				pv = append(pv, m)
+			}
+
+			suite.Error(
+				pv.VerifyPeerCertificate(rawCerts, nil),
+			)
+
+			assertPeerVerifierExpectations(suite.T(), pv...)
+		})
+	}
+}
+
+func (suite *PeerVerifiersSuite) testVerifyPeerCertificateOneGood(testCerts []*x509.Certificate, rawCerts [][]byte) {
+	// a verifier that passes any but the first cert
+	oneGood := new(mockPeerVerifier)
+	oneGood.ExpectVerify(func(actual *x509.Certificate) bool {
+		return actual == testCerts[0]
+	}).Return(errors.New("oneGood: first cert should fail")).Maybe()
+	oneGood.ExpectVerify(func(actual *x509.Certificate) bool {
+		return actual != testCerts[0]
+	}).Return(error(nil))
+
+	pv := PeerVerifiers{
+		oneGood,
+	}
+
+	suite.NoError(
+		pv.VerifyPeerCertificate(rawCerts, nil),
+	)
+
+	assertPeerVerifierExpectations(suite.T(), pv...)
 }
 
 func (suite *PeerVerifiersSuite) TestVerifyPeerCertificate() {
+	suite.Run("AllGood", func() {
+		for i := 1; i < len(suite.testCerts); i++ {
+			suite.Run(fmt.Sprintf("certs=%d", i), func() {
+				suite.testVerifyPeerCertificateAllGood(suite.testCerts[0:i], suite.rawCerts[0:i])
+			})
+		}
+	})
+
+	suite.Run("AllBad", func() {
+		for i := 1; i < len(suite.testCerts); i++ {
+			suite.Run(fmt.Sprintf("certs=%d", i), func() {
+				suite.testVerifyPeerCertificateAllBad(suite.testCerts[0:i], suite.rawCerts[0:i])
+			})
+		}
+	})
+
+	suite.Run("OneGood", func() {
+		for i := 2; i < len(suite.testCerts); i++ {
+			suite.Run(fmt.Sprintf("certs=%d", i), func() {
+				suite.testVerifyPeerCertificateOneGood(suite.testCerts[0:i], suite.rawCerts[0:i])
+			})
+		}
+	})
 }
 
 func TestPeerVerifiers(t *testing.T) {
