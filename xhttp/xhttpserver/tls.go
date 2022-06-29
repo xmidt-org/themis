@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"strings"
+
+	"go.uber.org/multierr"
 )
 
 var (
@@ -122,23 +124,34 @@ func (pvs PeerVerifiers) Verify(peerCert *x509.Certificate, verifiedChains [][]*
 }
 
 // VerifyPeerCertificate may be used as the closure for crypto/tls.Config.VerifyPeerCertificate
-func (pvs PeerVerifiers) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+//
+// If any of the rawCerts passes verification, this method returns nil to indicate that the
+// client has supplied a valid certificate.  If all rawCerts fail verification or if any certificates
+// fail to parse, this method returns an error.
+func (pvs PeerVerifiers) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) (err error) {
 	if len(pvs) == 0 {
-		return nil
+		return
 	}
 
 	for _, rawCert := range rawCerts {
-		peerCert, err := x509.ParseCertificate(rawCert)
-		if err == nil {
-			err = pvs.Verify(peerCert, verifiedChains)
+		peerCert, parseErr := x509.ParseCertificate(rawCert)
+		if parseErr != nil {
+			// any parse error invalidates the entire sequence of certificates
+			err = parseErr
+			break
 		}
 
-		if err != nil {
-			return err
+		verifyErr := pvs.Verify(peerCert, verifiedChains)
+		err = multierr.Append(err, verifyErr)
+
+		if verifyErr == nil {
+			// we found (1) cert that passes verification, so we're good
+			err = nil
+			break
 		}
 	}
 
-	return nil
+	return
 }
 
 // NewPeerVerifiers constructs a chain of verification strategies merged from a set of options with an extra
