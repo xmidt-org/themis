@@ -121,7 +121,7 @@ func TestNewHandlerJWK(t *testing.T) {
 		require.NoError(err)
 		require.NotEmpty(data)
 
-		set, err := jwk.ParseBytes(data)
+		set, err := jwk.ParseKey(data)
 		require.NoError(err)
 		assert.NotNil(set)
 	})
