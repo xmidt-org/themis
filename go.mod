@@ -17,7 +17,7 @@ require (
 	github.com/xmidt-org/candlelight v0.0.5
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.19.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.19.0
-	go.uber.org/fx v1.13.0
+	go.uber.org/fx v1.18.1
 	go.uber.org/multierr v1.8.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
