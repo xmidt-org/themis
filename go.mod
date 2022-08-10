@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.4.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	github.com/xmidt-org/candlelight v0.0.5
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.19.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.19.0
