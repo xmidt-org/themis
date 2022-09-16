@@ -15,8 +15,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"strings"
@@ -149,13 +149,12 @@ func main() {
 			CheckServerRequirements,
 		),
 	)
-
-	switch err := app.Err(); err {
-	case pflag.ErrHelp:
+	err := app.Err()
+	if errors.Is(err, pflag.ErrHelp) {
 		return
-	case nil:
+	} else if errors.Is(err, nil) {
 		app.Run()
-	default:
+	} else {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}

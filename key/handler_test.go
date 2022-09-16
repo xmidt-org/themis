@@ -3,7 +3,7 @@ package key
 import (
 	"context"
 	"encoding/pem"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,7 +43,7 @@ func TestNewHandler(t *testing.T) {
 		assert.Equal(http.StatusOK, response.Code)
 		assert.Equal("application/x-pem-file", response.Header().Get("Content-Type"))
 
-		data, err := ioutil.ReadAll(response.Body)
+		data, err := io.ReadAll(response.Body)
 		require.NoError(err)
 		require.NotEmpty(data)
 
@@ -117,11 +117,11 @@ func TestNewHandlerJWK(t *testing.T) {
 		assert.Equal(http.StatusOK, response.Code)
 		assert.Equal("application/json", response.Header().Get("Content-Type"))
 
-		data, err := ioutil.ReadAll(response.Body)
+		data, err := io.ReadAll(response.Body)
 		require.NoError(err)
 		require.NotEmpty(data)
 
-		set, err := jwk.ParseBytes(data)
+		set, err := jwk.Parse(data)
 		require.NoError(err)
 		assert.NotNil(set)
 	})

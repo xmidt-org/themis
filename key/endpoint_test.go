@@ -2,6 +2,7 @@ package key
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -49,9 +50,9 @@ func TestNewEndpoint(t *testing.T) {
 		require.Error(err)
 		require.Nil(result)
 
-		knfe, ok := err.(KeyNotFoundError)
+		var keyNotFoundError KeyNotFoundError
+		ok := errors.As(err, &keyNotFoundError)
 		require.True(ok)
-		assert.NotEmpty(knfe.Error())
-		assert.Equal(http.StatusNotFound, knfe.StatusCode())
+		assert.Equal(http.StatusNotFound, keyNotFoundError.StatusCode())
 	})
 }

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"go.uber.org/fx"
 )
 
@@ -111,7 +111,7 @@ func (bp *BufferedPrinter) HandleError(err error) {
 	)
 }
 
-// Logger is an analogue to the fx.Logger option.  This function creates a BufferedPrinter
+// Logger is an analog to the fx.Logger option.  This function creates a BufferedPrinter
 // and emits it as a component, sets it as the uber/fx logger, and adds it as an error handler.
 // Other code can express a dependency on a *BufferedPrinter and set the logger.
 func Logger() fx.Option {

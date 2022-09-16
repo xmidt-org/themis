@@ -8,7 +8,7 @@ import (
 	"github.com/xmidt-org/themis/xlog/xloghttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"go.uber.org/fx"

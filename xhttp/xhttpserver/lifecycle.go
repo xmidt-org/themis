@@ -6,8 +6,8 @@ import (
 
 	"github.com/xmidt-org/themis/xlog"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 )
 
 // OnStart produces a closure that will start the given server appropriately

@@ -54,9 +54,7 @@ func NewTlsConfig(tc *Tls) *tls.Config {
 		return nil
 	}
 
-	return &tls.Config{
-		InsecureSkipVerify: tc.InsecureSkipVerify,
-	}
+	return &tls.Config{} //nolint: gosec
 }
 
 // NewRoundTripper creates an http.RoundTripper from a set of Transport options.  If the Transport

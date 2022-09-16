@@ -174,7 +174,7 @@ var defaultTrackedMethods = map[string]bool{
 	"CONNECT": true,
 }
 
-// MethodLabeller provides both server and client labelling for the HTTP request method.
+// MethodLabeller provides both server and client labeling for the HTTP request method.
 type MethodLabeller struct {
 	// Name is the name of the label to apply.  If unset, DefaultMethodLabel is used.
 	Name string

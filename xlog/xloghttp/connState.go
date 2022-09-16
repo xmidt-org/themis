@@ -4,8 +4,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 )
 
 // NewConnStateLogger produces an http/Server.ConnState function that logs the connection

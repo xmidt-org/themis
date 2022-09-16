@@ -19,7 +19,7 @@ func TestNewPair(t *testing.T) {
 			assert  = assert.New(t)
 			require = require.New(t)
 
-			key, err = rsa.GenerateKey(rand.Reader, 1024)
+			key, err = rsa.GenerateKey(rand.Reader, 1024) // nolint: gosec
 		)
 
 		require.NoError(err)

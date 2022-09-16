@@ -1,6 +1,6 @@
 package xlogtest
 
-import "github.com/go-kit/kit/log"
+import "github.com/go-kit/log"
 
 type test interface {
 	Log(...interface{})

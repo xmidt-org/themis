@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	healthlog "github.com/InVisionApp/go-logger"
-	kitlog "github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	kitlog "github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/xmidt-org/themis/xlog"
 )
 

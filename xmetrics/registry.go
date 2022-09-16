@@ -4,6 +4,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 )
 
 // Options defines the configuration options for bootstrapping a prometheus-based metrics environment
@@ -226,17 +227,17 @@ func New(o Options) (Registry, error) {
 	}
 
 	if !o.DisableGoCollector {
-		if err := pr.Register(prometheus.NewGoCollector()); err != nil {
+		if err := pr.Register(collectors.NewGoCollector()); err != nil {
 			return nil, err
 		}
 	}
 
 	if !o.DisableProcessCollector {
-		pco := prometheus.ProcessCollectorOpts{
+		pco := collectors.ProcessCollectorOpts{
 			Namespace: o.DefaultNamespace,
 		}
 
-		if err := pr.Register(prometheus.NewProcessCollector(pco)); err != nil {
+		if err := pr.Register(collectors.NewProcessCollector(pco)); err != nil {
 			return nil, err
 		}
 	}

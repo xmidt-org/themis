@@ -2,7 +2,6 @@ package xhttpserver
 
 import (
 	"crypto/tls"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -113,7 +112,7 @@ func addServerCertificate(t *testing.T, in *tls.Config) *tls.Config {
 // createServerFiles creates a certificate file and a key file as temporary files.
 // The prebaked key and certificate are used.
 func createServerFiles(t *testing.T) (certificateFilePath, keyFilePath string) {
-	certificateFile, err := ioutil.TempFile("", "server.*.cert")
+	certificateFile, err := os.CreateTemp("", "server.*.cert")
 	if err != nil {
 		t.Fatalf("Unable to create server certificate file: %s", err)
 	}
@@ -126,7 +125,7 @@ func createServerFiles(t *testing.T) (certificateFilePath, keyFilePath string) {
 		t.Fatalf("Unable to write server certificate file '%s': %s", certificateFilePath, err)
 	}
 
-	keyFile, err := ioutil.TempFile("", "server.*.key")
+	keyFile, err := os.CreateTemp("", "server.*.key")
 	if err != nil {
 		t.Fatalf("Unable to create server key file: %s", err)
 	}
