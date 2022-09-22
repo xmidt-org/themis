@@ -108,7 +108,7 @@ func testNewListenerTLS(t *testing.T) {
 		c.Write(expectedMessage)
 	}()
 
-	c, err := tls.Dial("tcp", l.Addr().String(), &tls.Config{}) // nolint: gosec
+	c, err := tls.Dial("tcp", l.Addr().String(), &tls.Config{InsecureSkipVerify: true}) // nolint: gosec
 	require.NoError(err)
 	require.NotNil(c)
 
