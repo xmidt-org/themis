@@ -168,7 +168,6 @@ func TestGenerateECDSAPair(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		goodBits := []int{
 			0,
-			224,
 			256,
 			384,
 			512,
