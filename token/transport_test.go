@@ -300,8 +300,7 @@ func testNewRequestBuildersInvalidPartnerID(t *testing.T) {
 			assert.Error(err)
 
 			var buildErr BuildError
-			ok := errors.As(err, &buildErr)
-			require.True(ok)
+			assert.ErrorAs(err, &buildErr)
 			assert.Equal(http.StatusBadRequest, buildErr.StatusCode())
 		})
 	}
@@ -423,16 +422,14 @@ func testBuildRequestFailure(t *testing.T) {
 	for i, record := range testData {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			var (
-				assert  = assert.New(t)
-				require = require.New(t)
+				assert = assert.New(t)
+				//require = require.New(t)
 
 				request, actualErr = BuildRequest(httptest.NewRequest("GET", "/", nil), record)
 			)
 
 			var be BuildError
-			ok := errors.As(actualErr, &be)
-			require.True(ok)
-
+			assert.ErrorAs(actualErr, &be)
 			assert.Contains(multierr.Errors(be.Err), expectedErr)
 			assert.Equal(http.StatusBadRequest, be.StatusCode())
 			assert.Nil(request)
@@ -589,8 +586,7 @@ func testDecodeServerRequestFailure(t *testing.T) {
 	assert.Nil(v)
 
 	var be BuildError
-	ok := errors.As(actualErr, &be)
-	require.True(ok)
+	assert.ErrorAs(actualErr, &be)
 
 	assert.Contains(multierr.Errors(be.Err), expectedErr)
 }
@@ -671,12 +667,11 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	require.Error(err)
 	require.IsType((*DecodeClaimsError)(nil), err)
 
-	//var dce *DecodeClaimsError
-	//ok := errors.As(err, &)
-	// dce := err.(*DecodeClaimsError)
-	// assert.Equal(523, dce.StatusCode)
-	// assert.Equal("http://schmoogle.com", dce.URL)
-	// assert.Nil(dce.Err)
+	var dce *DecodeClaimsError
+	assert.ErrorAs(err, &dce)
+	assert.Equal(523, dce.StatusCode)
+	assert.Equal("http://schmoogle.com", dce.URL)
+	assert.Nil(dce.Err)
 }
 
 func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {
