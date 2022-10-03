@@ -8,7 +8,7 @@ import (
 
 	"github.com/xmidt-org/themis/xlog"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
