@@ -3,7 +3,7 @@ package xlog
 import (
 	"github.com/xmidt-org/themis/config"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"go.uber.org/fx"
 )
 

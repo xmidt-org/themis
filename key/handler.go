@@ -8,8 +8,8 @@ import (
 	"github.com/xmidt-org/themis/xlog"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/log/level"
 	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/go-kit/log/level"
 	"github.com/gorilla/mux"
 )
 

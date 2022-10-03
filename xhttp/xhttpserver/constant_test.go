@@ -60,7 +60,7 @@ func TestConstantHandler(t *testing.T) {
 			response.Body = &actualBody
 			handler.ServeHTTP(response, request)
 			assert.Equal(response.Code, record.expectedStatusCode)
-			assert.Equal(response.HeaderMap, record.expectedHeader)
+			assert.Equal(response.Header(), record.expectedHeader)
 			assert.Equal(record.expectedBody, actualBody.Bytes())
 		})
 	}

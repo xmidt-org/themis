@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"go.uber.org/multierr"
@@ -195,15 +195,13 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 
 	var nextProtos []string
 	if len(t.NextProtos) > 0 {
-		for _, np := range t.NextProtos {
-			nextProtos = append(nextProtos, np)
-		}
+		nextProtos = append(nextProtos, t.NextProtos...)
 	} else {
 		// assume http/1.1 by default
 		nextProtos = append(nextProtos, "http/1.1")
 	}
 
-	tc := &tls.Config{
+	tc := &tls.Config{ // nolint: gosec
 		MinVersion: t.MinVersion,
 		MaxVersion: t.MaxVersion,
 		ServerName: t.ServerName,
@@ -221,7 +219,7 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 	}
 
 	if len(t.ClientCACertificateFile) > 0 {
-		caCert, err := ioutil.ReadFile(t.ClientCACertificateFile)
+		caCert, err := os.ReadFile(t.ClientCACertificateFile)
 		if err != nil {
 			return nil, err
 		}
@@ -235,6 +233,6 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 		tc.ClientAuth = tls.RequireAndVerifyClientCert
 	}
 
-	tc.BuildNameToCertificate()
+	tc.BuildNameToCertificate() // nolint: staticcheck
 	return tc, nil
 }

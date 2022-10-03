@@ -3,7 +3,7 @@ package xloghttp
 import (
 	stdlibLog "log"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 )
 
 func NewErrorLog(address string, logger log.Logger) *stdlibLog.Logger {

@@ -27,8 +27,8 @@ func testRequestHeadersThen(t *testing.T, requestHeaders RequestHeaders) {
 	require.NotNil(decorated)
 
 	roundTripper.ExpectRoundTrip(request).Once().Return(expectedResponse, expectedErr)
-	actualResponse, actualErr := decorated.RoundTrip(request)
-	assert.Equal(expectedResponse, actualResponse)
+	actualResponse, actualErr := decorated.RoundTrip(request) //nolint: bodyclose
+	assert.Equal(expectedResponse, actualResponse)            //nolint: bodyclose
 	assert.Equal(expectedErr, actualErr)
 
 	for name := range requestHeaders.Header {
@@ -57,7 +57,7 @@ func testRequestHeadersThenFunc(t *testing.T, requestHeaders RequestHeaders) {
 	require.NotNil(decorated)
 
 	roundTripper.ExpectRoundTrip(request).Once().Return(expectedResponse, expectedErr)
-	actualResponse, actualErr := decorated.RoundTrip(request)
+	actualResponse, actualErr := decorated.RoundTrip(request) //nolint:bodyclose
 	assert.Equal(expectedResponse, actualResponse)
 	assert.Equal(expectedErr, actualErr)
 

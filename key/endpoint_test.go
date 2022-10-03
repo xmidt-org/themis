@@ -48,10 +48,8 @@ func TestNewEndpoint(t *testing.T) {
 		result, err := endpoint(context.Background(), "test")
 		require.Error(err)
 		require.Nil(result)
-
-		knfe, ok := err.(KeyNotFoundError)
-		require.True(ok)
-		assert.NotEmpty(knfe.Error())
-		assert.Equal(http.StatusNotFound, knfe.StatusCode())
+		var keyNotFoundError KeyNotFoundError
+		assert.ErrorAs(err, &keyNotFoundError)
+		assert.Equal(http.StatusNotFound, keyNotFoundError.StatusCode())
 	})
 }

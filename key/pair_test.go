@@ -19,7 +19,7 @@ func TestNewPair(t *testing.T) {
 			assert  = assert.New(t)
 			require = require.New(t)
 
-			key, err = rsa.GenerateKey(rand.Reader, 1024)
+			key, err = rsa.GenerateKey(rand.Reader, 1024) // nolint: gosec
 		)
 
 		require.NoError(err)
@@ -168,7 +168,6 @@ func TestGenerateECDSAPair(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		goodBits := []int{
 			0,
-			224,
 			256,
 			384,
 			512,

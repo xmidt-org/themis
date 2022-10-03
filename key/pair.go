@@ -10,7 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+
+	"os"
 
 	"github.com/lestrrat-go/jwx/jwk"
 )
@@ -156,12 +157,11 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			jsonWebKey: jsonWebKey,
 		}, nil
 	}
-
 	return nil, fmt.Errorf("Unsupported key type: %v", key)
 }
 
 func ReadPair(kid string, file string) (Pair, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func GenerateSecretPair(kid string, random io.Reader, bits int) (Pair, error) {
 	return NewPair(kid, secret)
 }
 
-// MarshalPKIXPublicKeyToPEM handles marshalling a public key in PKIX format which is
+// MarshalPKIXPublicKeyToPEM handles marshaling a public key in PKIX format which is
 // then encoded as a PEM block
 func MarshalPKIXPublicKeyToPEM(key interface{}) ([]byte, error) {
 	pkix, err := x509.MarshalPKIXPublicKey(key)

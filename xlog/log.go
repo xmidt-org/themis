@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -133,10 +133,10 @@ func New(o Options) (log.Logger, error) {
 		)
 	}
 
-	if levelled, err := AllowLevel(l, o.Level); err != nil {
+	if leveled, err := AllowLevel(l, o.Level); err != nil {
 		return nil, err
 	} else {
-		l = levelled
+		l = leveled
 	}
 
 	return l, nil

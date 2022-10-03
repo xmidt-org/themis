@@ -10,7 +10,7 @@ import (
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/xlog"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
@@ -102,7 +102,7 @@ func testUnmarshalProvideFull(t *testing.T) {
 	request, err := http.NewRequest("GET", s.URL, nil)
 	require.NoError(err)
 
-	response, err := c.Do(request)
+	response, err := c.Do(request) //nolint:bodyclose
 	require.NoError(err)
 	require.NotNil(response)
 	assert.Equal(299, response.StatusCode)
@@ -165,7 +165,7 @@ func testUnmarshalProvideWithRoundTripper(t *testing.T) {
 	request, err := http.NewRequest("GET", s.URL, nil)
 	require.NoError(err)
 
-	response, err := c.Do(request)
+	response, err := c.Do(request) //nolint:bodyclose
 	require.NoError(err)
 	require.NotNil(response)
 	assert.Equal(299, response.StatusCode)
@@ -329,7 +329,7 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 	request, err := http.NewRequest("GET", s.URL, nil)
 	require.NoError(err)
 
-	response, err := c.Do(request)
+	response, err := c.Do(request) //nolint: bodyclose
 	require.NoError(err)
 	require.NotNil(response)
 	assert.Equal(299, response.StatusCode)

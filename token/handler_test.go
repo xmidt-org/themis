@@ -44,7 +44,7 @@ func TestNewIssueHandler(t *testing.T) {
 	require.NotNil(handler)
 	request.Header.Set("Claim", "fromHeader")
 	handler.ServeHTTP(response, request)
-	assert.Equal("application/jose", response.HeaderMap.Get("Content-Type"))
+	assert.Equal("application/jose", response.Header().Get("Content-Type"))
 	assert.Equal("endpoint=run,claim=fromHeader", response.Body.String())
 }
 
@@ -80,7 +80,7 @@ func TestNewClaimsHandler(t *testing.T) {
 	require.NotNil(handler)
 	request.Header.Set("Claim", "fromHeader")
 	handler.ServeHTTP(response, request)
-	assert.Regexp("application/json.*", response.HeaderMap.Get("Content-Type"))
+	assert.Regexp("application/json.*", response.Header().Get("Content-Type"))
 	assert.JSONEq(
 		`{"endpoint": "run", "claim": "fromHeader"}`,
 		response.Body.String(),

@@ -87,18 +87,6 @@ func (m *mockPusher) ExpectPush(target string, opts *http.PushOptions) *mock.Cal
 	return m.On("Push", target, opts)
 }
 
-type mockStatusCoder struct {
-	mock.Mock
-}
-
-func (m *mockStatusCoder) StatusCode() int {
-	return m.Called().Int(0)
-}
-
-func (m *mockStatusCoder) ExpectedStatusCode() *mock.Call {
-	return m.On("StatusCode")
-}
-
 type hijackerWriter struct {
 	http.ResponseWriter
 	http.Hijacker

@@ -50,7 +50,7 @@ func TestBuildKeyRoutes(t *testing.T) {
 
 		router.ServeHTTP(response, request)
 		assert.Equal(http.StatusOK, response.Code)
-		assert.Equal(key.ContentTypePEM, response.HeaderMap.Get("Content-Type"))
+		assert.Equal(key.ContentTypePEM, response.Header().Get("Content-Type"))
 		assert.Equal("pem", response.Body.String())
 	})
 
@@ -63,7 +63,7 @@ func TestBuildKeyRoutes(t *testing.T) {
 
 		router.ServeHTTP(response, request)
 		assert.Equal(http.StatusOK, response.Code)
-		assert.Equal(key.ContentTypePEM, response.HeaderMap.Get("Content-Type"))
+		assert.Equal(key.ContentTypePEM, response.Header().Get("Content-Type"))
 		assert.Equal("pem", response.Body.String())
 	})
 
@@ -76,7 +76,7 @@ func TestBuildKeyRoutes(t *testing.T) {
 
 		router.ServeHTTP(response, request)
 		assert.Equal(http.StatusOK, response.Code)
-		assert.Equal(key.ContentTypeJWK, response.HeaderMap.Get("Content-Type"))
+		assert.Equal(key.ContentTypeJWK, response.Header().Get("Content-Type"))
 		assert.Equal("jwk", response.Body.String())
 	})
 
@@ -91,7 +91,7 @@ func TestBuildKeyRoutes(t *testing.T) {
 			request.Header.Set("Accept", key.ContentTypePEM)
 			router.ServeHTTP(response, request)
 			assert.Equal(http.StatusOK, response.Code)
-			assert.Equal(key.ContentTypePEM, response.HeaderMap.Get("Content-Type"))
+			assert.Equal(key.ContentTypePEM, response.Header().Get("Content-Type"))
 			assert.Equal("pem", response.Body.String())
 		})
 
@@ -105,7 +105,7 @@ func TestBuildKeyRoutes(t *testing.T) {
 			request.Header.Set("Accept", key.ContentTypeJWK)
 			router.ServeHTTP(response, request)
 			assert.Equal(http.StatusOK, response.Code)
-			assert.Equal(key.ContentTypeJWK, response.HeaderMap.Get("Content-Type"))
+			assert.Equal(key.ContentTypeJWK, response.Header().Get("Content-Type"))
 			assert.Equal("jwk", response.Body.String())
 		})
 	})

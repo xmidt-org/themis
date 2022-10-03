@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -26,8 +26,17 @@ type ClaimBuildersTestSuite struct {
 
 var _ suite.SetupAllSuite = (*ClaimBuildersTestSuite)(nil)
 
+type contextKey string
+
+const (
+	contextKeyRequestID contextKey = "foo"
+	val                 string     = "value"
+	trueString          string     = "true"
+)
+
 func (suite *ClaimBuildersTestSuite) SetupSuite() {
-	suite.expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+
+	suite.expectedCtx = context.WithValue(context.Background(), contextKeyRequestID, "bar")
 	suite.expectedErr = errors.New("expected AddClaims error")
 }
 
@@ -43,12 +52,12 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 
 			for i := 0; i < count; i++ {
 				i := i
-				expected[strconv.Itoa(i)] = "true"
+				expected[strconv.Itoa(i)] = trueString
 				builder = append(builder,
 					ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
 						suite.Equal(suite.expectedCtx, actualCtx)
 						suite.True(expectedRequest == actualRequest)
-						target[strconv.Itoa(i)] = "true"
+						target[strconv.Itoa(i)] = trueString
 						return nil
 					}),
 				)
@@ -67,7 +76,7 @@ func (suite *ClaimBuildersTestSuite) TestError() {
 	var (
 		expectedRequest = new(Request)
 		expected        = map[string]interface{}{
-			"first": "true",
+			"first": trueString,
 		}
 
 		actual = make(map[string]interface{})
@@ -76,7 +85,7 @@ func (suite *ClaimBuildersTestSuite) TestError() {
 			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
 				suite.Equal(suite.expectedCtx, actualCtx)
 				suite.True(expectedRequest == actualRequest)
-				target["first"] = "true"
+				target["first"] = trueString
 				return nil
 			}),
 			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
@@ -117,9 +126,9 @@ func (suite *RequestClaimBuilderTestSuite) Test() {
 		},
 		{
 			request: &Request{
-				Claims: map[string]interface{}{"foo": 1, "bar": "value"},
+				Claims: map[string]interface{}{"foo": 1, "bar": val},
 			},
-			expected: map[string]interface{}{"foo": 1, "bar": "value"},
+			expected: map[string]interface{}{"foo": 1, "bar": val},
 		},
 	}
 
@@ -156,8 +165,8 @@ func (suite *StaticClaimBuilderTestSuite) Test() {
 			expected: map[string]interface{}{},
 		},
 		{
-			builder:  staticClaimBuilder{"foo": 1, "bar": "value"},
-			expected: map[string]interface{}{"foo": 1, "bar": "value"},
+			builder:  staticClaimBuilder{"foo": 1, "bar": val},
+			expected: map[string]interface{}{"foo": 1, "bar": val},
 		},
 	}
 
@@ -341,7 +350,7 @@ func (suite *RemoteClaimBuilderTestSuite) goodHandler(response http.ResponseWrit
 
 	suite.Equal(expectedMethod, request.Method)
 
-	b, err := ioutil.ReadAll(request.Body)
+	b, err := io.ReadAll(request.Body)
 	suite.NoError(err)
 
 	var input map[string]interface{}
@@ -350,7 +359,7 @@ func (suite *RemoteClaimBuilderTestSuite) goodHandler(response http.ResponseWrit
 		input = make(map[string]interface{})
 	}
 
-	input["custom"] = "value"
+	input["custom"] = val
 
 	response.Header().Set("Content-Type", "application/json")
 	b, err = json.Marshal(input)
@@ -373,25 +382,25 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 	}{
 		{
 			request:  new(Request),
-			expected: map[string]interface{}{"custom": "value"},
+			expected: map[string]interface{}{"custom": val},
 		},
 		{
-			request:  &Request{Metadata: map[string]interface{}{"request": "value"}},
-			expected: map[string]interface{}{"request": "value", "custom": "value"},
+			request:  &Request{Metadata: map[string]interface{}{"request": val}},
+			expected: map[string]interface{}{"request": val, "custom": val},
 		},
 		{
 			method:   http.MethodPut,
 			client:   new(http.Client),
-			metadata: map[string]interface{}{"external": "value"},
+			metadata: map[string]interface{}{"external": val},
 			request:  new(Request),
-			expected: map[string]interface{}{"external": "value", "custom": "value"},
+			expected: map[string]interface{}{"external": val, "custom": val},
 		},
 		{
 			method:   http.MethodPatch,
 			client:   new(http.Client),
-			metadata: map[string]interface{}{"external": "value"},
-			request:  &Request{Metadata: map[string]interface{}{"request": "value"}},
-			expected: map[string]interface{}{"external": "value", "request": "value", "custom": "value"},
+			metadata: map[string]interface{}{"external": val},
+			request:  &Request{Metadata: map[string]interface{}{"request": val}},
+			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
 		},
 	}
 
@@ -508,7 +517,7 @@ func (suite *NewClaimBuildersTestSuite) rawMessage(v interface{}) json.RawMessag
 }
 
 func (suite *NewClaimBuildersTestSuite) handleRemoteClaims(response http.ResponseWriter, request *http.Request) {
-	body, err := ioutil.ReadAll(request.Body)
+	body, err := io.ReadAll(request.Body)
 	suite.Require().NoError(err)
 
 	var metadata map[string]interface{}
@@ -805,7 +814,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 			"static1": suite.rawMessage(-72.5),
 			"static2": suite.rawMessage([]string{"a", "b"}),
 			"request": 123,
-			"remote":  "value",
+			"remote":  val,
 			"jti":     "test",
 			"iat":     suite.expectedNow.UTC().Unix(),
 			"nbf":     suite.expectedNow.Add(15 * time.Second).UTC().Unix(),

@@ -18,12 +18,12 @@ func TestNewTlsConfig(t *testing.T) {
 	}{
 		{},
 		{
-			tls:      &Tls{InsecureSkipVerify: false},
-			expected: &tls.Config{InsecureSkipVerify: false},
+			tls:      &Tls{},
+			expected: &tls.Config{}, //nolint: gosec
 		},
 		{
-			tls:      &Tls{InsecureSkipVerify: true},
-			expected: &tls.Config{InsecureSkipVerify: true},
+			tls:      &Tls{},
+			expected: &tls.Config{}, //nolint: gosec
 		},
 	}
 
@@ -94,9 +94,7 @@ func testNewRoundTripperFull(t *testing.T) {
 			IdleConnTimeout:        11 * time.Second,
 			ExpectContinueTimeout:  17 * time.Millisecond,
 			TLSHandshakeTimeout:    198 * time.Hour,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
+			TLSClientConfig:        &tls.Config{}, //nolint: gosec
 		},
 		rt,
 	)

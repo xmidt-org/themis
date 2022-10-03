@@ -2,10 +2,11 @@ package xhealth
 
 import (
 	"context"
+	"errors"
 
 	health "github.com/InVisionApp/go-health"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/xmidt-org/themis/xlog"
 )
 
@@ -55,7 +56,7 @@ func OnStop(logger log.Logger, h health.IHealth) func(context.Context) error {
 		)
 
 		err := h.Stop()
-		if err == health.ErrAlreadyStopped {
+		if errors.Is(err, health.ErrAlreadyStopped) {
 			logger.Log(
 				level.Key(), level.InfoValue(),
 				xlog.MessageKey(), "health service already stopped or not running",

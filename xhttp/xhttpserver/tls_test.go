@@ -199,7 +199,7 @@ type PeerVerifiersSuite struct {
 
 func (suite *PeerVerifiersSuite) SetupSuite() {
 	var err error
-	suite.key, err = rsa.GenerateKey(rand.Reader, 512)
+	suite.key, err = rsa.GenerateKey(rand.Reader, 512) // nolint: gosec
 	suite.Require().NoError(err)
 
 	suite.testCerts = make([]*x509.Certificate, 3)
@@ -497,7 +497,7 @@ func testNewTlsConfigSimple(t *testing.T, certificateFile, keyFile string) {
 	assert.Zero(tc.MaxVersion)
 	assert.Empty(tc.ServerName)
 	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
-	assert.NotEmpty(tc.NameToCertificate)
+	assert.NotEmpty(tc.Certificates)
 }
 
 func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T, certificateFile, keyFile string) {
@@ -522,7 +522,7 @@ func testNewTlsConfigWithoutClientCACertificateFile(t *testing.T, certificateFil
 	assert.Equal(uint16(3), tc.MaxVersion)
 	assert.Equal("test", tc.ServerName)
 	assert.Equal([]string{"http/1.0"}, tc.NextProtos)
-	assert.NotEmpty(tc.NameToCertificate)
+	assert.NotEmpty(tc.Certificates)
 }
 
 func testNewTlsConfigWithClientCACertificateFile(t *testing.T, certificateFile, keyFile string) {
@@ -547,7 +547,7 @@ func testNewTlsConfigWithClientCACertificateFile(t *testing.T, certificateFile, 
 	assert.Zero(tc.MaxVersion)
 	assert.Empty(tc.ServerName)
 	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
-	assert.NotEmpty(tc.NameToCertificate)
+	assert.NotEmpty(tc.Certificates)
 	assert.NotNil(tc.ClientCAs)
 	assert.Equal(tls.RequireAndVerifyClientCert, tc.ClientAuth)
 }

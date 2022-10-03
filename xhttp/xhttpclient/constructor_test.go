@@ -45,7 +45,7 @@ func testChainThenConstructors(t *testing.T, constructorCount int) {
 	}
 
 	roundTripper.ExpectRoundTrip(expectedRequest).Once().Return(expectedResponse, expectedErr)
-	actualResponse, actualErr := NewChain(constructors...).Then(roundTripper).RoundTrip(expectedRequest)
+	actualResponse, actualErr := NewChain(constructors...).Then(roundTripper).RoundTrip(expectedRequest) //nolint: bodyclose
 	assert.Equal(expectedResponse, actualResponse)
 	assert.Equal(expectedErr, actualErr)
 	assert.Equal(expectedOrder, actualOrder)
@@ -100,7 +100,7 @@ func testChainThenFuncConstructors(t *testing.T, constructorCount int) {
 	}
 
 	roundTripper.ExpectRoundTrip(expectedRequest).Once().Return(expectedResponse, expectedErr)
-	actualResponse, actualErr := NewChain(constructors...).ThenFunc(roundTripper.RoundTrip).RoundTrip(expectedRequest)
+	actualResponse, actualErr := NewChain(constructors...).ThenFunc(roundTripper.RoundTrip).RoundTrip(expectedRequest) //nolint: bodyclose
 	assert.Equal(expectedResponse, actualResponse)
 	assert.Equal(expectedErr, actualErr)
 	assert.Equal(expectedOrder, actualOrder)
@@ -167,8 +167,8 @@ func testChainAppend(t *testing.T) {
 					}
 
 					roundTripper.ExpectRoundTrip(expectedRequest).Once().Return(expectedResponse, expectedErr)
-					actualResponse, actualErr := NewChain(initial...).Append(more...).Then(roundTripper).RoundTrip(expectedRequest)
-					assert.Equal(expectedResponse, actualResponse)
+					actualResponse, actualErr := NewChain(initial...).Append(more...).Then(roundTripper).RoundTrip(expectedRequest) //nolint: bodyclose
+					assert.Equal(expectedResponse, actualResponse)                                                                  //nolint: bodyclose
 					assert.Equal(expectedErr, actualErr)
 					assert.Equal(expectedOrder, actualOrder)
 					roundTripper.AssertExpectations(t)
@@ -226,8 +226,8 @@ func testChainExtend(t *testing.T) {
 					}
 
 					roundTripper.ExpectRoundTrip(expectedRequest).Once().Return(expectedResponse, expectedErr)
-					actualResponse, actualErr := NewChain(initial...).Extend(NewChain(more...)).Then(roundTripper).RoundTrip(expectedRequest)
-					assert.Equal(expectedResponse, actualResponse)
+					actualResponse, actualErr := NewChain(initial...).Extend(NewChain(more...)).Then(roundTripper).RoundTrip(expectedRequest) //nolint: bodyclose
+					assert.Equal(expectedResponse, actualResponse)                                                                            //nolint: bodyclose
 					assert.Equal(expectedErr, actualErr)
 					assert.Equal(expectedOrder, actualOrder)
 					roundTripper.AssertExpectations(t)

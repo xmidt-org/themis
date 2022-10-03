@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -54,7 +54,9 @@ func (be BuildError) Unwrap() error {
 func (be BuildError) StatusCode() int {
 	statusCode := 0
 	for _, err := range multierr.Errors(be.Err) {
-		if sc, ok := err.(kithttp.StatusCoder); ok {
+
+		var sc kithttp.StatusCoder
+		if ok := errors.As(err, &sc); ok {
 			if statusCode < sc.StatusCode() {
 				statusCode = sc.StatusCode()
 			}
@@ -213,12 +215,10 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
-
 		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
-
 			rb = append(rb,
 				headerParameterRequestBuilder{
 					key:       value.Key,
@@ -227,28 +227,23 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					setter:    claimsSetter,
 				},
 			)
-
 		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
 					key:      value.Key,
 					variable: value.Variable,
-					setter:   claimsSetter,
-				},
+					setter:   claimsSetter},
 			)
 		}
 	}
-
 	for _, value := range o.Metadata {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
-
 		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
-
 			rb = append(rb,
 				headerParameterRequestBuilder{
 					key:       value.Key,
@@ -257,7 +252,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					setter:    metadataSetter,
 				},
 			)
-
 		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
@@ -268,7 +262,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			)
 		}
 	}
-
 	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
 		rb = append(rb,
 			partnerIDRequestBuilder{
@@ -276,7 +269,6 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			},
 		)
 	}
-
 	return rb, nil
 }
 
@@ -355,7 +347,7 @@ func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
 }
 
 func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (interface{}, error) {
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}

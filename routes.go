@@ -115,8 +115,8 @@ func BuildClaimsRoutes(in ClaimsRoutesIn) {
 // CheckServerRequirements is an fx.Invoke function that does post-configuration verification
 // that we have required servers.  The valid server configurations are:
 //
-//    Both keys and issuer present.  Claims is optional in this case
-//    Neither keys or issuer present.  Claims is required in this case
+//	Both keys and issuer present.  Claims is optional in this case
+//	Neither keys or issuer present.  Claims is required in this case
 //
 // Any other arrangements results in an error.
 func CheckServerRequirements(k KeyRoutesIn, i IssuerRoutesIn, c ClaimsRoutesIn) error {
