@@ -31,9 +31,9 @@ type CommandLineOut struct {
 // CommandLine describes how to provide a *pflag.FlagSet to an uber/fx container.  The zero value
 // for this type is valid and will parse the executable's command line defined by os.Args.  Examples include:
 //
-//    CommandLine{}.Provide(parseCommandLine)
-//    CommandLine{Name: "custom"}.Provide(builder1, builder2)
-//    CommandLine{DisableParse: true}.Provide(parseIt)
+//	CommandLine{}.Provide(parseCommandLine)
+//	CommandLine{Name: "custom"}.Provide(builder1, builder2)
+//	CommandLine{DisableParse: true}.Provide(parseIt)
 type CommandLine struct {
 	// Name is the executable or application name.  If unset, os.Args[0] is used.
 	Name string
