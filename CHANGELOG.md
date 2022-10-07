@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Patch failing docker image, fix linter issues, fix breaking changes [#104](https://github.com/xmidt-org/themis/pull/104)
+
+## [v0.4.9]
+- Patch failing docker image, fix linter issues, fix breaking unit tests & changes [#104](https://github.com/xmidt-org/themis/pull/104)
 
 ## [v0.4.8]
 - Migrated to github.com/golang-jwt/jwt to address a security vulnerability. [#78](https://github.com/xmidt-org/themis/pull/78)
@@ -119,7 +121,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Integrated health via InvisionApp/go-health
 - Converted to a go module: github.com/xmidt-org/themis
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.8...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.9...HEAD
+[v0.4.8]: https://github.com/xmidt-org/themis/compare/v0.4.8...v0.4.9
 [v0.4.8]: https://github.com/xmidt-org/themis/compare/v0.4.7...v0.4.8
 [v0.4.7]: https://github.com/xmidt-org/themis/compare/v0.4.6...v0.4.7
 [v0.4.6]: https://github.com/xmidt-org/themis/compare/v0.4.5...v0.4.6
