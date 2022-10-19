@@ -15,7 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
-	github.com/xmidt-org/candlelight v0.0.11
+	github.com/xmidt-org/candlelight v0.0.12
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.36.3
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.3
 	go.uber.org/fx v1.18.2
@@ -59,18 +59,18 @@ require (
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	go.opentelemetry.io/otel v1.11.0 // indirect
-	go.opentelemetry.io/otel/exporters/jaeger v1.9.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.9.0 // indirect
-	go.opentelemetry.io/otel/exporters/zipkin v1.9.0 // indirect
+	go.opentelemetry.io/otel/exporters/jaeger v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/zipkin v1.11.0 // indirect
 	go.opentelemetry.io/otel/metric v0.32.3 // indirect
-	go.opentelemetry.io/otel/sdk v1.9.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.11.0 // indirect
 	go.opentelemetry.io/otel/trace v1.11.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/dig v1.15.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
