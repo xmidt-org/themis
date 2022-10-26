@@ -4,9 +4,9 @@ import (
 	"github.com/xmidt-org/themis/config"
 
 	health "github.com/InVisionApp/go-health"
-	"github.com/go-kit/log"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // HealthIn defines the set of dependencies for instantiating an InVision health service
@@ -15,7 +15,7 @@ type HealthIn struct {
 	fx.In
 
 	// Logger is the required go-kit logger that will receive health logging output
-	Logger log.Logger
+	logger *zap.Logger
 
 	// Unmarshaller is the required configuration unmarshaller strategy
 	Unmarshaller config.Unmarshaller
