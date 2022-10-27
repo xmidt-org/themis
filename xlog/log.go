@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"go.uber.org/zap"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -62,7 +64,7 @@ type Options struct {
 }
 
 // AllowLevel produces a filtered logger with the given level.AllowXXX set.
-func AllowLevel(next log.Logger, v string) (log.Logger, error) {
+func AllowLevel(next *zap.Logger, v string) (*zap.Logger, error) {
 	switch strings.ToUpper(v) {
 	case LevelNone:
 		fallthrough
@@ -108,9 +110,9 @@ func Level(v string) (level.Value, error) {
 	}
 }
 
-// New produces a go-kit log.Logger using the given set of configuration options
-func New(o Options) (log.Logger, error) {
-	var l log.Logger
+// New produces a go-kit *zap.Logger using the given set of configuration options
+func New(o Options) (*zap.Logger, error) {
+	var l *zap.Logger
 	if len(o.File) == 0 || o.File == StdoutFile {
 		l = Default()
 	} else {
@@ -129,7 +131,7 @@ func New(o Options) (log.Logger, error) {
 
 		l = log.WithPrefix(
 			l,
-			TimestampKey(), log.DefaultTimestampUTC,
+			TimestampKey(), time.Now().UTC(),
 		)
 	}
 
@@ -146,12 +148,12 @@ var defaultLogger = log.WithPrefix(
 	log.NewJSONLogger(
 		log.NewSyncWriter(os.Stdout),
 	),
-	TimestampKey(), log.DefaultTimestampUTC,
+	TimestampKey(), time.Now().UTC(),
 )
 
 // Default() returns the singleton default go-kit logger, which writes to stdout and
 // is safe for concurrent usage.
-func Default() log.Logger {
+func Default() *zap.Logger {
 	return defaultLogger
 }
 
@@ -159,11 +161,11 @@ var errorLogger = log.WithPrefix(
 	log.NewJSONLogger(
 		log.NewSyncWriter(os.Stderr),
 	),
-	TimestampKey(), log.DefaultTimestampUTC,
+	TimestampKey(), time.Now().UTC(),
 )
 
 // Error returns a default go-kit Logger that sends all output to os.Stderr.  Useful
 // for reporting errors on a crash.
-func Error() log.Logger {
+func Error() *zap.Logger {
 	return errorLogger
 }

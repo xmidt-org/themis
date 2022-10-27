@@ -50,7 +50,7 @@ func testAllowLevelInfo(t *testing.T, value string) {
 	assert.True(output.Len() > 0)
 
 	output.Reset()
-	logger.Log(level.Key(), level.ErrorValue(), "test", "test")
+	logger.Error("test", "test")
 	assert.True(output.Len() > 0)
 }
 
@@ -80,7 +80,7 @@ func testAllowLevelWarn(t *testing.T, value string) {
 	assert.True(output.Len() > 0)
 
 	output.Reset()
-	logger.Log(level.Key(), level.ErrorValue(), "test", "test")
+	logger.Error("test", "test")
 	assert.True(output.Len() > 0)
 }
 
@@ -110,7 +110,7 @@ func testAllowLevelError(t *testing.T, value string) {
 	assert.Zero(output.Len())
 
 	output.Reset()
-	logger.Log(level.Key(), level.ErrorValue(), "test", "test")
+	logger.Error("test", "test")
 	assert.True(output.Len() > 0)
 }
 

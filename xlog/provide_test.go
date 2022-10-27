@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
 )
 
 func TestProvide(t *testing.T) {
@@ -16,7 +17,7 @@ func TestProvide(t *testing.T) {
 
 		expected = log.NewJSONLogger(new(bytes.Buffer))
 
-		actual log.Logger
+		actual *zap.Logger
 		app    = fxtest.New(
 			t,
 			fx.Provide(Provide(expected)),
