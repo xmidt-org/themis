@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/xmidt-org/themis/xlog/xloghttp"
+	"go.uber.org/zap"
 
-	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/justinas/alice"
 )
@@ -49,7 +49,7 @@ type Options struct {
 }
 
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
-func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
+func NewServerChain(o Options, l *zap.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 		Busy{MaxConcurrentRequests: o.MaxConcurrentRequests}.Then,
@@ -70,7 +70,7 @@ func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) al
 
 // New constructs a basic HTTP server instance.  The supplied logger is enriched with information
 // about the server and returned for use by higher-level code.
-func New(o Options, l log.Logger, h http.Handler) Interface {
+func New(o Options, l *zap.Logger, h http.Handler) Interface {
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
@@ -83,9 +83,9 @@ func New(o Options, l log.Logger, h http.Handler) Interface {
 		ReadTimeout:       o.ReadTimeout,
 		WriteTimeout:      o.WriteTimeout,
 
-		ErrorLog: xloghttp.NewErrorLog(
+		ErrorLog: sallust.NewServerLogger(
 			o.Address,
-			log.WithPrefix(l, level.Key(), level.ErrorValue()),
+			l,
 		),
 	}
 

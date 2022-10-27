@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/xlog"
 	"github.com/xmidt-org/themis/xlog/xloghttp"
 
@@ -28,7 +29,7 @@ func testNewServerChainNone(t *testing.T) {
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			_, ok := response.(TrackingWriter)
 			assert.False(ok)
-			assert.Equal(xlog.Default(), xlog.Get(request.Context()))
+			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
 
 			response.WriteHeader(299)
 		})
@@ -62,7 +63,7 @@ func testNewServerChainHeaders(t *testing.T) {
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			_, ok := response.(TrackingWriter)
 			assert.False(ok)
-			assert.Equal(xlog.Default(), xlog.Get(request.Context()))
+			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
 
 			response.WriteHeader(299)
@@ -99,7 +100,7 @@ func testNewServerChainTracking(t *testing.T) {
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			assert.Implements((*TrackingWriter)(nil), response)
-			assert.Equal(xlog.Default(), xlog.Get(request.Context()))
+			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
 
 			response.WriteHeader(299)
@@ -136,7 +137,7 @@ func testNewServerChainFull(t *testing.T) {
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			assert.Implements((*TrackingWriter)(nil), response)
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
-			xlog.Get(request.Context()).Log("foo", "bar")
+			sallust.Get(request.Context()).Log("foo", "bar")
 
 			response.WriteHeader(299)
 		})

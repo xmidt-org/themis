@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // ServerNotConfiguredError is returned when a required server has no configuration key
@@ -45,7 +46,7 @@ func (cff ChainFactoryFunc) New(n string, o Options) (alice.Chain, error) {
 type ServerIn struct {
 	fx.In
 
-	Logger       log.Logger
+	Logger       *zap.Logger
 	Unmarshaller config.Unmarshaller
 	Shutdowner   fx.Shutdowner
 	Lifecycle    fx.Lifecycle
