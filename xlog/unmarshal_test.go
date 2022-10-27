@@ -5,11 +5,11 @@ import (
 
 	"github.com/xmidt-org/themis/config"
 
-	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
 )
 
 func testUnmarshalSuccess(t *testing.T) {
@@ -17,7 +17,7 @@ func testUnmarshalSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		logger log.Logger
+		logger *zap.Logger
 
 		app = fxtest.New(t,
 			fx.Provide(
@@ -46,7 +46,7 @@ func testUnmarshalWithBufferedPrinter(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		logger  log.Logger
+		logger  *zap.Logger
 		printer *BufferedPrinter
 
 		app = fxtest.New(t,
@@ -80,7 +80,7 @@ func testUnmarshalFailure(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		logger log.Logger
+		logger *zap.Logger
 
 		app = fx.New(
 			fx.Logger(DiscardPrinter{}),
