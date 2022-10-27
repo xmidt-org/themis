@@ -6,15 +6,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // Printer adapts a go-kit Logger onto the fx.Printer interface.  Use this type to
 // direct uber/fx app logging to an externally created go-kit Logger.
 type Printer struct {
-	Logger log.Logger
+	logger *zap.Logger
 }
 
 func (p Printer) Printf(format string, parameters ...interface{}) {
@@ -39,7 +39,7 @@ func (dp DiscardPrinter) Printf(string, ...interface{}) {
 type BufferedPrinter struct {
 	lock     sync.Mutex
 	messages []string
-	logger   log.Logger
+	logger   *zap.Logger
 }
 
 func (bp *BufferedPrinter) Printf(format string, parameters ...interface{}) {
@@ -74,7 +74,7 @@ func (bp *BufferedPrinter) Len() (c int) {
 //
 // This method is idempotent.  Subsequent attempts to set the logger have no effect
 // and output will continue to the original logger.
-func (bp *BufferedPrinter) SetLogger(l log.Logger) {
+func (bp *BufferedPrinter) SetLogger(l *zap.Logger) {
 	defer bp.lock.Unlock()
 	bp.lock.Lock()
 
