@@ -9,12 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xmidt-org/themis/xlog/xlogtest"
-
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust/sallustkit/xlogtest"
 )
 
 func testOnStartNewListenerError(t *testing.T) {

@@ -5,13 +5,13 @@ import (
 	"net"
 
 	"github.com/xmidt-org/themis/xlog"
+	"go.uber.org/zap"
 
-	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 )
 
 // OnStart produces a closure that will start the given server appropriately
-func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(context.Context) error {
+func OnStart(o Options, s Interface, logger *zap.Logger, onExit func()) func(context.Context) error {
 	return func(ctx context.Context) error {
 		tcfg, err := NewTlsConfig(o.Tls)
 		if err != nil {
@@ -49,7 +49,7 @@ func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(cont
 }
 
 // OnStop produces a closure that will shutdown the server appropriately
-func OnStop(s Interface, logger log.Logger) func(context.Context) error {
+func OnStop(s Interface, logger *zap.Logger) func(context.Context) error {
 	return func(ctx context.Context) error {
 		logger.Log(
 			level.Key(), level.InfoValue(),
