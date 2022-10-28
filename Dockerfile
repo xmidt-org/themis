@@ -27,8 +27,7 @@ FROM alpine:3.12.1
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /src/themis /src/themis.yaml /src/deploy/packaging/entrypoint.sh /go/bin/spruce /src/Dockerfile /src/NOTICE /src/LICENSE /src/CHANGELOG.md /
 COPY --from=builder /src/deploy/packaging/themis_spruce.yaml /tmp/themis_spruce.yaml
-
-RUN mkdir /etc/themis/ && touch /etc/themis/themis.yaml && chmod 666 /etc/themis/themis.yaml
+COPY --from=builder /src/themis.yaml /etc/themis/themis.yaml
 
 USER nobody
 
