@@ -342,11 +342,8 @@ type testUnmarshalAnnotatedNamedIn struct {
 
 func testUnmarshalAnnotatedNamed(t *testing.T) {
 	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		c   Interface
-		app = fxtest.New(t,
+		assert = assert.New(t)
+		app    = fx.New(
 			fx.Provide(
 				sallust.Default(),
 				config.ProvideViper(
@@ -372,15 +369,13 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 			fx.Invoke(
 				func(in testUnmarshalAnnotatedNamedIn) {
 					assert.NotNil(in.Client)
-					c = in.Client
+					// c = in.Client
 				},
 			),
 		)
 	)
 
-	require.NotNil(c)
-	app.RequireStart()
-	app.RequireStop()
+	assert.Error(app.Err())
 }
 
 func TestUnmarshal(t *testing.T) {
