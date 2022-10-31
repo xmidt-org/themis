@@ -23,6 +23,7 @@ require (
 	go.uber.org/fx v1.18.2
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.23.0
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (
@@ -80,3 +81,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/xmidt-org/sallust => /Users/odc/Documents/GitHub/xmidt-org/sallust
