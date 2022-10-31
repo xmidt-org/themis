@@ -23,7 +23,6 @@ require (
 	go.uber.org/fx v1.18.2
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.23.0
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (
