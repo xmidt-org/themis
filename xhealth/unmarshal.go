@@ -15,7 +15,7 @@ type HealthIn struct {
 	fx.In
 
 	// Logger is the required go-kit logger that will receive health logging output
-	logger *zap.Logger
+	Logger *zap.Logger
 
 	// Unmarshaller is the required configuration unmarshaller strategy
 	Unmarshaller config.Unmarshaller

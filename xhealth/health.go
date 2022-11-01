@@ -26,7 +26,7 @@ func New(o Options, logger *zap.Logger, listener health.IStatusListener) (health
 	if o.DisableLogging || logger == nil {
 		h.DisableLogging()
 	} else {
-		h.Logger = logger
+		h.Logger = NewHealthLoggerAdapter(logger)
 	}
 
 	h.StatusListener = listener
