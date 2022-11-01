@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.4.11]
+- Remove several unused build files and update the docker images to work. [#122](https://github.com/xmidt-org/themis/pull/122)
+
 ## [v0.4.10]
 - Update dependencies.
 - Fix the docker container so it has configuration in the right place.
@@ -125,7 +128,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Integrated health via InvisionApp/go-health
 - Converted to a go module: github.com/xmidt-org/themis
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.10...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.11...HEAD
+[v0.4.11]: https://github.com/xmidt-org/themis/compare/v0.4.10...v0.4.11
 [v0.4.10]: https://github.com/xmidt-org/themis/compare/v0.4.9...v0.4.10
 [v0.4.9]: https://github.com/xmidt-org/themis/compare/v0.4.8...v0.4.9
 [v0.4.8]: https://github.com/xmidt-org/themis/compare/v0.4.7...v0.4.8
