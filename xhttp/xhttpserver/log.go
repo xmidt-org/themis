@@ -6,11 +6,11 @@ const (
 )
 
 // AddressKey is the logging key for the server's bind address
-func AddressKey() interface{} {
+func AddressKey() string {
 	return addressKey
 }
 
 // ServerKey is the logging key for the server's name
-func ServerKey() interface{} {
+func ServerKey() string {
 	return serverKey
 }

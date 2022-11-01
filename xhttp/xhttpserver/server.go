@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xmidt-org/themis/xlog/xloghttp"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/sallust/sallusthttp"
 	"go.uber.org/zap"
 
-	"github.com/go-kit/log/level"
 	"github.com/justinas/alice"
 )
 
@@ -49,19 +49,28 @@ type Options struct {
 }
 
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
-func NewServerChain(o Options, l *zap.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
+func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) alice.Chain {
+	bs := sallusthttp.Builders{}
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 		Busy{MaxConcurrentRequests: o.MaxConcurrentRequests}.Then,
 	)
 
+	bs.AddFields(fbs...)
 	if !o.DisableTracking {
 		chain = chain.Append(UseTrackingWriter)
 	}
 
 	if !o.DisableHandlerLogger {
 		chain = chain.Append(
-			xloghttp.Logging{Base: l, Builders: pb}.Then,
+			func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+					next.ServeHTTP(
+						response,
+						sallusthttp.With(request, bs.Build(request, l)),
+					)
+				})
+			},
 		)
 	}
 
@@ -90,10 +99,9 @@ func New(o Options, l *zap.Logger, h http.Handler) Interface {
 	}
 
 	if o.LogConnectionState {
-		s.ConnState = xloghttp.NewConnStateLogger(
+		s.ConnState = sallusthttp.NewConnStateLogger(
 			l,
-			"connState",
-			level.DebugValue(),
+			zap.DebugLevel,
 		)
 	}
 

@@ -9,11 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/xmidt-org/sallust/sallustkit/xlogtest"
+	"github.com/xmidt-org/sallust"
 )
 
 func testOnStartNewListenerError(t *testing.T) {
@@ -29,7 +28,7 @@ func testOnStartNewListenerError(t *testing.T) {
 				Tls: &Tls{},
 			},
 			s,
-			log.NewJSONLogger(&output),
+			sallust.Default(),
 			func() {
 				assert.Fail("onExit should not have been called")
 			},
@@ -54,7 +53,7 @@ func testOnStartSuccess(t *testing.T) {
 		onStart      = OnStart(
 			Options{},
 			s,
-			xlogtest.New(t),
+			sallust.Default(),
 			func() {
 				close(onExitCalled)
 			},
@@ -97,7 +96,7 @@ func TestOnStop(t *testing.T) {
 
 		expectedErr = errors.New("expected shutdown error")
 		s           = new(mockServer)
-		onStop      = OnStop(s, xlogtest.New(t))
+		onStop      = OnStop(s, sallust.Default())
 	)
 
 	require.NotNil(onStop)

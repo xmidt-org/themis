@@ -1,7 +1,6 @@
 package xhttpserver
 
 import (
-	"bytes"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -9,10 +8,9 @@ import (
 	"time"
 
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/xlog"
-	"github.com/xmidt-org/themis/xlog/xloghttp"
+	"github.com/xmidt-org/sallust/sallusthttp"
+	"go.uber.org/zap"
 
-	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,13 +21,12 @@ func testNewServerChainNone(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
+		base = sallust.Default()
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			_, ok := response.(TrackingWriter)
 			assert.False(ok)
-			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
+			assert.Equal(sallust.Default(), sallust.Get(request.Context()))
 
 			response.WriteHeader(299)
 		})
@@ -57,13 +54,12 @@ func testNewServerChainHeaders(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
+		base = sallust.Default()
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			_, ok := response.(TrackingWriter)
 			assert.False(ok)
-			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
+			assert.Equal(sallust.Default(), sallust.Get(request.Context()))
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
 
 			response.WriteHeader(299)
@@ -95,12 +91,11 @@ func testNewServerChainTracking(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
+		base = sallust.Default()
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			assert.Implements((*TrackingWriter)(nil), response)
-			assert.Equal(xlog.Default(), sallust.Get(request.Context()))
+			assert.Equal(sallust.Default(), sallust.Get(request.Context()))
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
 
 			response.WriteHeader(299)
@@ -131,13 +126,12 @@ func testNewServerChainFull(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
+		output, base = sallust.NewTestLogger(zap.DebugLevel)
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			assert.Implements((*TrackingWriter)(nil), response)
 			assert.Equal("value", response.Header().Get("X-From-Configuration"))
-			sallust.Get(request.Context()).Log("foo", "bar")
+			sallust.Get(request.Context()).Info("foobar")
 
 			response.WriteHeader(299)
 		})
@@ -149,8 +143,8 @@ func testNewServerChainFull(t *testing.T) {
 				},
 			},
 			base,
-			xloghttp.Method("requestMethod"),
-			xloghttp.URI("requestURI"),
+			sallusthttp.MethodCustom("requestMethod"),
+			sallusthttp.URICustom("requestURI"),
 		)
 
 		response = httptest.NewRecorder()
@@ -179,9 +173,8 @@ func testNewSimple(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
-		router = mux.NewRouter()
+		output, base = sallust.NewTestLogger(zap.DebugLevel)
+		router       = mux.NewRouter()
 
 		s = New(
 			Options{
@@ -224,9 +217,8 @@ func testNewFull(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output bytes.Buffer
-		base   = log.NewJSONLogger(&output)
-		router = mux.NewRouter()
+		output, base = sallust.NewTestLogger(zap.DebugLevel)
+		router       = mux.NewRouter()
 
 		s = New(
 			Options{
