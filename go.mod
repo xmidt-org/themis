@@ -20,7 +20,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4
 	go.uber.org/fx v1.18.2
 	go.uber.org/multierr v1.8.0
-	go.uber.org/zap v1.23.0
+	go.uber.org/zap v1.24.0
 )
 
 require (
