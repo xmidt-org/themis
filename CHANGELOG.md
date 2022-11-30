@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - [Fix Deprecated FX Logger, Add Zap Logging #107](https://github.com/xmidt-org/themis/issues/107)
 - [Replace package xlog with sallust #123](https://github.com/xmidt-org/themis/issues/123)
 - [Replace go-kit/log with uber zap #121](https://github.com/xmidt-org/themis/issues/121)
+- [CVE-2022-32149 (High) detected in golang.org/x/text-v0.3.7 #117](https://github.com/xmidt-org/themis/issues/117)
 
 ## [v0.4.11]
 - Remove several unused build files and update the docker images to work. [#122](https://github.com/xmidt-org/themis/pull/122)
