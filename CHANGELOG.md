@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.4.12]
 - [Fix Deprecated FX Logger, Add Zap Logging #107](https://github.com/xmidt-org/themis/issues/107)
 - [Replace package xlog with sallust #123](https://github.com/xmidt-org/themis/issues/123)
 - [Replace go-kit/log with uber zap #121](https://github.com/xmidt-org/themis/issues/121)
