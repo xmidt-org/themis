@@ -206,6 +206,17 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 		MaxVersion: t.MaxVersion,
 		ServerName: t.ServerName,
 		NextProtos: nextProtos,
+
+		// disable vulnerable ciphers
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		},
+	}
+
+	// if no MinVersion was set, default to TLS 1.2
+	if tc.MinVersion == 0 {
+		tc.MinVersion = tls.VersionTLS12
 	}
 
 	if pvs := NewPeerVerifiers(t.PeerVerify, extra...); len(pvs) > 0 {
