@@ -6,10 +6,9 @@ import (
 	"testing"
 
 	"github.com/xmidt-org/candlelight"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/xlog"
 
-	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +42,7 @@ func testUnmarshalProvideFull(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -94,7 +93,7 @@ func testUnmarshalProvideOptional(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				sallust.Default,
 				config.ProvideViper(),
 				Unmarshal{
 					Key:      "server",
@@ -123,9 +122,9 @@ func testUnmarshalProvideRequired(t *testing.T) {
 		assert = assert.New(t)
 
 		app = fx.New(
-			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				fx.Logger(sallust.Printer{}),
+				sallust.Default,
 				config.ProvideViper(),
 				Unmarshal{Key: "server"}.Provide,
 			),
@@ -145,9 +144,9 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 		assert = assert.New(t)
 
 		app = fx.New(
-			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				fx.Logger(sallust.Printer{}),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -176,9 +175,9 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		expectedErr = errors.New("expected chain factory error")
 
 		app = fx.New(
-			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				fx.Logger(sallust.Printer{}),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -228,7 +227,7 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -294,7 +293,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 		router *mux.Router
 		app    = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{

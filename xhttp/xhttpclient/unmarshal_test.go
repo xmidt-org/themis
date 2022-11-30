@@ -7,10 +7,9 @@ import (
 	"testing"
 
 	"github.com/xmidt-org/candlelight"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/xlog"
 
-	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
@@ -177,8 +176,8 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 
 		c   Interface
 		app = fx.New(
-			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
+				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 							{
@@ -204,9 +203,9 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		expectedErr = errors.New("expected chain factory error")
 
 		app = fx.New(
-			fx.Logger(xlog.DiscardPrinter{}),
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				fx.Logger(sallust.Printer{}),
+				sallust.Default(),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -349,7 +348,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 		c   Interface
 		app = fxtest.New(t,
 			fx.Provide(
-				xlog.Provide(log.NewNopLogger()),
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{

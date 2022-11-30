@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/xmidt-org/candlelight"
+	"github.com/xmidt-org/sallust/sallusthttp"
 	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/xlog/xloghttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
-	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // ServerNotConfiguredError is returned when a required server has no configuration key
@@ -45,7 +45,7 @@ func (cff ChainFactoryFunc) New(n string, o Options) (alice.Chain, error) {
 type ServerIn struct {
 	fx.In
 
-	Logger       log.Logger
+	Logger       *zap.Logger
 	Unmarshaller config.Unmarshaller
 	Shutdowner   fx.Shutdowner
 	Lifecycle    fx.Lifecycle
@@ -54,9 +54,9 @@ type ServerIn struct {
 	// server based on configuration.  Both this field and Chain may be used simultaneously.
 	ChainFactory ChainFactory `optional:"true"`
 
-	// ParameterBuiders is an optional component which is used to create contextual request loggers
+	// FieldBuilders is an optional component which is used to create contextual request loggers
 	// for use by http.Handler code.
-	ParameterBuilders xloghttp.ParameterBuilders `optional:"true"`
+	FieldBuilders []sallusthttp.FieldBuilder `optional:"true"`
 
 	// Tracing will be used to set up tracing instrumentation code.
 	Tracing candlelight.Tracing `optional:"true"`
@@ -110,8 +110,8 @@ func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
 
 	var (
 		serverName   = u.name()
-		serverLogger = log.With(in.Logger, ServerKey(), serverName)
-		serverChain  = NewServerChain(o, serverLogger, in.ParameterBuilders...)
+		serverLogger = in.Logger.With(zap.String(ServerKey(), serverName))
+		serverChain  = NewServerChain(o, serverLogger, in.FieldBuilders...)
 	)
 
 	if in.ChainFactory != nil {

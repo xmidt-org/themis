@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xmidt-org/themis/xlog/xloghttp"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/sallust/sallusthttp"
+	"go.uber.org/zap"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/justinas/alice"
 )
 
@@ -49,19 +49,28 @@ type Options struct {
 }
 
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
-func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) alice.Chain {
+func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) alice.Chain {
+	bs := sallusthttp.Builders{}
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 		Busy{MaxConcurrentRequests: o.MaxConcurrentRequests}.Then,
 	)
 
+	bs.AddFields(fbs...)
 	if !o.DisableTracking {
 		chain = chain.Append(UseTrackingWriter)
 	}
 
 	if !o.DisableHandlerLogger {
 		chain = chain.Append(
-			xloghttp.Logging{Base: l, Builders: pb}.Then,
+			func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+					next.ServeHTTP(
+						response,
+						sallusthttp.With(request, bs.Build(request, l)),
+					)
+				})
+			},
 		)
 	}
 
@@ -70,7 +79,7 @@ func NewServerChain(o Options, l log.Logger, pb ...xloghttp.ParameterBuilder) al
 
 // New constructs a basic HTTP server instance.  The supplied logger is enriched with information
 // about the server and returned for use by higher-level code.
-func New(o Options, l log.Logger, h http.Handler) Interface {
+func New(o Options, l *zap.Logger, h http.Handler) Interface {
 	s := &http.Server{
 		// we don't need this technically, because we create a listener
 		// it's here for other code to inspect
@@ -83,17 +92,16 @@ func New(o Options, l log.Logger, h http.Handler) Interface {
 		ReadTimeout:       o.ReadTimeout,
 		WriteTimeout:      o.WriteTimeout,
 
-		ErrorLog: xloghttp.NewErrorLog(
+		ErrorLog: sallust.NewServerLogger(
 			o.Address,
-			log.WithPrefix(l, level.Key(), level.ErrorValue()),
+			l,
 		),
 	}
 
 	if o.LogConnectionState {
-		s.ConnState = xloghttp.NewConnStateLogger(
+		s.ConnState = sallusthttp.NewConnStateLogger(
 			l,
-			"connState",
-			level.DebugValue(),
+			zap.DebugLevel,
 		)
 	}
 

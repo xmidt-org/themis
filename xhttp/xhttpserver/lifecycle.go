@@ -4,14 +4,11 @@ import (
 	"context"
 	"net"
 
-	"github.com/xmidt-org/themis/xlog"
-
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
+	"go.uber.org/zap"
 )
 
 // OnStart produces a closure that will start the given server appropriately
-func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(context.Context) error {
+func OnStart(o Options, s Interface, logger *zap.Logger, onExit func()) func(context.Context) error {
 	return func(ctx context.Context) error {
 		tcfg, err := NewTlsConfig(o.Tls)
 		if err != nil {
@@ -29,19 +26,10 @@ func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(cont
 			}
 
 			address := l.Addr().String()
-			logger.Log(
-				level.Key(), level.InfoValue(),
-				AddressKey(), address,
-				xlog.MessageKey(), "starting server",
-			)
+			logger.Info("starting server", zap.String(AddressKey(), address))
 
 			err := s.Serve(l)
-			logger.Log(
-				level.Key(), level.ErrorValue(),
-				AddressKey(), address,
-				xlog.MessageKey(), "listener exited",
-				xlog.ErrorKey(), err,
-			)
+			logger.Error("listener exited", zap.String(AddressKey(), address), zap.Error(err))
 		}()
 
 		return nil
@@ -49,12 +37,9 @@ func OnStart(o Options, s Interface, logger log.Logger, onExit func()) func(cont
 }
 
 // OnStop produces a closure that will shutdown the server appropriately
-func OnStop(s Interface, logger log.Logger) func(context.Context) error {
+func OnStop(s Interface, logger *zap.Logger) func(context.Context) error {
 	return func(ctx context.Context) error {
-		logger.Log(
-			level.Key(), level.InfoValue(),
-			xlog.MessageKey(), "server stopping",
-		)
+		logger.Info("server stopping")
 
 		return s.Shutdown(ctx)
 	}

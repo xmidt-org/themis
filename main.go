@@ -25,6 +25,7 @@ import (
 	"github.com/InVisionApp/go-health"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/candlelight"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
@@ -32,8 +33,6 @@ import (
 	"github.com/xmidt-org/themis/xhealth"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
-	"github.com/xmidt-org/themis/xlog"
-	"github.com/xmidt-org/themis/xlog/xloghttp"
 	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
 
 	"github.com/spf13/pflag"
@@ -96,13 +95,11 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 
 func main() {
 	app := fx.New(
-		xlog.Logger(),
+		sallust.WithLogger(),
 		config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
 		provideMetrics(),
 		fx.Provide(
 			config.ProvideViper(setupViper),
-			xlog.Unmarshal("log"),
-			xloghttp.ProvideStandardBuilders,
 			xhealth.Unmarshal("health"),
 			random.Provide,
 			key.Provide,
@@ -126,6 +123,15 @@ func main() {
 				}
 				config.ApplicationName = applicationName
 				return config, nil
+			},
+			func(u config.Unmarshaller) (sallust.LoggerIn, error) {
+				var c sallust.Config
+
+				if err := u.UnmarshalKey("log", &c); err != nil {
+					return sallust.LoggerIn{}, err
+				}
+
+				return sallust.LoggerIn{Config: c}, nil
 			},
 		),
 		fx.Invoke(

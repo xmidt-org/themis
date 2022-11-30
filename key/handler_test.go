@@ -8,8 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/xmidt-org/themis/xlog"
-	"github.com/xmidt-org/themis/xlog/xlogtest"
+	"github.com/xmidt-org/sallust"
 
 	"github.com/gorilla/mux"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -27,7 +26,7 @@ func TestNewHandler(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandler(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = mux.SetURLVars(
 				httptest.NewRequest("GET", "/", nil).WithContext(ctx),
 				map[string]string{"kid": "test"},
@@ -59,7 +58,7 @@ func TestNewHandler(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandler(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = mux.SetURLVars(
 				httptest.NewRequest("GET", "/", nil).WithContext(ctx),
 				map[string]string{"kid": "test"},
@@ -80,7 +79,7 @@ func TestNewHandler(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandler(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = httptest.NewRequest("GET", "/", nil).WithContext(ctx)
 
 			response = httptest.NewRecorder()
@@ -101,7 +100,7 @@ func TestNewHandlerJWK(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandlerJWK(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = mux.SetURLVars(
 				httptest.NewRequest("GET", "/", nil).WithContext(ctx),
 				map[string]string{"kid": "test"},
@@ -134,7 +133,7 @@ func TestNewHandlerJWK(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandlerJWK(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = mux.SetURLVars(
 				httptest.NewRequest("GET", "/", nil).WithContext(ctx),
 				map[string]string{"kid": "test"},
@@ -155,7 +154,7 @@ func TestNewHandlerJWK(t *testing.T) {
 			endpoint = NewEndpoint(registry)
 			handler  = NewHandlerJWK(endpoint)
 
-			ctx     = xlog.With(context.Background(), xlogtest.New(t))
+			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = httptest.NewRequest("GET", "/", nil).WithContext(ctx)
 
 			response = httptest.NewRecorder()
