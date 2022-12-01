@@ -120,10 +120,9 @@ func testUnmarshalProvideOptional(t *testing.T) {
 func testUnmarshalProvideRequired(t *testing.T) {
 	var (
 		assert = assert.New(t)
-
-		app = fx.New(
+		app    = fx.New(
+			sallust.WithLogger(),
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				sallust.Default,
 				config.ProvideViper(),
 				Unmarshal{Key: "server"}.Provide,
@@ -144,9 +143,8 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 		assert = assert.New(t)
 
 		app = fx.New(
+			sallust.WithLogger(),
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
-				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -175,9 +173,8 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		expectedErr = errors.New("expected chain factory error")
 
 		app = fx.New(
+			sallust.WithLogger(),
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
-				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -226,8 +223,8 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 
 		router *mux.Router
 		app    = fxtest.New(t,
+			fx.Supply(sallust.Default()),
 			fx.Provide(
-				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{

@@ -493,7 +493,7 @@ func testNewTlsConfigSimple(t *testing.T, certificateFile, keyFile string) {
 	require.NoError(err)
 	require.NotNil(tc)
 
-	assert.Zero(tc.MinVersion)
+	assert.Equal(uint16(tls.VersionTLS12), tc.MinVersion)
 	assert.Zero(tc.MaxVersion)
 	assert.Empty(tc.ServerName)
 	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
@@ -543,7 +543,7 @@ func testNewTlsConfigWithClientCACertificateFile(t *testing.T, certificateFile, 
 	require.NoError(err)
 	require.NotNil(tc)
 
-	assert.Zero(tc.MinVersion)
+	assert.Equal(uint16(tls.VersionTLS12), tc.MinVersion)
 	assert.Zero(tc.MaxVersion)
 	assert.Empty(tc.ServerName)
 	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
