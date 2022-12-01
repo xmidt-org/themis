@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Disable TLS 1.0 and 1.1 by default.  Configuration can reenable.
+- Disable ciphers vulnerable to SWEET32.
 
 ## [v0.4.12]
 - [Fix Deprecated FX Logger, Add Zap Logging #107](https://github.com/xmidt-org/themis/issues/107)
