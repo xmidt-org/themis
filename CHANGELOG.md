@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Update configs and documentation for the introduction of OTLP in Candlelight [#137](https://github.com/xmidt-org/themis/pull/137)
+- Correct Bad Usage of LoggerIn that broke Themis [#136](https://github.com/xmidt-org/themis/pull/136)
 
 ## [v0.4.13]
 - Disable TLS 1.0 and 1.1 by default.  Configuration can reenable.
