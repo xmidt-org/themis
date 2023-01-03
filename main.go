@@ -124,14 +124,9 @@ func main() {
 				config.ApplicationName = applicationName
 				return config, nil
 			},
-			func(u config.Unmarshaller) (sallust.LoggerIn, error) {
-				var c sallust.Config
-
-				if err := u.UnmarshalKey("log", &c); err != nil {
-					return sallust.LoggerIn{}, err
-				}
-
-				return sallust.LoggerIn{Config: c}, nil
+			func(u config.Unmarshaller) (c sallust.Config, err error) {
+				err = u.UnmarshalKey("log", &c)
+				return
 			},
 		),
 		fx.Invoke(
