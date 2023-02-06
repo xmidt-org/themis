@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.4.14]
 - Update configs and documentation for the introduction of OTLP in Candlelight [#137](https://github.com/xmidt-org/themis/pull/137)
 - Correct Bad Usage of LoggerIn that broke Themis [#136](https://github.com/xmidt-org/themis/pull/136)
 
@@ -140,7 +142,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Integrated health via InvisionApp/go-health
 - Converted to a go module: github.com/xmidt-org/themis
 
-[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.13...HEAD
+[Unreleased]: https://github.com/xmidt-org/themis/compare/v0.4.14...HEAD
+[v0.4.14]: https://github.com/xmidt-org/themis/compare/v0.4.13...v0.4.14
 [v0.4.13]: https://github.com/xmidt-org/themis/compare/v0.4.12...v0.4.13
 [v0.4.12]: https://github.com/xmidt-org/themis/compare/v0.4.11...v0.4.12
 [v0.4.11]: https://github.com/xmidt-org/themis/compare/v0.4.10...v0.4.11
