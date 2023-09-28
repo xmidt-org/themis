@@ -66,14 +66,14 @@ func testResponseHeadersThenFunc(t *testing.T, responseHeaders ResponseHeaders) 
 
 func TestResponseHeaders(t *testing.T) {
 	testData := []ResponseHeaders{
-		ResponseHeaders{},
-		ResponseHeaders{
+		{},
+		{
 			Header: http.Header{},
 		},
-		ResponseHeaders{Header: http.Header{
+		{Header: http.Header{
 			"x-test": []string{"value"},
 		}},
-		ResponseHeaders{Header: http.Header{
+		{Header: http.Header{
 			"X-Single": []string{"value"},
 			"x-douBLe": []string{"value1", "value2"},
 		}},

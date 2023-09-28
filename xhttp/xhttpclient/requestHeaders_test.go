@@ -75,14 +75,14 @@ func testRequestHeadersThenFunc(t *testing.T, requestHeaders RequestHeaders) {
 
 func TestRequestHeaders(t *testing.T) {
 	testData := []RequestHeaders{
-		RequestHeaders{},
-		RequestHeaders{
+		{},
+		{
 			Header: http.Header{},
 		},
-		RequestHeaders{Header: http.Header{
+		{Header: http.Header{
 			"x-test": []string{"value"},
 		}},
-		RequestHeaders{Header: http.Header{
+		{Header: http.Header{
 			"X-Single": []string{"value"},
 			"x-douBLe": []string{"value1", "value2"},
 		}},
