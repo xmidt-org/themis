@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2017 Comcast Cable Communications Management, LLC
+// SPDX-License-Identifier: Apache-2.0
 package key
 
 import (
@@ -74,12 +76,12 @@ func TestRegistry(t *testing.T) {
 	t.Run("Register", func(t *testing.T) {
 		t.Run("ValidDescriptor", func(t *testing.T) {
 			testData := []Descriptor{
-				Descriptor{Kid: "test"},
-				Descriptor{Kid: "test", Type: "rsa"},
-				Descriptor{Kid: "test", Type: "rsa", File: "test.pkcs1.pem"},
-				Descriptor{Kid: "test", Type: "rsa", File: "test.pkcs8.pem"},
-				Descriptor{Kid: "test", Type: "ecdsa"},
-				Descriptor{Kid: "test", Type: "secret"},
+				{Kid: "test"},
+				{Kid: "test", Type: "rsa"},
+				{Kid: "test", Type: "rsa", File: "test.pkcs1.pem"},
+				{Kid: "test", Type: "rsa", File: "test.pkcs8.pem"},
+				{Kid: "test", Type: "ecdsa"},
+				{Kid: "test", Type: "secret"},
 			}
 
 			for i, d := range testData {
@@ -91,8 +93,8 @@ func TestRegistry(t *testing.T) {
 
 		t.Run("InvalidDescriptor", func(t *testing.T) {
 			testData := []Descriptor{
-				Descriptor{File: "nosuch"},
-				Descriptor{Type: "not a valid key type"},
+				{File: "nosuch"},
+				{Type: "not a valid key type"},
 			}
 
 			for i, d := range testData {
