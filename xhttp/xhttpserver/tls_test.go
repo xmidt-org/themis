@@ -110,7 +110,8 @@ func (suite *ConfiguredPeerVerifierSuite) testVerifySuccess() {
 	for _, testCase := range testData {
 		suite.Run(testCase.description, func() {
 			verifier := suite.newConfiguredPeerVerifier(testCase.options)
-			suite.NoError(verifier.Verify(&testCase.peerCert, nil))
+			peerCert := testCase.peerCert
+			suite.NoError(verifier.Verify(&peerCert, nil))
 		})
 	}
 }
@@ -170,7 +171,8 @@ func (suite *ConfiguredPeerVerifierSuite) testVerifyFailure() {
 		suite.Run(testCase.description, func() {
 			verifier := suite.newConfiguredPeerVerifier(testCase.options)
 
-			err := verifier.Verify(&testCase.peerCert, nil)
+			peerCert := testCase.peerCert
+			err := verifier.Verify(&peerCert, nil)
 			suite.Error(err)
 		})
 	}
