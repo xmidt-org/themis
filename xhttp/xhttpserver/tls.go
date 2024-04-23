@@ -243,7 +243,7 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 		}
 
 		tc.ClientCAs = caCertPool
-		tc.ClientAuth = tls.RequireAndVerifyClientCert
+		tc.ClientAuth = tls.RequestClientCert
 	}
 
 	tc.BuildNameToCertificate() // nolint: staticcheck

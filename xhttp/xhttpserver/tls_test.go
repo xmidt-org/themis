@@ -553,7 +553,7 @@ func testNewTlsConfigWithClientCACertificateFile(t *testing.T, certificateFile, 
 	assert.Equal([]string{"http/1.1"}, tc.NextProtos)
 	assert.NotEmpty(tc.Certificates)
 	assert.NotNil(tc.ClientCAs)
-	assert.Equal(tls.RequireAndVerifyClientCert, tc.ClientAuth)
+	assert.Equal(tls.RequestClientCert, tc.ClientAuth)
 }
 
 func testNewTlsConfigLoadClientCACertificateError(t *testing.T, certificateFile, keyFile string) {
