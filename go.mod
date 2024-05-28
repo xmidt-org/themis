@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/justinas/alice v1.2.0
 	github.com/lestrrat-go/jwx v1.2.29
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
