@@ -27,4 +27,5 @@ jobs:
       release-docker-latest: false
       release-docker-major:  false
       release-docker-minor:  false
+      yaml-lint-skip:        false
     secrets: inherit
