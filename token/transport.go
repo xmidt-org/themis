@@ -208,6 +208,15 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 	return nil
 }
 
+// setConnectionState sets the tls.ConnectionState for the given request.
+func setConnectionState(original *http.Request, tr *Request) error {
+	if cs, ok := xhttpserver.ConnectionState(original.Context()); ok {
+		tr.ConnectionState = cs
+	}
+
+	return nil
+}
+
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
 // and metadata that are HTTP-based are included in the results.  Claims and metadata that are statically
 // assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
@@ -238,6 +247,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			)
 		}
 	}
+
 	for _, value := range o.Metadata {
 		switch {
 		case len(value.Key) == 0:
@@ -264,6 +274,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			)
 		}
 	}
+
 	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
 		rb = append(rb,
 			partnerIDRequestBuilder{
@@ -271,6 +282,12 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			},
 		)
 	}
+
+	rb = append(
+		rb,
+		RequestBuilderFunc(setConnectionState),
+	)
+
 	return rb, nil
 }
 

@@ -22,7 +22,6 @@ func testUnmarshalError(t *testing.T) {
 
 	app := fx.New(
 		fx.Provide(
-			fx.Logger(sallust.Printer{}),
 			config.ProvideViper(
 				config.Json(`
 					{
@@ -49,7 +48,6 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 
 		app = fx.New(
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -84,7 +82,6 @@ func testUnmarshalFactoryError(t *testing.T) {
 
 		app = fx.New(
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 						{
