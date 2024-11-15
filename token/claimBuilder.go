@@ -4,6 +4,7 @@ package token
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -188,6 +189,27 @@ func enforcePeerCertificate(_ context.Context, r *Request, target map[string]int
 	return nil
 }
 
+// verifyPeerChain verifies that any peer certificate has a certificate in the system
+// bundle as part of its chain.
+func verifyPeerChain(_ context.Context, r *Request, target map[string]interface{}) error {
+	vo := x509.VerifyOptions{
+		KeyUsages: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+		},
+	}
+
+	for _, pc := range r.ConnectionState.PeerCertificates {
+		if _, err := pc.Verify(vo); err == nil {
+			// at least (1) cert passed, so we can stop
+			return nil
+		}
+	}
+
+	// no certificates were part of any CA chain that we trust
+	target[ClaimTrust] = 0
+	return nil
+}
+
 // NewClaimBuilders constructs a ClaimBuilders from configuration.  The returned instance is typically
 // used in configuration a token Factory.  It can be used as a standalone service component with an endpoint.
 //
@@ -269,6 +291,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	builders = append(
 		builders,
 		ClaimBuilderFunc(enforcePeerCertificate),
+		ClaimBuilderFunc(verifyPeerChain),
 	)
 
 	return builders, nil
