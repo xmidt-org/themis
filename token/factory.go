@@ -4,6 +4,7 @@ package token
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"sync/atomic"
 
@@ -26,6 +27,10 @@ type Request struct {
 	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request.  This
 	// metadata is available to lower levels of infrastructure used by the Factory.
 	Metadata map[string]interface{}
+
+	// ConnectionState represents the state of any underlying TLS connection.
+	// For non-tls connections, this field is unset.
+	ConnectionState tls.ConnectionState
 }
 
 // NewRequest returns an empty, fully initialized token Request
