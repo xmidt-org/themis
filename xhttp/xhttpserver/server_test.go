@@ -212,6 +212,7 @@ func testNewSimple(t *testing.T) {
 	assert.Greater(output.Len(), 0)
 
 	assert.Nil(s.(*http.Server).ConnState)
+	assert.NotNil(s.(*http.Server).ConnContext)
 }
 
 func testNewFull(t *testing.T) {
