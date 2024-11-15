@@ -19,12 +19,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-const (
-	// ClaimTrust is the name of the trust value within JWT claims issued
-	// by themis.
-	ClaimTrust = "trust"
-)
-
 var (
 	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
 )
