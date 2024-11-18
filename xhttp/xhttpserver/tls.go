@@ -3,7 +3,6 @@
 package xhttpserver
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -249,21 +248,4 @@ func NewTlsConfig(t *Tls, extra ...PeerVerifier) (*tls.Config, error) {
 
 	tc.BuildNameToCertificate() // nolint: staticcheck
 	return tc, nil
-}
-
-type connectionStateKey struct{}
-
-// ConnectionState returns the tls.ConnectionState from the given context.
-func ConnectionState(ctx context.Context) (cs tls.ConnectionState, present bool) {
-	cs, present = ctx.Value(connectionStateKey{}).(tls.ConnectionState)
-	return
-}
-
-// SetConnectionState associates a tls.ConnectionState with the given context.
-func SetConnectionState(ctx context.Context, cs tls.ConnectionState) context.Context {
-	return context.WithValue(
-		ctx,
-		connectionStateKey{},
-		cs,
-	)
 }

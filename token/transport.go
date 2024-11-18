@@ -210,8 +210,8 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 
 // setConnectionState sets the tls.ConnectionState for the given request.
 func setConnectionState(original *http.Request, tr *Request) error {
-	if cs, ok := xhttpserver.ConnectionState(original.Context()); ok {
-		tr.ConnectionState = cs
+	if original.TLS != nil {
+		tr.ConnectionState = *original.TLS
 	}
 
 	return nil
