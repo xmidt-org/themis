@@ -28,9 +28,9 @@ type Request struct {
 	// metadata is available to lower levels of infrastructure used by the Factory.
 	Metadata map[string]interface{}
 
-	// ConnectionState represents the state of any underlying TLS connection.
+	// TLS represents the state of any underlying TLS connection.
 	// For non-tls connections, this field is unset.
-	ConnectionState tls.ConnectionState
+	TLS *tls.ConnectionState
 }
 
 // NewRequest returns an empty, fully initialized token Request
