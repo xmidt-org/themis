@@ -323,6 +323,7 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 			return nil, err
 		}
 
+		tr.Logger = sallust.Get(ctx)
 		return tr, nil
 	}
 }
