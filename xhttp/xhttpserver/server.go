@@ -4,7 +4,6 @@ package xhttpserver
 
 import (
 	"context"
-	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -99,18 +98,6 @@ func New(o Options, l *zap.Logger, h http.Handler) Interface {
 			o.Address,
 			l,
 		),
-
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			type connectionStater interface {
-				ConnectionState() tls.ConnectionState
-			}
-
-			if cs, ok := c.(connectionStater); ok {
-				ctx = SetConnectionState(ctx, cs.ConnectionState())
-			}
-
-			return ctx
-		},
 	}
 
 	if o.LogConnectionState {
