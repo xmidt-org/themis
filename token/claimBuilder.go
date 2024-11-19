@@ -182,7 +182,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 // enforcePeerCertificate is a ClaimsBuilderFunc that overrides trust as necessary
 // given the TLS peer certificates (if any)
 func enforcePeerCertificate(_ context.Context, r *Request, target map[string]interface{}) error {
-	if r.TLS != nil && len(r.TLS.PeerCertificates) == 0 {
+	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		target[ClaimTrust] = 0
 	}
 
