@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/key"
+	"go.uber.org/zap"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -20,6 +22,10 @@ const (
 // Request is a token creation request.  Clients can pass in arbitrary claims, typically things like "iss",
 // to merge and override anything set on the factory via configuration.
 type Request struct {
+	// Logger is the zap logger which can be used to log information about the request.
+	// This field is always set.
+	Logger *zap.Logger
+
 	// Claims holds the extra claims to add to tokens.  These claims will override any configured claims in a Factory,
 	// but will not override time-based claims such as nbf or exp.
 	Claims map[string]interface{}
@@ -36,6 +42,7 @@ type Request struct {
 // NewRequest returns an empty, fully initialized token Request
 func NewRequest() *Request {
 	return &Request{
+		Logger:   sallust.Default(),
 		Claims:   make(map[string]interface{}),
 		Metadata: make(map[string]interface{}),
 	}

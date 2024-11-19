@@ -17,6 +17,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust"
 	"go.uber.org/multierr"
 )
 
@@ -101,6 +102,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				"X-Midt-Partner-ID": []string{"test"},
 			},
 			expected: &Request{
+				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
 					"fromHeader":       "foo",
 					"partner-id-claim": "test",
@@ -141,6 +143,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			},
 			uri: "/test?pid=test&claim=foo&metadata=bar",
 			expected: &Request{
+				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
 					"fromParameter":    "foo",
 					"partner-id-claim": "test",
@@ -178,6 +181,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				"metadata": "bar",
 			},
 			expected: &Request{
+				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
 					"fromVariable":     "foo",
 					"partner-id-claim": "test",
@@ -209,6 +213,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				"metadata": "bar",
 			},
 			expected: &Request{
+				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
 					"fromVariable": "foo",
 				},
@@ -336,6 +341,7 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
+				Logger:   sallust.Default(),
 				Claims:   map[string]interface{}{"claim": []int{1, 2, 3}},
 				Metadata: make(map[string]interface{}),
 			},
@@ -348,6 +354,7 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
+				Logger:   sallust.Default(),
 				Claims:   make(map[string]interface{}),
 				Metadata: map[string]interface{}{"metadata": -75.8},
 			},
@@ -369,6 +376,7 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
+				Logger:   sallust.Default(),
 				Claims:   map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
 				Metadata: map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
 			},
@@ -561,6 +569,7 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 	require.IsType((*Request)(nil), v)
 	assert.Equal(
 		Request{
+			Logger:   sallust.Default(),
 			Claims:   map[string]interface{}{"claim": "value"},
 			Metadata: make(map[string]interface{}),
 		},

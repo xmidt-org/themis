@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
@@ -304,6 +305,7 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 		return nil, err
 	}
 
+	tr.Logger = sallust.Get(original.Context())
 	return tr, nil
 }
 
