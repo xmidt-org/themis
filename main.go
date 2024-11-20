@@ -88,6 +88,10 @@ func main() {
 		provideMetrics(),
 		fx.Provide(
 			config.ProvideViper(setupViper),
+			func(u config.Unmarshaller) (c sallust.Config, err error) {
+				err = u.UnmarshalKey("log", &c)
+				return
+			},
 			xhealth.Unmarshal("health"),
 			random.Provide,
 			key.Provide,
@@ -111,10 +115,6 @@ func main() {
 				}
 				config.ApplicationName = applicationName
 				return config, nil
-			},
-			func(u config.Unmarshaller) (c sallust.Config, err error) {
-				err = u.UnmarshalKey("log", &c)
-				return
 			},
 		),
 		fx.Invoke(

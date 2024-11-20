@@ -7,7 +7,7 @@ const (
 	devMode = `
 servers:
   key:
-    address: :8080
+    address: :6500
     disableHTTPKeepAlives: true
     header:
       X-Midt-Server:
@@ -16,7 +16,7 @@ servers:
         - development
 
   issuer:
-    address: :8081
+    address: :6501
     disableHTTPKeepAlives: true
     header:
       X-Midt-Server:
@@ -25,7 +25,7 @@ servers:
         - development
 
   claims:
-    address: :8082
+    address: :6502
     disableHTTPKeepAlives: true
     header:
       X-Midt-Server:
@@ -34,7 +34,7 @@ servers:
         - development
 
   metrics:
-    address: :8083
+    address: :6503
     disableHTTPKeepAlives: true
 
   pprof:
@@ -42,7 +42,7 @@ servers:
     disableHTTPKeepAlives: true
 
   health:
-    address: :8084
+    address: :6504
     disableHTTPKeepAlives: true
     header:
       X-Midt-Server:
@@ -115,7 +115,11 @@ token:
     bits: 1024
 
 log:
-  file: stdout
-  level: INFO
+  outputPaths:
+    - stdout
+  errorOutputPaths:
+    - stderr
+  level: DEBUG
+  encoding: json
 `
 )

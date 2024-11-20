@@ -130,7 +130,7 @@ func (u Unmarshal) Provide(in ServerIn) (*mux.Router, error) {
 		otelmux.WithTracerProvider(in.Tracing.TracerProvider()),
 		otelmux.WithPropagators(in.Tracing.Propagator()),
 	}
-	router.Use(otelmux.Middleware(u.Name, options...), candlelight.EchoFirstTraceNodeInfo(in.Tracing.Propagator()))
+	router.Use(otelmux.Middleware(u.Name, options...), candlelight.EchoFirstTraceNodeInfo(in.Tracing.Propagator(), true))
 	var server = New(
 		o,
 		serverLogger,
