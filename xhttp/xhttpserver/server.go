@@ -53,12 +53,17 @@ type Options struct {
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
 func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) alice.Chain {
 	bs := sallusthttp.Builders{}
+	bs.AddFields(fbs...)
+	bs.Add(sallusthttp.DefaultFields)
+	bs.Add(func(r *http.Request, l *zap.Logger) *zap.Logger {
+		return l.With(zap.String("userAgent", r.UserAgent()))
+	})
+
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
 		Busy{MaxConcurrentRequests: o.MaxConcurrentRequests}.Then,
 	)
 
-	bs.AddFields(fbs...)
 	if !o.DisableTracking {
 		chain = chain.Append(UseTrackingWriter)
 	}
