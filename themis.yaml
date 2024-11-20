@@ -108,8 +108,12 @@ token:
     bits: 1024
 
 log:
-  file: stdout
+  outputPaths:
+    - stdout
+  errorOutputPaths:
+    - stderr
   level: DEBUG
+  encoding: json
 
 # tracing provides configuration around traces using OpenTelemetry.
 # (Optional). By default, a 'noop' tracer provider is used and tracing is disabled.

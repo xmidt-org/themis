@@ -115,7 +115,11 @@ token:
     bits: 1024
 
 log:
-  file: stdout
+  outputPaths:
+    - stdout
+  errorOutputPaths:
+    - stderr
   level: DEBUG
+  encoding: json
 `
 )
