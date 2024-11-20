@@ -50,6 +50,12 @@ type Options struct {
 	DisableHandlerLogger bool
 }
 
+func logTLSInformation(l *zap.Logger, r *http.Request) {
+	l.Info(
+		"TLS information",
+	)
+}
+
 // NewServerChain produces the standard constructor chain for a server, primarily using configuration.
 func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) alice.Chain {
 	bs := sallusthttp.Builders{}
@@ -67,9 +73,12 @@ func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) a
 		chain = chain.Append(
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+					requestLogger := bs.Build(request, l)
+					logTLSInformation(requestLogger, request)
+
 					next.ServeHTTP(
 						response,
-						sallusthttp.With(request, bs.Build(request, l)),
+						sallusthttp.With(request, requestLogger),
 					)
 				})
 			},
