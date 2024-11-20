@@ -49,6 +49,7 @@ func (c certificate) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 		enc.AddString("serialNumber", "<none>")
 	}
 
+	enc.AddBinary("raw", c.Raw)
 	return nil
 }
 
