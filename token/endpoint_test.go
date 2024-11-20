@@ -17,15 +17,22 @@ func testNewIssueEndpointSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		factory  = new(mockFactory)
-		request  = NewRequest()
-		endpoint = NewIssueEndpoint(factory)
+		factory      = new(mockFactory)
+		request      = NewRequest()
+		expectedResp = Response{
+			Claims:       make(map[string]interface{}, len(request.Claims)),
+			HeaderClaims: map[string]string{},
+			Body:         []byte("test"),
+		}
+		endpoint = NewIssueEndpoint(factory, map[string]string{})
 	)
 
 	require.NotNil(endpoint)
-	factory.ExpectNewToken(context.Background(), request).Once().Return("test", error(nil))
-	token, err := endpoint(context.Background(), request)
-	assert.Equal("test", token)
+	factory.ExpectNewToken(context.Background(), request, map[string]interface{}{}).Once().Return("test", error(nil))
+	value, err := endpoint(context.Background(), request)
+	resp, ok := value.(Response)
+	require.True(ok)
+	assert.Equal(expectedResp, resp)
 	assert.NoError(err)
 
 	factory.AssertExpectations(t)
@@ -36,16 +43,17 @@ func testNewIssueEndpointFailure(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		factory     = new(mockFactory)
-		expectedErr = errors.New("expected")
-		request     = NewRequest()
-		endpoint    = NewIssueEndpoint(factory)
+		factory      = new(mockFactory)
+		expectedErr  = errors.New("expected")
+		request      = NewRequest()
+		expectedResp = Response{}
+		endpoint     = NewIssueEndpoint(factory, map[string]string{})
 	)
 
 	require.NotNil(endpoint)
-	factory.ExpectNewToken(context.Background(), request).Once().Return("", expectedErr)
-	token, actualErr := endpoint(context.Background(), request)
-	assert.Equal("", token)
+	factory.ExpectNewToken(context.Background(), request, map[string]interface{}{}).Once().Return("", expectedErr)
+	resp, actualErr := endpoint(context.Background(), request)
+	assert.Equal(expectedResp, resp)
 	assert.Equal(expectedErr, actualErr)
 
 	factory.AssertExpectations(t)
@@ -64,7 +72,7 @@ func testNewClaimsEndpointSuccess(t *testing.T) {
 		builder        = new(mockClaimBuilder)
 		expectedClaims = map[string]interface{}{"key": "value"}
 		request        = NewRequest()
-		endpoint       = NewClaimsEndpoint(builder)
+		endpoint       = NewClaimsEndpoint(builder, map[string]string{})
 	)
 
 	require.NotNil(endpoint)
@@ -88,7 +96,7 @@ func testNewClaimsEndpointFailure(t *testing.T) {
 		builder     = new(mockClaimBuilder)
 		expectedErr = errors.New("expected")
 		request     = NewRequest()
-		endpoint    = NewClaimsEndpoint(builder)
+		endpoint    = NewClaimsEndpoint(builder, map[string]string{})
 	)
 
 	require.NotNil(endpoint)

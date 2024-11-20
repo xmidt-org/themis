@@ -58,11 +58,11 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			ClaimBuilder: cb,
 			Factory:      f,
 			IssueHandler: NewIssueHandler(
-				NewIssueEndpoint(f),
+				NewIssueEndpoint(f, o.HeaderClaims),
 				rb,
 			),
 			ClaimsHandler: NewClaimsHandler(
-				NewClaimsEndpoint(cb),
+				NewClaimsEndpoint(cb, o.HeaderClaims),
 				rb,
 			),
 		}, nil

@@ -328,9 +328,16 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 	}
 }
 
-func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
-	response.Header().Set("Content-Type", "application/jose")
-	_, err := response.Write([]byte(value.(string)))
+func EncodeIssueResponse(_ context.Context, w http.ResponseWriter, value interface{}) error {
+	resp := value.(Response)
+	for k, values := range resp.Headers() {
+		for _, v := range values {
+			w.Header().Set(k, v)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/jose")
+	_, err := w.Write(resp.Body)
 	return err
 }
 

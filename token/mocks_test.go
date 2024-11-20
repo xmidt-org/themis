@@ -12,13 +12,13 @@ type mockFactory struct {
 	mock.Mock
 }
 
-func (m *mockFactory) NewToken(ctx context.Context, r *Request) (string, error) {
-	arguments := m.Called(ctx, r)
+func (m *mockFactory) NewToken(ctx context.Context, r *Request, claims map[string]interface{}) (string, error) {
+	arguments := m.Called(ctx, r, claims)
 	return arguments.String(0), arguments.Error(1)
 }
 
-func (m *mockFactory) ExpectNewToken(ctx context.Context, r *Request) *mock.Call {
-	return m.On("NewToken", ctx, r)
+func (m *mockFactory) ExpectNewToken(ctx context.Context, r *Request, claims map[string]interface{}) *mock.Call {
+	return m.On("NewToken", ctx, r, claims)
 }
 
 type mockClaimBuilder struct {

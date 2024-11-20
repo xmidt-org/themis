@@ -108,6 +108,11 @@ type Options struct {
 	// or statically from configuration.  For special processing around the partner id, set the PartnerID field.
 	Claims []Value
 
+	// HeaderClaims is an optional map of claims-to-headers, where each claim will be attempted to be added as response header.
+	//
+	// Any failures to add claims are silent and does not affect the response.
+	HeaderClaims map[string]string
+
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
 	Metadata []Value
 

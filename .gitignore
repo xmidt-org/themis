@@ -13,6 +13,7 @@ report.json
 # for VSCode
 .vscode/
 .dev/
+__debug_bin*
 
 # for releases
 .ignore/

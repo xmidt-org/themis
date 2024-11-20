@@ -612,7 +612,7 @@ func TestEncodeIssueResponse(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedValue = "expected"
+		expectedValue = Response{Body: []byte("expected")}
 		response      = httptest.NewRecorder()
 	)
 
@@ -621,7 +621,7 @@ func TestEncodeIssueResponse(t *testing.T) {
 	)
 
 	assert.Equal("application/jose", response.Header().Get("Content-Type"))
-	assert.Equal(expectedValue, response.Body.String())
+	assert.Equal(expectedValue.Body, response.Body.Bytes())
 }
 
 func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {

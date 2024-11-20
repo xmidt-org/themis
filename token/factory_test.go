@@ -9,6 +9,7 @@ import (
 
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
+	"github.com/xmidt-org/themis/random/randomtest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,7 +49,7 @@ func testNewFactoryInvalidKeyType(t *testing.T) {
 	assert.Error(err)
 }
 
-func testNewFactorySuccess(t *testing.T) {
+func testNewFactoryWithoutReponseClaimsSuccess(t *testing.T) {
 	var (
 		assert   = assert.New(t)
 		require  = require.New(t)
@@ -72,13 +73,46 @@ func testNewFactorySuccess(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(factory)
 
-	token, err := factory.NewToken(context.Background(), new(Request))
+	token, err := factory.NewToken(context.Background(), new(Request), nil)
 	require.NoError(err)
 	assert.True(len(token) > 0)
+}
+
+func testNewFactoryWithReponseClaimsSuccess(t *testing.T) {
+	var (
+		assert         = assert.New(t)
+		require        = require.New(t)
+		registry       = key.NewRegistry(rand.Reader)
+		noncer         = new(randomtest.Noncer)
+		expectedClaims = map[string]interface{}{"jti": "deadbeef"}
+		cb             = ClaimBuilders{
+			nonceClaimBuilder{n: noncer},
+		}
+	)
+
+	noncer.ExpectNonce().Return("deadbeef", error(nil)).Once()
+	factory, err := NewFactory(Options{
+		Alg: "RS256",
+		Key: key.Descriptor{
+			Kid:  "test",
+			Bits: 512,
+		},
+		Nonce: true,
+	}, cb, registry)
+
+	require.NoError(err)
+	require.NotNil(factory)
+
+	resp := Response{Claims: make(map[string]interface{})}
+	token, err := factory.NewToken(context.Background(), new(Request), resp.Claims)
+	require.NoError(err)
+	assert.True(len(token) > 0)
+	assert.Equal(expectedClaims, resp.Claims)
 }
 
 func TestNewFactory(t *testing.T) {
 	t.Run("InvalidAlg", testNewFactoryInvalidAlg)
 	t.Run("InvalidKeyType", testNewFactoryInvalidKeyType)
-	t.Run("Success", testNewFactorySuccess)
+	t.Run("WithoutReponseClaims Success", testNewFactoryWithoutReponseClaimsSuccess)
+	t.Run("WithReponseClaims Success", testNewFactoryWithReponseClaimsSuccess)
 }

@@ -51,7 +51,7 @@ func NewRequest() *Request {
 // Factory is a creation strategy for signed JWT tokens
 type Factory interface {
 	// NewToken uses a Request to produce a signed JWT token
-	NewToken(context.Context, *Request) (string, error)
+	NewToken(context.Context, *Request, map[string]interface{}) (string, error)
 }
 
 type factory struct {
@@ -62,13 +62,18 @@ type factory struct {
 	pair atomic.Value
 }
 
-func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
-	merged := make(map[string]interface{}, len(r.Claims))
-	if err := f.claimBuilder.AddClaims(ctx, r, merged); err != nil {
+// NewToken returns a token based on a given request.
+func (f *factory) NewToken(ctx context.Context, r *Request, claims map[string]interface{}) (string, error) {
+	// claims will be non nil when responses need to access them.
+	if claims == nil {
+		claims = make(map[string]interface{}, len(r.Claims))
+	}
+
+	if err := f.claimBuilder.AddClaims(ctx, r, claims); err != nil {
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(f.method, jwt.MapClaims(merged))
+	token := jwt.NewWithClaims(f.method, jwt.MapClaims(claims))
 	pair := f.pair.Load().(key.Pair)
 	token.Header["kid"] = pair.KID()
 	return token.SignedString(pair.Sign())

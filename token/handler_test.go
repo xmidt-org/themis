@@ -15,20 +15,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewIssueHandler(t *testing.T) {
+func TestNewIssueHandlerWithoutClaimHeaders(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
 
 		endpoint = endpoint.Endpoint(func(_ context.Context, v interface{}) (interface{}, error) {
-			var output bytes.Buffer
+			var (
+				resp   = Response{}
+				output bytes.Buffer
+			)
 			output.WriteString("endpoint=run")
 			for key, value := range v.(*Request).Claims {
 				output.WriteRune(',')
 				fmt.Fprintf(&output, "%s=%s", key, value)
 			}
 
-			return output.String(), nil
+			resp.Body = output.Bytes()
+
+			return resp, nil
 		})
 
 		builders = RequestBuilders{
@@ -47,6 +52,52 @@ func TestNewIssueHandler(t *testing.T) {
 	request.Header.Set("Claim", "fromHeader")
 	handler.ServeHTTP(response, request)
 	assert.Equal("application/jose", response.Header().Get("Content-Type"))
+	assert.Empty(response.Header().Get("claim"))
+	assert.Equal("endpoint=run,claim=fromHeader", response.Body.String())
+}
+
+func TestNewIssueHandlerWithClaimHeaders(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		endpoint = endpoint.Endpoint(func(_ context.Context, v interface{}) (interface{}, error) {
+			var (
+				resp = Response{
+					Claims:       make(map[string]interface{}),
+					HeaderClaims: map[string]string{"claim": "HeaderClaim"},
+				}
+				output bytes.Buffer
+			)
+			output.WriteString("endpoint=run")
+			for key, value := range v.(*Request).Claims {
+				output.WriteRune(',')
+				fmt.Fprintf(&output, "%s=%s", key, value)
+				resp.Claims[key] = value
+			}
+
+			resp.Body = output.Bytes()
+
+			return resp, nil
+		})
+
+		builders = RequestBuilders{
+			RequestBuilderFunc(func(original *http.Request, r *Request) error {
+				r.Claims["claim"] = original.Header.Get("Claim")
+				return nil
+			}),
+		}
+
+		handler  = NewIssueHandler(endpoint, builders)
+		response = httptest.NewRecorder()
+		request  = httptest.NewRequest("POST", "/", nil)
+	)
+
+	require.NotNil(handler)
+	request.Header.Set("Claim", "fromHeader")
+	handler.ServeHTTP(response, request)
+	assert.Equal("application/jose", response.Header().Get("Content-Type"))
+	assert.Equal("fromHeader", response.Header().Get("HeaderClaim"))
 	assert.Equal("endpoint=run,claim=fromHeader", response.Body.String())
 }
 
