@@ -4,7 +4,6 @@ package token
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -179,38 +178,15 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
 }
 
-// enforcePeerCertificate is a ClaimsBuilderFunc that overrides trust as necessary
-// given the TLS peer certificates (if any)
+// enforcePeerCertificate sets a trust of 1000 if and only if at least (1) peer certificate
+// was supplied.
 func enforcePeerCertificate(_ context.Context, r *Request, target map[string]interface{}) error {
-	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+	if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
+		target[ClaimTrust] = 1000
+	} else {
 		target[ClaimTrust] = 0
 	}
 
-	return nil
-}
-
-// verifyPeerChain verifies that any peer certificate has a certificate in the system
-// bundle as part of its chain.
-func verifyPeerChain(_ context.Context, r *Request, target map[string]interface{}) error {
-	if r.TLS == nil {
-		return nil // still support non-TLS use cases
-	}
-
-	vo := x509.VerifyOptions{
-		KeyUsages: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageClientAuth,
-		},
-	}
-
-	for _, pc := range r.TLS.PeerCertificates {
-		if _, err := pc.Verify(vo); err == nil {
-			// at least (1) cert passed, so we can stop
-			return nil
-		}
-	}
-
-	// no certificates were part of any CA chain that we trust
-	target[ClaimTrust] = 0
 	return nil
 }
 
@@ -220,7 +196,7 @@ func verifyPeerChain(_ context.Context, r *Request, target map[string]interface{
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
 func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
-	var ( // at a minimum, the claims from the request will be copied
+	var (
 		builders           = ClaimBuilders{requestClaimBuilder{}}
 		staticClaimBuilder = make(staticClaimBuilder)
 	)
@@ -295,7 +271,6 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	builders = append(
 		builders,
 		ClaimBuilderFunc(enforcePeerCertificate),
-		ClaimBuilderFunc(verifyPeerChain),
 	)
 
 	return builders, nil
