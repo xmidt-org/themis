@@ -178,8 +178,8 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 
 		c   Interface
 		app = fx.New(
+			fx.NopLogger,
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 							{
@@ -205,8 +205,8 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		expectedErr = errors.New("expected chain factory error")
 
 		app = fx.New(
+			fx.NopLogger,
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				sallust.Default(),
 				config.ProvideViper(
 					config.Json(`

@@ -12,6 +12,7 @@ report.json
 
 # for VSCode
 .vscode/
+.dev/
 
 # for releases
 .ignore/

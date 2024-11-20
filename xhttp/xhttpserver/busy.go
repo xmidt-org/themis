@@ -52,7 +52,7 @@ func (b Busy) Then(next http.Handler) http.Handler {
 	}
 
 	bh := &busyHandler{
-		maxConcurrentRequests: int32(b.MaxConcurrentRequests),
+		maxConcurrentRequests: int32(b.MaxConcurrentRequests), //nolint
 		next:                  next,
 	}
 

@@ -20,11 +20,12 @@ on:
 
 jobs:
   ci:
-    uses: xmidt-org/shared-go/.github/workflows/ci.yml@3bef4e75bb010c08cf96c3dee60f126a220b8073 # v4.3.2
+    uses: xmidt-org/shared-go/.github/workflows/ci.yml@59f5d322b0ee953245334530336f8e6503cacb65 # v4.4.27
     with:
       release-type:          program
       release-docker:        false
       release-docker-latest: false
       release-docker-major:  false
       release-docker-minor:  false
+      yaml-lint-skip:        false
     secrets: inherit

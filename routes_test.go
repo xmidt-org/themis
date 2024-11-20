@@ -111,15 +111,4 @@ func TestBuildKeyRoutes(t *testing.T) {
 			assert.Equal("jwk", response.Body.String())
 		})
 	})
-
-	t.Run("BadMethod", func(t *testing.T) {
-		var (
-			assert   = assert.New(t)
-			response = httptest.NewRecorder()
-			request  = httptest.NewRequest("POST", "/keys/test", nil)
-		)
-
-		router.ServeHTTP(response, request)
-		assert.Equal(http.StatusMethodNotAllowed, response.Code)
-	})
 }

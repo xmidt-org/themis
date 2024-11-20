@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
@@ -208,6 +209,15 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 	return nil
 }
 
+// setConnectionState sets the tls.ConnectionState for the given request.
+func setConnectionState(original *http.Request, tr *Request) error {
+	if original.TLS != nil {
+		tr.TLS = original.TLS
+	}
+
+	return nil
+}
+
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
 // and metadata that are HTTP-based are included in the results.  Claims and metadata that are statically
 // assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
@@ -217,10 +227,12 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
+
 		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
+
 			rb = append(rb,
 				headerParameterRequestBuilder{
 					key:       value.Key,
@@ -229,6 +241,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					setter:    claimsSetter,
 				},
 			)
+
 		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
@@ -238,14 +251,17 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			)
 		}
 	}
+
 	for _, value := range o.Metadata {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
+
 		case len(value.Header) > 0 || len(value.Parameter) > 0:
 			if len(value.Variable) > 0 {
 				return nil, ErrVariableNotAllowed
 			}
+
 			rb = append(rb,
 				headerParameterRequestBuilder{
 					key:       value.Key,
@@ -254,6 +270,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 					setter:    metadataSetter,
 				},
 			)
+
 		case len(value.Variable) > 0:
 			rb = append(rb,
 				variableRequestBuilder{
@@ -264,6 +281,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			)
 		}
 	}
+
 	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
 		rb = append(rb,
 			partnerIDRequestBuilder{
@@ -271,6 +289,12 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 			},
 		)
 	}
+
+	rb = append(
+		rb,
+		RequestBuilderFunc(setConnectionState),
+	)
+
 	return rb, nil
 }
 
@@ -281,6 +305,7 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 		return nil, err
 	}
 
+	tr.Logger = sallust.Get(original.Context())
 	return tr, nil
 }
 
@@ -298,6 +323,7 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 			return nil, err
 		}
 
+		tr.Logger = sallust.Get(ctx)
 		return tr, nil
 	}
 }

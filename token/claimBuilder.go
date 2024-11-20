@@ -4,6 +4,7 @@ package token
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,6 +16,12 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
+)
+
+const (
+	// ClaimTrust is the name of the trust value within JWT claims issued
+	// by themis. This claim will be overridden based upon TLS connection state.
+	ClaimTrust = "trust"
 )
 
 var (
@@ -172,6 +179,41 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
 }
 
+// enforcePeerCertificate is a ClaimsBuilderFunc that overrides trust as necessary
+// given the TLS peer certificates (if any)
+func enforcePeerCertificate(_ context.Context, r *Request, target map[string]interface{}) error {
+	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+		target[ClaimTrust] = 0
+	}
+
+	return nil
+}
+
+// verifyPeerChain verifies that any peer certificate has a certificate in the system
+// bundle as part of its chain.
+func verifyPeerChain(_ context.Context, r *Request, target map[string]interface{}) error {
+	if r.TLS == nil {
+		return nil // still support non-TLS use cases
+	}
+
+	vo := x509.VerifyOptions{
+		KeyUsages: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+		},
+	}
+
+	for _, pc := range r.TLS.PeerCertificates {
+		if _, err := pc.Verify(vo); err == nil {
+			// at least (1) cert passed, so we can stop
+			return nil
+		}
+	}
+
+	// no certificates were part of any CA chain that we trust
+	target[ClaimTrust] = 0
+	return nil
+}
+
 // NewClaimBuilders constructs a ClaimBuilders from configuration.  The returned instance is typically
 // used in configuration a token Factory.  It can be used as a standalone service component with an endpoint.
 //
@@ -182,6 +224,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		builders           = ClaimBuilders{requestClaimBuilder{}}
 		staticClaimBuilder = make(staticClaimBuilder)
 	)
+
 	if o.Remote != nil { // scan the metadata looking for static values that should be applied when invoking the remote server
 		metadata := make(map[string]interface{})
 		for _, value := range o.Metadata {
@@ -200,34 +243,44 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 				metadata[value.Key] = msg
 			}
 		}
+
 		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
 		if err != nil {
 			return nil, err
 		}
+
 		builders = append(builders, remoteClaimBuilder)
 	}
+
 	for _, value := range o.Claims {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
+
 		case value.IsFromHTTP():
 			continue
+
 		case !value.IsStatic():
 			return nil, fmt.Errorf("A value is required for the static claim: %s", value.Key)
+
 		default:
 			msg, err := value.RawMessage()
 			if err != nil {
 				return nil, err
 			}
+
 			staticClaimBuilder[value.Key] = msg
 		}
 	}
+
 	if len(staticClaimBuilder) > 0 {
 		builders = append(builders, staticClaimBuilder)
 	}
+
 	if o.Nonce && n != nil {
 		builders = append(builders, nonceClaimBuilder{n: n})
 	}
+
 	if !o.DisableTime {
 		builders = append(
 			builders,
@@ -238,5 +291,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 				notBeforeDelta:   o.NotBeforeDelta,
 			})
 	}
+
+	builders = append(
+		builders,
+		ClaimBuilderFunc(enforcePeerCertificate),
+		ClaimBuilderFunc(verifyPeerChain),
+	)
+
 	return builders, nil
 }

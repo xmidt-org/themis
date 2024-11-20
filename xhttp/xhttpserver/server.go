@@ -67,9 +67,15 @@ func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) a
 		chain = chain.Append(
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+					requestLogger := bs.Build(request, l)
+					requestLogger.Info(
+						"tls info",
+						connectionStateField("state", request.TLS),
+					)
+
 					next.ServeHTTP(
 						response,
-						sallusthttp.With(request, bs.Build(request, l)),
+						sallusthttp.With(request, requestLogger),
 					)
 				})
 			},

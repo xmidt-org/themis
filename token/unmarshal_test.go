@@ -5,7 +5,6 @@ package token
 import (
 	"testing"
 
-	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 
@@ -21,8 +20,8 @@ func testUnmarshalError(t *testing.T) {
 	)
 
 	app := fx.New(
+		fx.NopLogger,
 		fx.Provide(
-			fx.Logger(sallust.Printer{}),
 			config.ProvideViper(
 				config.Json(`
 					{
@@ -48,8 +47,8 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 		factory Factory
 
 		app = fx.New(
+			fx.NopLogger,
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -83,8 +82,8 @@ func testUnmarshalFactoryError(t *testing.T) {
 		factory Factory
 
 		app = fx.New(
+			fx.NopLogger,
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -111,8 +110,8 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 		factory Factory
 
 		app = fx.New(
+			fx.NopLogger,
 			fx.Provide(
-				fx.Logger(sallust.Printer{}),
 				config.ProvideViper(
 					config.Json(`
 						{
