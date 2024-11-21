@@ -32,7 +32,7 @@ func ReadCertPool(path string) (cp *x509.CertPool, err error) {
 // Mtls configures the mutual TLS settings for a tls.Config.
 type Mtls struct {
 	ClientCACertificateFile string
-	DisableRequired         bool
+	DisableRequire          bool
 	DisableVerify           bool
 }
 
@@ -54,16 +54,16 @@ func configureMtls(tc *tls.Config, mtls *Mtls) (err error) {
 	}
 
 	switch {
-	case mtls.DisableRequired && mtls.DisableVerify:
+	case mtls.DisableRequire && mtls.DisableVerify:
 		tc.ClientAuth = tls.RequestClientCert
 
-	case !mtls.DisableRequired && mtls.DisableVerify:
+	case !mtls.DisableRequire && mtls.DisableVerify:
 		tc.ClientAuth = tls.RequireAnyClientCert
 
-	case mtls.DisableRequired && !mtls.DisableVerify:
+	case mtls.DisableRequire && !mtls.DisableVerify:
 		tc.ClientAuth = tls.VerifyClientCertIfGiven
 
-	case !mtls.DisableRequired && !mtls.DisableVerify:
+	case !mtls.DisableRequire && !mtls.DisableVerify:
 		tc.ClientAuth = tls.RequireAndVerifyClientCert
 	}
 

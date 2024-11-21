@@ -5,10 +5,8 @@ package xhttpserver
 import (
 	"bufio"
 	"context"
-	"crypto/x509"
 	"net"
 	"net/http"
-	"testing"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -122,27 +120,4 @@ func (m *mockServer) Shutdown(ctx context.Context) error {
 
 func (m *mockServer) ExpectShutdown(p ...interface{}) *mock.Call {
 	return m.On("Shutdown", p...)
-}
-
-func newCertificateMatcher(t *testing.T, commonName string, dnsNames ...string) func(*x509.Certificate) bool {
-	return func(actual *x509.Certificate) bool {
-		t.Logf("Testing cert: Subject.CommonName=%s, DNSNames=%s", actual.Subject.CommonName, actual.DNSNames)
-
-		switch {
-		case commonName != actual.Subject.CommonName:
-			return false
-
-		case len(dnsNames) != len(actual.DNSNames):
-			return false
-
-		default:
-			for i := 0; i < len(dnsNames); i++ {
-				if dnsNames[i] != actual.DNSNames[i] {
-					return false
-				}
-			}
-		}
-
-		return true
-	}
 }

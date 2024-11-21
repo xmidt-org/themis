@@ -5,11 +5,55 @@ package xhttpserver
 import (
 	"crypto/tls"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestConfigureMtls(t *testing.T) {
+	testCases := []struct {
+		Mtls     *Mtls
+		Expected tls.ClientAuthType
+	}{
+		{
+			Mtls:     nil,
+			Expected: tls.NoClientCert,
+		},
+		{
+			Mtls:     &Mtls{},
+			Expected: tls.RequireAndVerifyClientCert,
+		},
+		{
+			Mtls: &Mtls{
+				DisableRequire: true,
+			},
+			Expected: tls.VerifyClientCertIfGiven,
+		},
+		{
+			Mtls: &Mtls{
+				DisableVerify: true,
+			},
+			Expected: tls.RequireAnyClientCert,
+		},
+		{
+			Mtls: &Mtls{
+				DisableRequire: true,
+				DisableVerify:  true,
+			},
+			Expected: tls.RequestClientCert,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var tc tls.Config
+			configureMtls(&tc, testCase.Mtls)
+			assert.Equal(t, testCase.Expected, tc.ClientAuth)
+		})
+	}
+}
 
 func testNewTlsConfigNil(t *testing.T) {
 	assert := assert.New(t)
