@@ -4,6 +4,7 @@ package token
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/xmidt-org/themis/random"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
+	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -178,16 +180,75 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
 }
 
-// enforcePeerCertificate sets a trust of 1000 if and only if at least (1) peer certificate
-// was supplied.
-func enforcePeerCertificate(_ context.Context, r *Request, target map[string]interface{}) error {
-	if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
-		target[ClaimTrust] = 1000
-	} else {
-		target[ClaimTrust] = 0
+func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertificateClaimBuilder, err error) {
+	if cc == nil {
+		return
 	}
 
-	return nil
+	cb = &clientCertificateClaimBuilder{
+		trust: cc.Trust,
+	}
+
+	if len(cc.RootCAFile) > 0 {
+		cb.roots, err = xhttpserver.ReadCertPool(cc.RootCAFile)
+	}
+
+	if err == nil && len(cc.IntermediatesFile) > 0 {
+		cb.intermediates, err = xhttpserver.ReadCertPool(cc.IntermediatesFile)
+	}
+
+	return
+}
+
+type clientCertificateClaimBuilder struct {
+	roots         *x509.CertPool
+	intermediates *x509.CertPool
+	trust         Trust
+}
+
+func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
+	// first case: this didn't come from a TLS connection, or it did but the client gave no certificates
+	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+		target[ClaimTrust] = cb.trust.NoCertificates
+		return
+	}
+
+	now := time.Now()
+	for i, pc := range r.TLS.PeerCertificates {
+		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
+			// the TLS layer already verified this certificate, so we're done
+			target[ClaimTrust] = cb.trust.Trusted
+			return
+		}
+
+		// special logic around expired certificates
+		expired := now.After(pc.NotAfter)
+		vo := x509.VerifyOptions{
+			// always set the current time so that we disambiguate expired
+			// from untrusted.
+			CurrentTime:   pc.NotAfter.Add(-time.Second),
+			Roots:         cb.roots,
+			Intermediates: cb.intermediates,
+		}
+
+		_, verifyErr := pc.Verify(vo)
+
+		switch {
+		case expired && verifyErr != nil:
+			target[ClaimTrust] = cb.trust.ExpiredUntrusted
+
+		case !expired && verifyErr != nil:
+			target[ClaimTrust] = cb.trust.Untrusted
+
+		case expired && verifyErr == nil:
+			target[ClaimTrust] = cb.trust.ExpiredTrusted
+
+		case !expired && verifyErr == nil:
+			target[ClaimTrust] = cb.trust.Trusted
+		}
+	}
+
+	return
 }
 
 // NewClaimBuilders constructs a ClaimBuilders from configuration.  The returned instance is typically
@@ -268,10 +329,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			})
 	}
 
-	builders = append(
-		builders,
-		ClaimBuilderFunc(enforcePeerCertificate),
-	)
+	if cb, err := newClientCertificateClaimBuiler(o.ClientCertificates); cb != nil && err == nil {
+		builders = append(
+			builders,
+			cb,
+		)
+	}
 
 	return builders, nil
 }

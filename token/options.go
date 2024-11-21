@@ -93,10 +93,54 @@ type PartnerID struct {
 	Default string
 }
 
+// Trust describes the various levels of trust based upon client
+// certificate state.
+type Trust struct {
+	// NoCertificates is the trust level to set when no client certificates are present.
+	// This value has no default. If unset, the trust value is zero (0).
+	NoCertificates int
+
+	// ExpiredUntrusted is the trust level to set when a certificate has both expired
+	// and is within an CA chain that we do not trust.
+	ExpiredUntrusted int
+
+	// ExpiredTrusted is the trust level to set when a certificate has both expired
+	// and IS within a trusted CA chain.
+	ExpiredTrusted int
+
+	// Untrusted is the trust level to set when a client has an otherwise valid
+	// certificate, but that certificate is part of an untrusted chain.
+	Untrusted int
+
+	// Trusted is the trust level to set when a client certificate is part of
+	// a trusted CA chain.
+	Trusted int
+}
+
+// ClientCertificates describes how peer certificates are to be handled when
+// it comes to issuing tokens.
+type ClientCertificates struct {
+	// RootCAFile is the PEM bundle of certificates used for client certificate verification.
+	// If unset, the system verifier and/or bundle is used.
+	RootCAFile string
+
+	// IntermediatesFile is the PEM bundle of certificates used for client certificate verification.
+	// If unset, no intermediary certificates are considered.
+	IntermediatesFile string
+
+	// Trust defines the trust levels to set for various situations involving
+	// client certificates.
+	Trust Trust
+}
+
 // Options holds the configurable information for a token Factory
 type Options struct {
 	// Alg is the required JWT signing algorithm to use
 	Alg string
+
+	// ClientCertificates describes how peer certificates affect the issued tokens.
+	// If unset, client certificates are not considered when issuing tokens.
+	ClientCertificates *ClientCertificates
 
 	// Key describes the signing key to use
 	Key key.Descriptor
