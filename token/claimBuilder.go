@@ -206,17 +206,19 @@ type clientCertificateClaimBuilder struct {
 	trust         Trust
 }
 
-func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
-	// first case: this didn't come from a TLS connection, or it did but the client gave no certificates
+func (cb *clientCertificateClaimBuilder) getTrust(r *Request, target map[string]interface{}) (err error) {
+	// simplest case: this didn't come from a TLS connection, or it did but the client gave no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		target[ClaimTrust] = cb.trust.NoCertificates
 		return
 	}
 
 	now := time.Now()
+	var trust int
 	for i, pc := range r.TLS.PeerCertificates {
 		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
 			// the TLS layer already verified this certificate, so we're done
+			// we assume Trusted is the highest trust level
 			target[ClaimTrust] = cb.trust.Trusted
 			return
 		}
@@ -235,19 +237,29 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		switch {
 		case expired && verifyErr != nil:
-			target[ClaimTrust] = cb.trust.ExpiredUntrusted
+			if trust < cb.trust.ExpiredUntrusted {
+				trust = cb.trust.ExpiredUntrusted
+			}
 
 		case !expired && verifyErr != nil:
-			target[ClaimTrust] = cb.trust.Untrusted
+			if trust < cb.trust.Untrusted {
+				trust = cb.trust.Untrusted
+			}
 
 		case expired && verifyErr == nil:
-			target[ClaimTrust] = cb.trust.ExpiredTrusted
+			if trust < cb.trust.ExpiredTrusted {
+				trust = cb.trust.ExpiredTrusted
+			}
 
 		case !expired && verifyErr == nil:
+			// we assume Trusted is the highest trust level
 			target[ClaimTrust] = cb.trust.Trusted
+			return
 		}
 	}
 
+	// take the highest, non-Trusted level
+	target[ClaimTrust] = trust
 	return
 }
 
