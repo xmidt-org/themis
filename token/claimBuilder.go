@@ -186,7 +186,7 @@ func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertific
 	}
 
 	cb = &clientCertificateClaimBuilder{
-		trust: cc.Trust,
+		trust: cc.Trust.enforceDefaults(),
 	}
 
 	if len(cc.RootCAFile) > 0 {
@@ -206,7 +206,7 @@ type clientCertificateClaimBuilder struct {
 	trust         Trust
 }
 
-func (cb *clientCertificateClaimBuilder) getTrust(r *Request, target map[string]interface{}) (err error) {
+func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
 	// simplest case: this didn't come from a TLS connection, or it did but the client gave no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		target[ClaimTrust] = cb.trust.NoCertificates

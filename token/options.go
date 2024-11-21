@@ -9,6 +9,14 @@ import (
 	"github.com/xmidt-org/themis/key"
 )
 
+const (
+	DefaultTrustLevelNoCertificates   = 0
+	DefaultTrustLevelExpiredUntrusted = 100
+	DefaultTrustLevelExpiredTrusted   = 1000
+	DefaultTrustLevelUntrusted        = 1000
+	DefaultTrustLevelTrusted          = 1000
+)
+
 // RemoteClaims describes a remote HTTP endpoint that can produce claims given the
 // metadata from a token request.
 type RemoteClaims struct {
@@ -97,24 +105,59 @@ type PartnerID struct {
 // certificate state.
 type Trust struct {
 	// NoCertificates is the trust level to set when no client certificates are present.
-	// This value has no default. If unset, the trust value is zero (0).
+	// If unset, DefaultTrustLevelNoCertificates is used.
 	NoCertificates int
 
 	// ExpiredUntrusted is the trust level to set when a certificate has both expired
 	// and is within an CA chain that we do not trust.
+	//
+	// If unset, DefaultTrustLevelExpiredTrusted is used.
 	ExpiredUntrusted int
 
 	// ExpiredTrusted is the trust level to set when a certificate has both expired
 	// and IS within a trusted CA chain.
+	//
+	// If unset, DefaultTrustLevelExpiredTrusted is used.
 	ExpiredTrusted int
 
 	// Untrusted is the trust level to set when a client has an otherwise valid
 	// certificate, but that certificate is part of an untrusted chain.
+	//
+	// If unset, DefaultTrustLevelUntrusted is used.
 	Untrusted int
 
 	// Trusted is the trust level to set when a client certificate is part of
+	//
+	// If unset, DefaultTrustLevelTrusted is used.
 	// a trusted CA chain.
 	Trusted int
+}
+
+// enforceDefaults returns a Trust that has ensures any unset values are
+// set to their defaults.
+func (t Trust) enforceDefaults() (other Trust) {
+	other = t
+	if other.NoCertificates <= 0 {
+		other.NoCertificates = DefaultTrustLevelNoCertificates
+	}
+
+	if other.ExpiredUntrusted <= 0 {
+		other.ExpiredUntrusted = DefaultTrustLevelExpiredUntrusted
+	}
+
+	if other.ExpiredTrusted <= 0 {
+		other.ExpiredTrusted = DefaultTrustLevelExpiredTrusted
+	}
+
+	if other.Untrusted <= 0 {
+		other.Untrusted = DefaultTrustLevelUntrusted
+	}
+
+	if other.Trusted <= 0 {
+		other.Trusted = DefaultTrustLevelTrusted
+	}
+
+	return
 }
 
 // ClientCertificates describes how peer certificates are to be handled when
@@ -122,6 +165,8 @@ type Trust struct {
 type ClientCertificates struct {
 	// RootCAFile is the PEM bundle of certificates used for client certificate verification.
 	// If unset, the system verifier and/or bundle is used.
+	//
+	// Generally, this value should be the same as the the mtls.clientCACertificateFile.
 	RootCAFile string
 
 	// IntermediatesFile is the PEM bundle of certificates used for client certificate verification.
