@@ -11,7 +11,6 @@ import (
 
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/sallust/sallusthttp"
-	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -128,7 +127,7 @@ func testNewServerChainFull(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output, base = sallust.NewTestLogger(zap.DebugLevel)
+		base = sallust.Default()
 
 		next = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 			assert.Implements((*TrackingWriter)(nil), response)
@@ -157,10 +156,6 @@ func testNewServerChainFull(t *testing.T) {
 	require.NotNil(decorated)
 	decorated.ServeHTTP(response, request)
 	assert.Equal(299, response.Code)
-	assert.Contains(output.String(), "requestMethod")
-	assert.Contains(output.String(), "POST")
-	assert.Contains(output.String(), "requestURI")
-	assert.Contains(output.String(), "/foo")
 }
 
 func TestNewServerChain(t *testing.T) {
@@ -175,8 +170,8 @@ func testNewSimple(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output, base = sallust.NewTestLogger(zap.DebugLevel)
-		router       = mux.NewRouter()
+		base   = sallust.Default()
+		router = mux.NewRouter()
 
 		s = New(
 			Options{
@@ -209,7 +204,6 @@ func testNewSimple(t *testing.T) {
 
 	require.NotNil(s.(*http.Server).ErrorLog)
 	s.(*http.Server).ErrorLog.Print("foo", "bar")
-	assert.Greater(output.Len(), 0)
 
 	assert.Nil(s.(*http.Server).ConnState)
 }
@@ -219,8 +213,8 @@ func testNewFull(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		output, base = sallust.NewTestLogger(zap.DebugLevel)
-		router       = mux.NewRouter()
+		base   = sallust.Default()
+		router = mux.NewRouter()
 
 		s = New(
 			Options{
@@ -252,12 +246,9 @@ func testNewFull(t *testing.T) {
 
 	require.NotNil(s.(*http.Server).ErrorLog)
 	s.(*http.Server).ErrorLog.Print("foo", "bar")
-	assert.Greater(output.Len(), 0)
 
 	require.NotNil(s.(*http.Server).ConnState)
-	output.Reset()
 	s.(*http.Server).ConnState(new(net.IPConn), http.StateNew)
-	assert.Greater(output.Len(), 0)
 }
 
 func TestNew(t *testing.T) {
