@@ -21,7 +21,7 @@ import (
 
 const (
 	// ClaimTrust is the name of the trust value within JWT claims issued
-	// by themis. This claim will be overridden based upon TLS connection state.
+	// by themis. This claim will be written based upon TLS connection state.
 	ClaimTrust = "trust"
 )
 
@@ -180,14 +180,17 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
 }
 
+// newClientCertificateClaimBuiler creates a claim builder that sets trust based
+// on client certificates.  This functional always returns a non-nil claimbuilder.
+// Regular HTTP always results in a NoCertificates trust level.
 func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertificateClaimBuilder, err error) {
+	cb = new(clientCertificateClaimBuilder)
 	if cc == nil {
+		cb.trust = Trust{}.enforceDefaults()
 		return
 	}
 
-	cb = &clientCertificateClaimBuilder{
-		trust: cc.Trust.enforceDefaults(),
-	}
+	cb.trust = cc.Trust.enforceDefaults()
 
 	if len(cc.RootCAFile) > 0 {
 		cb.roots, err = xhttpserver.ReadCertPool(cc.RootCAFile)
@@ -207,7 +210,8 @@ type clientCertificateClaimBuilder struct {
 }
 
 func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
-	// simplest case: this didn't come from a TLS connection, or it did but the client gave no certificates
+	// simplest case: this request either (1) didn't come from a TLS connection,
+	// or (2) the client sent no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		target[ClaimTrust] = cb.trust.NoCertificates
 		return
@@ -341,7 +345,8 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			})
 	}
 
-	if cb, err := newClientCertificateClaimBuiler(o.ClientCertificates); cb != nil && err == nil {
+	// NOTE: newClientCertificateClaimBuiler always returns a non-nil builder
+	if cb, err := newClientCertificateClaimBuiler(o.ClientCertificates); err == nil {
 		builders = append(
 			builders,
 			cb,
