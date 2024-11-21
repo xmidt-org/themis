@@ -9,6 +9,7 @@ import (
 
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,7 +73,7 @@ func testNewFactorySuccess(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(factory)
 
-	token, err := factory.NewToken(context.Background(), new(Request))
+	token, err := factory.NewToken(context.Background(), &Request{Logger: zap.NewNop()})
 	require.NoError(err)
 	assert.True(len(token) > 0)
 }
