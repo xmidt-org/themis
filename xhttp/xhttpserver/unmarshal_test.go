@@ -43,6 +43,7 @@ func testUnmarshalProvideFull(t *testing.T) {
 
 		router *mux.Router
 		app    = fxtest.New(t,
+			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
 				config.ProvideViper(
@@ -94,6 +95,7 @@ func testUnmarshalProvideOptional(t *testing.T) {
 
 		router *mux.Router
 		app    = fxtest.New(t,
+			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
 				config.ProvideViper(),
@@ -225,8 +227,9 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 
 		router *mux.Router
 		app    = fxtest.New(t,
-			fx.Supply(sallust.Default()),
+			fx.NopLogger,
 			fx.Provide(
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
@@ -291,6 +294,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 
 		router *mux.Router
 		app    = fxtest.New(t,
+			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
 				config.ProvideViper(
