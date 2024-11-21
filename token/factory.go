@@ -68,6 +68,7 @@ func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
 		return "", err
 	}
 
+	r.Logger.Info("new token", zap.Any("trust", merged[ClaimTrust]))
 	token := jwt.NewWithClaims(f.method, jwt.MapClaims(merged))
 	pair := f.pair.Load().(key.Pair)
 	token.Header["kid"] = pair.KID()

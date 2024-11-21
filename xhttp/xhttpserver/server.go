@@ -58,6 +58,9 @@ func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) a
 	bs.Add(func(r *http.Request, l *zap.Logger) *zap.Logger {
 		return l.With(zap.String("userAgent", r.UserAgent()))
 	})
+	bs.Add(func(r *http.Request, l *zap.Logger) *zap.Logger {
+		return l.With(connectionStateField("state", r.TLS))
+	})
 
 	chain := alice.New(
 		ResponseHeaders{Header: o.Header}.Then,
@@ -73,10 +76,7 @@ func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) a
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 					requestLogger := bs.Build(request, l)
-					requestLogger.Info(
-						"tls info",
-						connectionStateField("state", request.TLS),
-					)
+					requestLogger.Info("request received")
 
 					next.ServeHTTP(
 						response,
