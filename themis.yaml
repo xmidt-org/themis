@@ -60,6 +60,18 @@ token:
   nonce: true
   notBeforeDelta: -15s
   duration: 24h
+  clientCertificates:
+    # rootCAFile: "/path/to/bundle.pem"
+    # intermediatesFile: "/path/to/bundle.pem"
+    trust:
+      # these trust values are just to illustrate what you can do
+      # they are unique, so locally you can easily tell which case happened
+      noCertificates: 10
+      expiredUntrusted: 100
+      expiredTrusted: 200
+      untrusted: 900
+      trusted: 1000
+
   claims:
     - key: mac
       header: X-Midt-Mac-Address
