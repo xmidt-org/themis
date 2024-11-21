@@ -146,28 +146,3 @@ func newCertificateMatcher(t *testing.T, commonName string, dnsNames ...string) 
 		return true
 	}
 }
-
-type mockPeerVerifier struct {
-	mock.Mock
-}
-
-func (m *mockPeerVerifier) Verify(peerCert *x509.Certificate, verifiedChains [][]*x509.Certificate) error {
-	return m.Called(peerCert, verifiedChains).Error(0)
-}
-
-// ExpectVerify sets up the a mocked call to Verify with a peer certificate with the given
-// subject common name and dns names.  Since this package doesn't use any other fields,
-// this expectation suffices for tests.
-func (m *mockPeerVerifier) ExpectVerify(certificateMatcher func(*x509.Certificate) bool) *mock.Call {
-	return m.On(
-		"Verify",
-		mock.MatchedBy(certificateMatcher),
-		[][]*x509.Certificate(nil), // we always pass nil in tests, since we don't use this parameter
-	)
-}
-
-func assertPeerVerifierExpectations(t *testing.T, pvs ...PeerVerifier) {
-	for _, pv := range pvs {
-		pv.(*mockPeerVerifier).AssertExpectations(t)
-	}
-}
