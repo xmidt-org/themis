@@ -78,8 +78,6 @@ token:
       parameter: uuid
     - key: iss
       value: "development"
-    - key: trust
-      value: 1000
     - key: sub
       value: "client-supplied"
     - key: aud

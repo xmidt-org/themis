@@ -545,7 +545,7 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	)
 
 	suite.Equal(
-		map[string]interface{}{"request": 123, "trust": 0},
+		map[string]interface{}{"request": 123},
 		actual,
 	)
 }
@@ -691,7 +691,6 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 			"static1": suite.rawMessage(-72.5),
 			"static2": suite.rawMessage([]string{"a", "b"}),
 			"request": 123,
-			"trust":   0,
 		},
 		actual,
 	)
@@ -738,7 +737,6 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 			"iat":     suite.expectedNow.UTC().Unix(),
 			"nbf":     suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
 			"exp":     suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
-			"trust":   0,
 		},
 		actual,
 	)
@@ -823,7 +821,6 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 			"iat":     suite.expectedNow.UTC().Unix(),
 			"nbf":     suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
 			"exp":     suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
-			"trust":   0,
 		},
 		actual,
 	)
