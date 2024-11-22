@@ -14,6 +14,8 @@ import (
 	"github.com/xmidt-org/themis/random"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/xzap"
+	"go.uber.org/zap"
 
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -238,6 +240,13 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		}
 
 		_, verifyErr := pc.Verify(vo)
+		if verifyErr != nil {
+			r.Logger.Warn(
+				"certificate verification failed",
+				xzap.Certificate("cert", pc),
+				zap.Error(verifyErr),
+			)
+		}
 
 		switch {
 		case expired && verifyErr != nil:

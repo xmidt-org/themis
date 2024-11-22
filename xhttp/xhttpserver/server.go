@@ -10,6 +10,7 @@ import (
 
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/sallust/sallusthttp"
+	"github.com/xmidt-org/themis/xzap"
 	"go.uber.org/zap"
 
 	"github.com/justinas/alice"
@@ -59,7 +60,7 @@ func NewServerChain(o Options, l *zap.Logger, fbs ...sallusthttp.FieldBuilder) a
 		return l.With(zap.String("userAgent", r.UserAgent()))
 	})
 	bs.Add(func(r *http.Request, l *zap.Logger) *zap.Logger {
-		return l.With(connectionStateField("state", r.TLS))
+		return l.With(xzap.ConnectionState("state", r.TLS))
 	})
 
 	chain := alice.New(
