@@ -11,9 +11,9 @@ import (
 
 const (
 	DefaultTrustLevelNoCertificates   = 0
-	DefaultTrustLevelExpiredUntrusted = 100
-	DefaultTrustLevelExpiredTrusted   = 1000
-	DefaultTrustLevelUntrusted        = 1000
+	DefaultTrustLevelExpiredUntrusted = 0
+	DefaultTrustLevelExpiredTrusted   = 500
+	DefaultTrustLevelUntrusted        = 0
 	DefaultTrustLevelTrusted          = 1000
 )
 
