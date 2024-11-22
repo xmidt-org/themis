@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2017 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
-package xhttpserver
+package xzap
 
 import (
 	"crypto/tls"
@@ -53,6 +53,14 @@ func (c certificate) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func Certificate(field string, cert *x509.Certificate) zap.Field {
+	if cert != nil {
+		return zap.Object(field, certificate(*cert))
+	} else {
+		return zap.Skip()
+	}
+}
+
 type certificates []*x509.Certificate
 
 func (cs certificates) MarshalLogArray(enc zapcore.ArrayEncoder) error {
@@ -96,7 +104,9 @@ func (cstate connectionState) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	return nil
 }
 
-func connectionStateField(field string, v *tls.ConnectionState) zap.Field {
+// ConnectionState produces a zap logging Field that produces an object representation
+// of a TLS connection state.
+func ConnectionState(field string, v *tls.ConnectionState) zap.Field {
 	if v != nil {
 		return zap.Object(field, connectionState(*v))
 	} else {
