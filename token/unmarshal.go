@@ -9,11 +9,13 @@ import (
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type TokenIn struct {
 	fx.In
 
+	Logger       *zap.Logger
 	Noncer       random.Noncer `optional:"true"`
 	Keys         key.Registry
 	Unmarshaller config.Unmarshaller
@@ -36,6 +38,12 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 		var o Options
 		if err := in.Unmarshaller.UnmarshalKey(configKey, &o); err != nil {
 			return TokenOut{}, err
+		}
+
+		if o.ClientCertificates != nil {
+			in.Logger.Info("trust settings", zap.Reflect("trust", o.ClientCertificates.Trust))
+		} else {
+			in.Logger.Info("trust settings", zap.Reflect("trust", Trust{}.enforceDefaults()))
 		}
 
 		cb, err := NewClaimBuilders(in.Noncer, in.Client, o)

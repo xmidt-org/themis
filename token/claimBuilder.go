@@ -354,13 +354,13 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			})
 	}
 
-	// NOTE: newClientCertificateClaimBuiler always returns a non-nil builder
-	if cb, err := newClientCertificateClaimBuiler(o.ClientCertificates); err == nil {
+	cb, err := newClientCertificateClaimBuiler(o.ClientCertificates)
+	if err == nil {
 		builders = append(
 			builders,
 			cb,
 		)
 	}
 
-	return builders, nil
+	return builders, err
 }

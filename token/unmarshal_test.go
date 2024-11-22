@@ -5,6 +5,7 @@ package token
 import (
 	"testing"
 
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 
@@ -146,6 +147,7 @@ func testUnmarshalSuccess(t *testing.T) {
 
 		app = fxtest.New(t,
 			fx.Provide(
+				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
