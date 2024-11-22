@@ -230,7 +230,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		}
 
 		// special logic around expired certificates
-		expired := now.After(pc.NotAfter)
+		expired := now.Before(pc.NotBefore) || now.After(pc.NotAfter)
 		vo := x509.VerifyOptions{
 			// always set the current time so that we disambiguate expired
 			// from untrusted.
