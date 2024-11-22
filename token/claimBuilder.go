@@ -243,8 +243,8 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		if verifyErr != nil {
 			r.Logger.Warn(
 				"certificate verification failed",
-				xzap.Certificate("cert", pc),
 				zap.Error(verifyErr),
+				xzap.Certificate("cert", pc),
 			)
 		}
 
