@@ -237,6 +237,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			CurrentTime:   pc.NotAfter.Add(-time.Second),
 			Roots:         cb.roots,
 			Intermediates: cb.intermediates,
+			KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 		}
 
 		_, verifyErr := pc.Verify(vo)
