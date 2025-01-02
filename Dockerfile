@@ -25,6 +25,8 @@ RUN mkdir -p /go/bin && \
 
 COPY . .
 
+RUN go build -o themis .
+
 RUN make test release
 
 ##########################
@@ -55,11 +57,11 @@ RUN     mkdir /etc/themis/ \
 
 USER nobody
 
-ENTRYPOINT ["/entrypoint.sh"]
+#ENTRYPOINT ["/entrypoint.sh"]
 
 EXPOSE 6500
 EXPOSE 6501
 EXPOSE 6502
 EXPOSE 6503
 
-CMD ["/themis"]
+ENTRYPOINT ["/themis"]
