@@ -25,8 +25,6 @@ RUN mkdir -p /go/bin && \
 
 COPY . .
 
-#RUN go build -o themis .
-
 RUN make test release
 
 ##########################
