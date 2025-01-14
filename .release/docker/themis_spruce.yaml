@@ -116,8 +116,11 @@ token:
     bits: 1024
 
 log:
-  file: "stdout"
-  level: (( grab $LOG_LEVEL || "INFO" ))
+  outputPaths:
+    - "stdout"
+  errorOutputPaths:
+    - "stdout"
+  level: (( grab $LOG_LEVEL || "DEBUG" ))
 
 # tracing provides configuration around traces using OpenTelemetry.
 # (Optional). By default, a 'noop' tracer provider is used and tracing is disabled.
