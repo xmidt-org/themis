@@ -43,8 +43,7 @@ COPY --from=builder /go/bin/spruce                          /bin/
 # Include compliance details about the container and what it contains.
 COPY --from=builder /src/Dockerfile \
                     /src/NOTICE \
-                    /src/LICENSE \
-                    /src/CHANGELOG.md   /
+                    /src/LICENSE  /
 
 # Make the location for the configuration file that will be used.
 RUN     mkdir /etc/themis/ \
