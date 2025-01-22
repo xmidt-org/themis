@@ -25,8 +25,6 @@ RUN mkdir -p /go/bin && \
 
 COPY . .
 
-RUN make test release
-
 ##########################
 # Build the final image.
 ##########################
