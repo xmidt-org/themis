@@ -1,22 +1,12 @@
-# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
-# SPDX-License-Identifier: Apache-2.0
-FROM docker.io/library/golang:1.23-alpine as builder
+## SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+## SPDX-License-Identifier: Apache-2.0
+FROM docker.io/library/golang:1.19-alpine as builder
 
 WORKDIR /src
 
-ARG VERSION
-ARG GITCOMMIT
-ARG BUILDTIME
-
 RUN apk add --no-cache --no-progress \
     ca-certificates \
-    make \
-    curl \
-    git \
-    openssh \
-    gcc \
-    libc-dev \
-    upx
+    curl
 
 # Download spruce here to eliminate the need for curl in the final image
 RUN mkdir -p /go/bin && \
@@ -33,17 +23,17 @@ FROM alpine:latest
 
 # Copy over the standard things you'd expect.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt  /etc/ssl/certs/
-COPY --from=builder /src/themis                         /
-COPY --from=builder /src/.release/docker/entrypoint.sh  /
+COPY themis /
+COPY .release/docker/entrypoint.sh  /
 
 # Copy over spruce and the spruce template file used to make the actual configuration file.
-COPY --from=builder /src/.release/docker/themis_spruce.yaml /tmp/themis_spruce.yaml
-COPY --from=builder /go/bin/spruce                          /bin/
+COPY .release/docker/themis_spruce.yaml  /tmp/themis_spruce.yaml
+COPY --from=builder /go/bin/spruce        /bin/
 
 # Include compliance details about the container and what it contains.
-COPY --from=builder /src/Dockerfile \
-                    /src/NOTICE \
-                    /src/LICENSE  /
+COPY Dockerfile /
+COPY NOTICE     /
+COPY LICENSE    /
 
 # Make the location for the configuration file that will be used.
 RUN     mkdir /etc/themis/ \
