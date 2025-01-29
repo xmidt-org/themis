@@ -11,7 +11,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/lestrrat-go/jwx v1.2.30
 	github.com/prometheus/client_golang v1.20.5
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	github.com/xmidt-org/candlelight v0.1.23
