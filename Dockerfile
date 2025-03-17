@@ -42,7 +42,7 @@ RUN     mkdir /etc/themis/ \
 
 USER nobody
 
-ENTRYPOINT ["/entrypoint.sh"]
+#ENTRYPOINT ["/entrypoint.sh"]
 
 EXPOSE 6500
 EXPOSE 6501
