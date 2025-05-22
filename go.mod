@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/xmidt-org/candlelight v0.1.23
 	github.com/xmidt-org/sallust v0.2.3
-	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.60.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.61.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0
 	go.uber.org/fx v1.24.0
 	go.uber.org/multierr v1.11.0
@@ -68,7 +68,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.32.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.32.0 // indirect
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.36.0 // indirect
 	go.opentelemetry.io/otel/exporters/zipkin v1.32.0 // indirect
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
