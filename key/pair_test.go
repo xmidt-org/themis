@@ -116,24 +116,30 @@ func TestGenerateRSAPair(t *testing.T) {
 				pair, err = GenerateRSAPair("test", rand.Reader, bits)
 			)
 
-			require.NoError(err)
-			require.NotNil(pair)
+			if bits > 0 && bits < 1024 {
+				expectedErr := fmt.Errorf("crypto/rsa: %d-bit keys are insecure (see https://go.dev/pkg/crypto/rsa#hdr-Minimum_key_size)", bits)
+				require.Error(err)
+				require.EqualError(err, expectedErr.Error())
+			} else {
+				require.NoError(err)
+				require.NotNil(pair)
 
-			assert.Equal("test", pair.KID())
+				assert.Equal("test", pair.KID())
 
-			key, ok := pair.Sign().(*rsa.PrivateKey)
-			require.True(ok)
-			require.NotNil(key)
+				key, ok := pair.Sign().(*rsa.PrivateKey)
+				require.True(ok)
+				require.NotNil(key)
 
-			var output bytes.Buffer
-			c, err := pair.WriteVerifyPEMTo(&output)
-			require.NoError(err)
-			assert.True(c > 0)
+				var output bytes.Buffer
+				c, err := pair.WriteVerifyPEMTo(&output)
+				require.NoError(err)
+				assert.True(c > 0)
 
-			output.Reset()
-			c, err = pair.WriteJWK(&output)
-			require.NoError(err)
-			assert.True(c > 0)
+				output.Reset()
+				c, err = pair.WriteJWK(&output)
+				require.NoError(err)
+				assert.True(c > 0)
+			}
 		})
 	}
 }

@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	DefaultRSABits    = 512
+	DefaultRSABits    = 1024
 	DefaultSecretBits = 512
 )
 
