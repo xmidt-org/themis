@@ -65,7 +65,7 @@ func testNewFactorySuccess(t *testing.T) {
 		Alg: "RS256",
 		Key: key.Descriptor{
 			Kid:  "test",
-			Bits: 512,
+			Bits: 1024,
 		},
 		Nonce: true,
 	}, cb, registry)
