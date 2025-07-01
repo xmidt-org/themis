@@ -2,8 +2,6 @@ module github.com/xmidt-org/themis
 
 go 1.24
 
-toolchain go1.24.0
-
 require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
 	github.com/InVisionApp/go-logger v1.0.1
