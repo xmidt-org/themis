@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	ErrNoKidVariable = errors.New("No kid variable in URI definition")
+	ErrNoKidVariable = errors.New("no kid variable in URI definition")
 )
 
 type Handler http.Handler

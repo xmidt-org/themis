@@ -83,7 +83,7 @@ func (r *registry) newPair(d Descriptor) (Pair, error) {
 	case KeyTypeSecret:
 		return GenerateSecretPair(d.Kid, r.random, d.Bits)
 	default:
-		return nil, fmt.Errorf("Invalid key type: %s", d.Type)
+		return nil, fmt.Errorf("invalid key type: %s", d.Type)
 	}
 }
 
@@ -97,7 +97,7 @@ func (r *registry) Register(d Descriptor) (Pair, error) {
 	r.lock.Lock()
 
 	if _, ok := r.pairs[p.KID()]; ok {
-		return nil, fmt.Errorf("Key id already used: %s", p.KID())
+		return nil, fmt.Errorf("key id already used: %s", p.KID())
 	}
 
 	r.pairs[p.KID()] = p

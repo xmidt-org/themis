@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	ErrVariableNotAllowed = errors.New("Either header/parameter or variable can specified, but not all three")
+	ErrVariableNotAllowed = errors.New("either header/parameter or variable can specified, but not all three")
 )
 
 // InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise

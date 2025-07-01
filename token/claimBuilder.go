@@ -28,8 +28,8 @@ const (
 )
 
 var (
-	ErrRemoteURLRequired = errors.New("A URL for the remote claimer is required")
-	ErrMissingKey        = errors.New("A key is required for all claims and metadata values")
+	ErrRemoteURLRequired = errors.New("a URL for the remote claimer is required")
+	ErrMissingKey        = errors.New("a key is required for all claims and metadata values")
 )
 
 // ClaimBuilder is a strategy for building token claims, given a token Request
@@ -297,7 +297,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			case value.IsFromHTTP():
 				continue
 			case !value.IsStatic():
-				return nil, fmt.Errorf("A value is required for the static metadata: %s", value.Key)
+				return nil, fmt.Errorf("a value is required for the static metadata: %s", value.Key)
 			default:
 				msg, err := value.RawMessage()
 				if err != nil {
@@ -324,7 +324,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			continue
 
 		case !value.IsStatic():
-			return nil, fmt.Errorf("A value is required for the static claim: %s", value.Key)
+			return nil, fmt.Errorf("a value is required for the static claim: %s", value.Key)
 
 		default:
 			msg, err := value.RawMessage()
