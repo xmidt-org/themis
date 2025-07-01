@@ -89,7 +89,7 @@ func NewFactory(o Options, cb ClaimBuilder, kr key.Registry) (Factory, error) {
 	}
 
 	if f.method == nil {
-		return nil, fmt.Errorf("No such signing method: %s", o.Alg)
+		return nil, fmt.Errorf("no such signing method: %s", o.Alg)
 	}
 
 	pair, err := kr.Register(o.Key)

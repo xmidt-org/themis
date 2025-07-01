@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrTlsCertificateRequired = errors.New("Both a certificateFile and keyFile are required")
+	ErrTlsCertificateRequired = errors.New("both a certificateFile and keyFile are required")
 )
 
 // ReadCertPool reads a file that is expected to contain a certificate bundle
@@ -22,7 +22,7 @@ func ReadCertPool(path string) (cp *x509.CertPool, err error) {
 	if err == nil {
 		cp = x509.NewCertPool()
 		if !cp.AppendCertsFromPEM(contents) {
-			err = fmt.Errorf("Unable to add certificates from %s", path)
+			err = fmt.Errorf("unable to add certificates from %s", path)
 		}
 	}
 

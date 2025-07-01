@@ -88,7 +88,7 @@ func NewListener(ctx context.Context, o Options, lcfg net.ListenConfig, tcfg *tl
 	tcpListener, ok := l.(*net.TCPListener)
 	if !ok {
 		l.Close()
-		return nil, fmt.Errorf("Network [%s] and address [%s] does not result in a TCPListener", network, o.Address)
+		return nil, fmt.Errorf("network [%s] and address [%s] does not result in a TCPListener", network, o.Address)
 	}
 
 	listener := &Listener{

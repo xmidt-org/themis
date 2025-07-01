@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	ErrUnrecognizedKeyData = errors.New("Unable to read key data")
+	ErrUnrecognizedKeyData = errors.New("unable to read key data")
 
 	DefaultCurve = elliptic.P384()
 )
@@ -159,7 +159,7 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			jsonWebKey: jsonWebKey,
 		}, nil
 	}
-	return nil, fmt.Errorf("Unsupported key type: %v", key)
+	return nil, fmt.Errorf("unsupported key type: %v", key)
 }
 
 func ReadPair(kid string, file string) (Pair, error) {
@@ -218,7 +218,7 @@ func GenerateECDSAPair(kid string, random io.Reader, bits int) (Pair, error) {
 			curve = elliptic.P521()
 
 		default:
-			return nil, fmt.Errorf("Unsupported curve value: %d", curve)
+			return nil, fmt.Errorf("unsupported curve value: %d", curve)
 		}
 	}
 
