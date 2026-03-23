@@ -91,6 +91,10 @@ type PartnerID struct {
 	// is set and thus the partner id won't be transmitted to remote systems.
 	Metadata string
 
+	// PathValue is the name of the path value key for the partner id.  If unset, no path value
+	// is set and thus the partner id won't be transmitted to remote systems via url path value.
+	PathValue string
+
 	// Header is the HTTP header containing the partner id
 	Header string
 
@@ -199,6 +203,10 @@ type Options struct {
 
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
 	Metadata []Value
+
+	// PathValues holds non-claim information about the request, usually garnered from the original HTTP request.  This
+	// PathValues is available to remote claim builders.
+	PathValues []Value
 
 	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
 	// performed, though a partner id may still be configured as part of the claims.
