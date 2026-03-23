@@ -55,6 +55,22 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 	assert.Empty(rb)
 }
 
+func testNewRequestBuildersInvalidPathValues(t *testing.T) {
+	assert := assert.New(t)
+	rb, err := NewRequestBuilders(Options{
+		PathValues: []Value{
+			{
+				Key:       "bad",
+				Header:    "xxx",
+				Parameter: "yyy",
+				Variable:  "zzz",
+			},
+		},
+	})
+
+	assert.Equal(ErrVariableNotAllowed, err)
+	assert.Empty(rb)
+}
 func testNewRequestBuildersSuccess(t *testing.T) {
 	testData := []struct {
 		options      Options
@@ -89,16 +105,24 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Header: "X-Missing",
 					},
 				},
+				PathValues: []Value{
+					{
+						Key:    "fromHeader",
+						Header: "X-PathVlaue",
+					},
+				},
 				PartnerID: &PartnerID{
-					Claim:    "partner-id-claim",
-					Metadata: "partner-id-metadata",
-					Header:   "X-Midt-Partner-ID",
+					Claim:     "partner-id-claim",
+					Metadata:  "partner-id-metadata",
+					PathValue: "partner-id-pathValue",
+					Header:    "X-Midt-Partner-ID",
 				},
 			},
 			uri: "/test",
 			header: http.Header{
 				"X-Claim":           []string{"foo"},
 				"X-Metadata":        []string{"bar"},
+				"X-PathVlaue":       []string{"foobar"},
 				"X-Midt-Partner-ID": []string{"test"},
 			},
 			expected: &Request{
@@ -110,6 +134,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				Metadata: map[string]interface{}{
 					"fromHeader":          "bar",
 					"partner-id-metadata": "test",
+				},
+				PathValues: map[string]any{
+					"fromHeader":           "foobar",
+					"partner-id-pathValue": "test",
 				},
 			},
 		},
@@ -135,13 +163,24 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Parameter: "missing",
 					},
 				},
+				PathValues: []Value{
+					{
+						Key:       "fromParameter",
+						Parameter: "pathValue",
+					},
+					{
+						Key:       "missing",
+						Parameter: "missing",
+					},
+				},
 				PartnerID: &PartnerID{
 					Claim:     "partner-id-claim",
 					Metadata:  "partner-id-metadata",
+					PathValue: "partner-id-pathValue",
 					Parameter: "pid",
 				},
 			},
-			uri: "/test?pid=test&claim=foo&metadata=bar",
+			uri: "/test?pid=test&claim=foo&metadata=bar&pathValue=foobar",
 			expected: &Request{
 				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
@@ -151,6 +190,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				Metadata: map[string]interface{}{
 					"fromParameter":       "bar",
 					"partner-id-metadata": "test",
+				},
+				PathValues: map[string]any{
+					"fromParameter":        "foobar",
+					"partner-id-pathValue": "test",
 				},
 			},
 		},
@@ -168,17 +211,25 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Variable: "metadata",
 					},
 				},
+				PathValues: []Value{
+					{
+						Key:      "fromVariable",
+						Variable: "pathValues",
+					},
+				},
 				PartnerID: &PartnerID{
 					Claim:     "partner-id-claim",
 					Metadata:  "partner-id-metadata",
+					PathValue: "partner-id-pathValue",
 					Parameter: "pid",
 					Default:   "test",
 				},
 			},
 			uri: "/test/foo/bar",
 			urlVariables: map[string]string{
-				"claim":    "foo",
-				"metadata": "bar",
+				"claim":      "foo",
+				"metadata":   "bar",
+				"pathValues": "foobar",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -190,6 +241,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromVariable":        "bar",
 					"partner-id-metadata": "test",
 				},
+				PathValues: map[string]any{
+					"fromVariable":         "foobar",
+					"partner-id-pathValue": "test",
+				},
 			},
 		},
 		{
@@ -206,11 +261,18 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Variable: "metadata",
 					},
 				},
+				PathValues: []Value{
+					{
+						Key:      "fromVariable",
+						Variable: "pathValue",
+					},
+				},
 			},
 			uri: "/test/foo/bar",
 			urlVariables: map[string]string{
-				"claim":    "foo",
-				"metadata": "bar",
+				"claim":     "foo",
+				"metadata":  "bar",
+				"pathValue": "foobar",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -219,6 +281,9 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				},
 				Metadata: map[string]interface{}{
 					"fromVariable": "bar",
+				},
+				PathValues: map[string]any{
+					"fromVariable": "foobar",
 				},
 			},
 		},
@@ -316,6 +381,7 @@ func testNewRequestBuildersInvalidPartnerID(t *testing.T) {
 func TestNewRequestBuilders(t *testing.T) {
 	t.Run("InvalidClaim", testNewRequestBuildersInvalidClaim)
 	t.Run("InvalidMetadata", testNewRequestBuildersInvalidMetadata)
+	t.Run("InvalidPathValues", testNewRequestBuildersInvalidPathValues)
 	t.Run("MissingVariable", testNewRequestBuildersMissingVariable)
 	t.Run("InvalidPartnerID", testNewRequestBuildersInvalidPartnerID)
 	t.Run("Success", testNewRequestBuildersSuccess)
@@ -341,9 +407,10 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:   sallust.Default(),
-				Claims:   map[string]interface{}{"claim": []int{1, 2, 3}},
-				Metadata: make(map[string]interface{}),
+				Logger:     sallust.Default(),
+				Claims:     map[string]interface{}{"claim": []int{1, 2, 3}},
+				Metadata:   make(map[string]interface{}),
+				PathValues: make(map[string]interface{}),
 			},
 		},
 		{
@@ -354,9 +421,10 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:   sallust.Default(),
-				Claims:   make(map[string]interface{}),
-				Metadata: map[string]interface{}{"metadata": -75.8},
+				Logger:     sallust.Default(),
+				Claims:     make(map[string]interface{}),
+				Metadata:   map[string]interface{}{"metadata": -75.8},
+				PathValues: make(map[string]interface{}),
 			},
 		},
 		{
@@ -376,9 +444,10 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:   sallust.Default(),
-				Claims:   map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
-				Metadata: map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
+				Logger:     sallust.Default(),
+				Claims:     map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
+				Metadata:   map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
+				PathValues: make(map[string]interface{}),
 			},
 		},
 	}
@@ -569,9 +638,10 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 	require.IsType((*Request)(nil), v)
 	assert.Equal(
 		Request{
-			Logger:   sallust.Default(),
-			Claims:   map[string]interface{}{"claim": "value"},
-			Metadata: make(map[string]interface{}),
+			Logger:     sallust.Default(),
+			Claims:     map[string]interface{}{"claim": "value"},
+			Metadata:   make(map[string]interface{}),
+			PathValues: make(map[string]interface{}),
 		},
 		*v.(*Request),
 	)

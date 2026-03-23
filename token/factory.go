@@ -34,6 +34,10 @@ type Request struct {
 	// metadata is available to lower levels of infrastructure used by the Factory.
 	Metadata map[string]interface{}
 
+	// PathValues holds non-claim information about the request, usually garnered from the original HTTP request.  This
+	// PathValues is available to remote claim builders.
+	PathValues map[string]interface{}
+
 	// TLS represents the state of any underlying TLS connection.
 	// For non-tls connections, this field is unset.
 	TLS *tls.ConnectionState
@@ -42,9 +46,10 @@ type Request struct {
 // NewRequest returns an empty, fully initialized token Request
 func NewRequest() *Request {
 	return &Request{
-		Logger:   sallust.Default(),
-		Claims:   make(map[string]interface{}),
-		Metadata: make(map[string]interface{}),
+		Logger:     sallust.Default(),
+		Claims:     make(map[string]interface{}),
+		Metadata:   make(map[string]interface{}),
+		PathValues: make(map[string]interface{}),
 	}
 }
 

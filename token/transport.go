@@ -111,6 +111,10 @@ func metadataSetter(key string, value interface{}, tr *Request) {
 	tr.Metadata[key] = value
 }
 
+func pathValuesSetter(key string, value interface{}, tr *Request) {
+	tr.PathValues[key] = value
+}
+
 type headerParameterRequestBuilder struct {
 	key       string
 	header    string
@@ -204,6 +208,10 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 		if len(prb.Metadata) > 0 {
 			tr.Metadata[prb.Metadata] = partnerID
 		}
+
+		if len(prb.PathValue) > 0 {
+			tr.PathValues[prb.PathValue] = partnerID
+		}
 	}
 
 	return nil
@@ -282,7 +290,37 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		}
 	}
 
-	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
+	for _, value := range o.PathValues {
+		switch {
+		case len(value.Key) == 0:
+			return nil, ErrMissingKey
+
+		case len(value.Header) > 0 || len(value.Parameter) > 0:
+			if len(value.Variable) > 0 {
+				return nil, ErrVariableNotAllowed
+			}
+
+			rb = append(rb,
+				headerParameterRequestBuilder{
+					key:       value.Key,
+					header:    http.CanonicalHeaderKey(value.Header),
+					parameter: value.Parameter,
+					setter:    pathValuesSetter,
+				},
+			)
+
+		case len(value.Variable) > 0:
+			rb = append(rb,
+				variableRequestBuilder{
+					key:      value.Key,
+					variable: value.Variable,
+					setter:   pathValuesSetter,
+				},
+			)
+		}
+	}
+
+	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0 || len(o.PartnerID.PathValue) > 0) {
 		rb = append(rb,
 			partnerIDRequestBuilder{
 				PartnerID: *o.PartnerID,
