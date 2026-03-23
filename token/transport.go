@@ -436,3 +436,25 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 
 	return claims, nil
 }
+
+func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request interface{}) error {
+	if headerer, ok := request.(kithttp.Headerer); ok {
+		for k := range headerer.Headers() {
+			r.Header.Set(k, headerer.Headers().Get(k))
+		}
+	}
+
+	tr := request.(*Request)
+	for k, v := range tr.PathValues {
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
+	}
+
+	b, err := json.Marshal(tr.Metadata)
+	if err != nil {
+		return err
+	}
+
+	r.Body = io.NopCloser(bytes.NewReader(b))
+
+	return nil
+}
