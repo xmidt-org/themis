@@ -178,7 +178,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	c := kithttp.NewClient(
 		method,
 		url,
-		kithttp.EncodeJSONRequest,
+		EncodeRemoteClaimsRequest,
 		DecodeRemoteClaimsResponse,
 		kithttp.SetClient(client),
 		kithttp.ClientBefore(
