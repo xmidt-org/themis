@@ -38,15 +38,17 @@ func testUnmarshalProvideFull(t *testing.T) {
 					config.Json(`
 						{
 							"client": {
-								"transport": {
-									"idleConnTimeout": "1s",
+								"httpClient": {
+									"transport": {
+										"idleConnTimeout": "1s"
+									},
 									"tls": {
 										"insecureSkipVerify": true
+									},
+									"timeout": "10s",
+									"header": {
+										"x-header": ["value"]
 									}
-								},
-								"timeout": "10s",
-								"header": {
-									"x-header": ["value"]
 								}
 							}
 						}
@@ -109,69 +111,6 @@ func testUnmarshalProvideFull(t *testing.T) {
 	assert.Equal(299, response.StatusCode)
 }
 
-func testUnmarshalProvideWithRoundTripper(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		handler = http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-			assert.Equal("value", request.Header.Get("X-Header"))
-			assert.Equal("from roundtripper component", request.Header.Get("X-RoundTripper-Component"))
-			response.WriteHeader(299)
-		})
-
-		c   Interface
-		app = fxtest.New(t,
-			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
-						{
-							"client": {
-								"transport": {
-									"idleConnTimeout": "1s",
-									"tls": {
-										"insecureSkipVerify": true
-									}
-								},
-								"timeout": "10s",
-								"header": {
-									"x-header": ["value"]
-								}
-							}
-						}
-					`),
-				),
-				func() http.RoundTripper {
-					return NewChain(
-						func(delegate http.RoundTripper) http.RoundTripper {
-							return RoundTripperFunc(func(request *http.Request) (*http.Response, error) {
-								request.Header.Set("X-RoundTripper-Component", "from roundtripper component")
-								return delegate.RoundTrip(request)
-							})
-						},
-					).Then(nil)
-				},
-				Unmarshal{Key: "client"}.Provide,
-			),
-			fx.Populate(&c),
-		)
-	)
-
-	require.NoError(app.Err())
-	require.NotNil(c)
-
-	s := httptest.NewServer(handler)
-	defer s.Close()
-
-	request, err := http.NewRequest("GET", s.URL, nil)
-	require.NoError(err)
-
-	response, err := c.Do(request) //nolint:bodyclose
-	require.NoError(err)
-	require.NotNil(response)
-	assert.Equal(299, response.StatusCode)
-}
-
 func testUnmarshalProvideUnmarshalError(t *testing.T) {
 	var (
 		assert = assert.New(t)
@@ -182,11 +121,13 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 			fx.Provide(
 				config.ProvideViper(
 					config.Json(`
-							{
-								"client": {
-									"timeout": "this is not a valid duration"
+						{
+							"client": {
+								"httpClient": {
+									"timeout": "this is not a valid duration",
 								}
 							}
+						}
 					`),
 				),
 				Unmarshal{Key: "client"}.Provide,
@@ -263,15 +204,17 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 					config.Json(`
 						{
 							"client": {
-								"transport": {
-									"idleConnTimeout": "1s",
+								"httpClient": {
+									"transport": {
+										"idleConnTimeout": "1s"
+									},
 									"tls": {
 										"insecureSkipVerify": true
+									},
+									"timeout": "10s",
+									"header": {
+										"x-header": ["value"]
 									}
-								},
-								"timeout": "10s",
-								"header": {
-									"x-header": ["value"]
 								}
 							}
 						}
@@ -388,7 +331,6 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 func TestUnmarshal(t *testing.T) {
 	t.Run("Provide", func(t *testing.T) {
 		t.Run("Full", testUnmarshalProvideFull)
-		t.Run("WithRoundTripper", testUnmarshalProvideWithRoundTripper)
 		t.Run("UnmarshalError", testUnmarshalProvideUnmarshalError)
 		t.Run("ChainFactoryError", testUnmarshalProvideChainFactoryError)
 	})
