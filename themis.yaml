@@ -55,6 +55,14 @@ prometheus:
   constLabels:
     development: "true"
 
+client:
+  httpClient:
+    tls:
+      minVersion: 771 # 0x0303, the TLS 1.2 version uint16
+      # certificates:
+      #   - certificateFile: /etc/comcastthemis/cert.pem
+      #     keyFile: /etc/comcastthemis/key.pem
+
 token:
   alg: RS256
   nonce: true
