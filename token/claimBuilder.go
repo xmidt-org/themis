@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"time"
@@ -125,19 +126,25 @@ type remoteClaimBuilder struct {
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
-	metadata := r.Metadata
+	rCopy := Request{
+		Metadata:   make(map[string]interface{}),
+		PathValues: make(map[string]interface{}),
+	}
+
+	maps.Copy(rCopy.Metadata, r.Metadata)
+	maps.Copy(rCopy.PathValues, r.PathValues)
 	if len(rc.extra) > 0 {
-		metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
+		rCopy.Metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
 		for k, v := range r.Metadata {
-			metadata[k] = v
+			rCopy.Metadata[k] = v
 		}
 
 		for k, v := range rc.extra {
-			metadata[k] = v
+			rCopy.Metadata[k] = v
 		}
 	}
 
-	result, err := rc.endpoint(ctx, metadata)
+	result, err := rc.endpoint(ctx, &rCopy)
 	if err != nil {
 		return err
 	}
