@@ -810,7 +810,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, PathValues: make(map[string]interface{})}, actual),
 	)
 
 	suite.Equal(
