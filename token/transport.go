@@ -111,6 +111,10 @@ func metadataSetter(key string, value interface{}, tr *Request) {
 	tr.Metadata[key] = value
 }
 
+func pathValuesSetter(key string, value interface{}, tr *Request) {
+	tr.PathValues[key] = value
+}
+
 type headerParameterRequestBuilder struct {
 	key       string
 	header    string
@@ -204,6 +208,10 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 		if len(prb.Metadata) > 0 {
 			tr.Metadata[prb.Metadata] = partnerID
 		}
+
+		if len(prb.PathValue) > 0 {
+			tr.PathValues[prb.PathValue] = partnerID
+		}
 	}
 
 	return nil
@@ -282,7 +290,37 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		}
 	}
 
-	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0) {
+	for _, value := range o.PathValues {
+		switch {
+		case len(value.Key) == 0:
+			return nil, ErrMissingKey
+
+		case len(value.Header) > 0 || len(value.Parameter) > 0:
+			if len(value.Variable) > 0 {
+				return nil, ErrVariableNotAllowed
+			}
+
+			rb = append(rb,
+				headerParameterRequestBuilder{
+					key:       value.Key,
+					header:    http.CanonicalHeaderKey(value.Header),
+					parameter: value.Parameter,
+					setter:    pathValuesSetter,
+				},
+			)
+
+		case len(value.Variable) > 0:
+			rb = append(rb,
+				variableRequestBuilder{
+					key:      value.Key,
+					variable: value.Variable,
+					setter:   pathValuesSetter,
+				},
+			)
+		}
+	}
+
+	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0 || len(o.PartnerID.PathValue) > 0) {
 		rb = append(rb,
 			partnerIDRequestBuilder{
 				PartnerID: *o.PartnerID,
@@ -401,4 +439,26 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 	}
 
 	return claims, nil
+}
+
+func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request interface{}) error {
+	if headerer, ok := request.(kithttp.Headerer); ok {
+		for k := range headerer.Headers() {
+			r.Header.Set(k, headerer.Headers().Get(k))
+		}
+	}
+
+	tr := request.(*Request)
+	for k, v := range tr.PathValues {
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
+	}
+
+	b, err := json.Marshal(tr.Metadata)
+	if err != nil {
+		return err
+	}
+
+	r.Body = io.NopCloser(bytes.NewReader(b))
+
+	return nil
 }

@@ -114,6 +114,13 @@ token:
     - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
+  pathValues:
+    - key: mac
+      header: X-Midt-Mac-Address
+      parameter: mac
+  remote:
+    method: GET
+    url: https://localhost:443/device/{mac}/claims?format=json
   partnerID:
     claim: partner-id
     metadata: pid
