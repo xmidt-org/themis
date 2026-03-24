@@ -3,6 +3,7 @@
 package xhttpserver
 
 import (
+	"html"
 	"net/http"
 	"strconv"
 )
@@ -62,6 +63,7 @@ func (ch *ConstantHandler) ServeHTTP(response http.ResponseWriter, _ *http.Reque
 
 	response.WriteHeader(ch.statusCode)
 	if len(ch.body) > 0 {
-		response.Write(ch.body)
+		// G705: XSS via taint analysis (gosec)
+		response.Write([]byte(html.EscapeString(string(ch.body))))
 	}
 }
