@@ -72,6 +72,23 @@ func testNewRequestBuildersInvalidPathWildCards(t *testing.T) {
 	assert.Empty(rb)
 }
 
+func testNewRequestBuildersInvalidQueryParameters(t *testing.T) {
+	assert := assert.New(t)
+	rb, err := NewRequestBuilders(Options{
+		QueryParameters: []Value{
+			{
+				Key:       "bad",
+				Header:    "xxx",
+				Parameter: "yyy",
+				Variable:  "zzz",
+			},
+		},
+	})
+
+	assert.ErrorIs(err, ErrVariableNotAllowed)
+	assert.Empty(rb)
+}
+
 func testNewRequestBuildersSuccess(t *testing.T) {
 	testData := []struct {
 		options      Options
@@ -112,11 +129,18 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Header: "X-PathVlaue",
 					},
 				},
+				QueryParameters: []Value{
+					{
+						Key:    "fromHeader",
+						Header: "Accept",
+					},
+				},
 				PartnerID: &PartnerID{
-					Claim:        "partner-id-claim",
-					Metadata:     "partner-id-metadata",
-					PathWildCard: "partner-id-pathWildCard",
-					Header:       "X-Midt-Partner-ID",
+					Claim:          "partner-id-claim",
+					Metadata:       "partner-id-metadata",
+					PathWildCard:   "partner-id-pathWildCard",
+					QueryParameter: "partner-id-queryParameter",
+					Header:         "X-Midt-Partner-ID",
 				},
 			},
 			uri: "/test",
@@ -125,6 +149,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				"X-Metadata":        []string{"bar"},
 				"X-PathVlaue":       []string{"foobar"},
 				"X-Midt-Partner-ID": []string{"test"},
+				"Accept":            []string{"json"},
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -139,6 +164,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				PathWildCards: map[string]any{
 					"fromHeader":              "foobar",
 					"partner-id-pathWildCard": "test",
+				},
+				QueryParameters: map[string]any{
+					"fromHeader":                "json",
+					"partner-id-queryParameter": "test",
 				},
 			},
 		},
@@ -174,14 +203,21 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Parameter: "missing",
 					},
 				},
+				QueryParameters: []Value{
+					{
+						Key:       "fromParameter",
+						Parameter: "queryParameter",
+					},
+				},
 				PartnerID: &PartnerID{
-					Claim:        "partner-id-claim",
-					Metadata:     "partner-id-metadata",
-					PathWildCard: "partner-id-pathWildCard",
-					Parameter:    "pid",
+					Claim:          "partner-id-claim",
+					Metadata:       "partner-id-metadata",
+					PathWildCard:   "partner-id-pathWildCard",
+					QueryParameter: "partner-id-queryParameter",
+					Parameter:      "pid",
 				},
 			},
-			uri: "/test?pid=test&claim=foo&metadata=bar&pathWildCard=foobar&queryParameters=json",
+			uri: "/test?pid=test&claim=foo&metadata=bar&pathWildCard=foobar&queryParameter=json",
 			expected: &Request{
 				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
@@ -195,6 +231,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				PathWildCards: map[string]any{
 					"fromParameter":           "foobar",
 					"partner-id-pathWildCard": "test",
+				},
+				QueryParameters: map[string]any{
+					"fromParameter":             "json",
+					"partner-id-queryParameter": "test",
 				},
 			},
 		},
@@ -218,19 +258,27 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Variable: "pathWildCard",
 					},
 				},
+				QueryParameters: []Value{
+					{
+						Key:      "fromVariable",
+						Variable: "queryParameter",
+					},
+				},
 				PartnerID: &PartnerID{
-					Claim:        "partner-id-claim",
-					Metadata:     "partner-id-metadata",
-					PathWildCard: "partner-id-pathWildCard",
-					Parameter:    "pid",
-					Default:      "test",
+					Claim:          "partner-id-claim",
+					Metadata:       "partner-id-metadata",
+					PathWildCard:   "partner-id-pathWildCard",
+					QueryParameter: "partner-id-queryParameter",
+					Parameter:      "pid",
+					Default:        "test",
 				},
 			},
-			uri: "/test/foo/bar",
+			uri: "/test/foo/bar/json",
 			urlVariables: map[string]string{
-				"claim":        "foo",
-				"metadata":     "bar",
-				"pathWildCard": "foobar",
+				"claim":          "foo",
+				"metadata":       "bar",
+				"pathWildCard":   "foobar",
+				"queryParameter": "json",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -246,6 +294,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromVariable":            "foobar",
 					"partner-id-pathWildCard": "test",
 				},
+				QueryParameters: map[string]any{
+					"fromVariable":              "json",
+					"partner-id-queryParameter": "test",
+				},
 			},
 		},
 		{
@@ -268,12 +320,19 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Variable: "pathWildCard",
 					},
 				},
+				QueryParameters: []Value{
+					{
+						Key:      "fromVariable",
+						Variable: "queryParameter",
+					},
+				},
 			},
-			uri: "/test/foo/bar",
+			uri: "/test/foo/bar/foobar/json",
 			urlVariables: map[string]string{
-				"claim":        "foo",
-				"metadata":     "bar",
-				"pathWildCard": "foobar",
+				"claim":          "foo",
+				"metadata":       "bar",
+				"pathWildCard":   "foobar",
+				"queryParameter": "json",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -285,6 +344,9 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				},
 				PathWildCards: map[string]any{
 					"fromVariable": "foobar",
+				},
+				QueryParameters: map[string]any{
+					"fromVariable": "json",
 				},
 			},
 		},
@@ -383,6 +445,7 @@ func TestNewRequestBuilders(t *testing.T) {
 	t.Run("InvalidClaim", testNewRequestBuildersInvalidClaim)
 	t.Run("InvalidMetadata", testNewRequestBuildersInvalidMetadata)
 	t.Run("InvalidPathWildCards", testNewRequestBuildersInvalidPathWildCards)
+	t.Run("InvalidQueryParameters", testNewRequestBuildersInvalidQueryParameters)
 	t.Run("MissingVariable", testNewRequestBuildersMissingVariable)
 	t.Run("InvalidPartnerID", testNewRequestBuildersInvalidPartnerID)
 	t.Run("Success", testNewRequestBuildersSuccess)
@@ -408,10 +471,11 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:        sallust.Default(),
-				Claims:        map[string]interface{}{"claim": []int{1, 2, 3}},
-				Metadata:      make(map[string]interface{}),
-				PathWildCards: make(map[string]interface{}),
+				Logger:          sallust.Default(),
+				Claims:          map[string]interface{}{"claim": []int{1, 2, 3}},
+				Metadata:        make(map[string]interface{}),
+				PathWildCards:   make(map[string]interface{}),
+				QueryParameters: make(map[string]any),
 			},
 		},
 		{
@@ -422,10 +486,11 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:        sallust.Default(),
-				Claims:        make(map[string]interface{}),
-				Metadata:      map[string]interface{}{"metadata": -75.8},
-				PathWildCards: make(map[string]interface{}),
+				Logger:          sallust.Default(),
+				Claims:          make(map[string]interface{}),
+				Metadata:        map[string]interface{}{"metadata": -75.8},
+				PathWildCards:   make(map[string]interface{}),
+				QueryParameters: make(map[string]any),
 			},
 		},
 		{
@@ -445,10 +510,11 @@ func testBuildRequestSuccess(t *testing.T) {
 				}),
 			},
 			expected: &Request{
-				Logger:        sallust.Default(),
-				Claims:        map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
-				Metadata:      map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
-				PathWildCards: make(map[string]interface{}),
+				Logger:          sallust.Default(),
+				Claims:          map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
+				Metadata:        map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
+				PathWildCards:   make(map[string]interface{}),
+				QueryParameters: make(map[string]any),
 			},
 		},
 	}
@@ -639,10 +705,11 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 	require.IsType((*Request)(nil), v)
 	assert.Equal(
 		Request{
-			Logger:        sallust.Default(),
-			Claims:        map[string]interface{}{"claim": "value"},
-			Metadata:      make(map[string]interface{}),
-			PathWildCards: make(map[string]interface{}),
+			Logger:          sallust.Default(),
+			Claims:          map[string]interface{}{"claim": "value"},
+			Metadata:        make(map[string]interface{}),
+			PathWildCards:   make(map[string]interface{}),
+			QueryParameters: make(map[string]any),
 		},
 		*v.(*Request),
 	)

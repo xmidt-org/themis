@@ -131,6 +131,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	}
 	maps.Copy(rCopy.Metadata, r.Metadata)
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
+	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	if len(rc.extra) > 0 {
 		rCopy.Metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
 		for k, v := range r.Metadata {

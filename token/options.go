@@ -95,6 +95,10 @@ type PartnerID struct {
 	// value is set and thus the partner id won't be transmitted to remote systems via url path wild cards.
 	PathWildCard string
 
+	// QueryParameter is the name of the url query parameter key for the partner id.  If unset, no path url query parameter
+	// value is set and thus the partner id won't be transmitted to remote systems via url query parameters.
+	QueryParameter string
+
 	// Header is the HTTP header containing the partner id
 	Header string
 
@@ -233,6 +237,7 @@ type Options struct {
 	Remote *RemoteClaims
 
 	// The following options are for remote claims' requests.
-	Metadata      []Value // Metadata describes the non-claim request payload, which can be statically configured or supplied via a request.
-	PathWildCards []Value // PathWildCards are the request path wildcards, which can be statically configured or supplied via a HTTP request.
+	Metadata        []Value // Metadata describes the non-claim request payload, which can be statically configured or supplied via a request.
+	PathWildCards   []Value // PathWildCards are the request path wildcards, which can be statically configured or supplied via a HTTP request.
+	QueryParameters []Value // QueryParameters are the request query parameters, which can be statically configured or supplied via a HTTP request
 }
