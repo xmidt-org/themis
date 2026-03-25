@@ -34,7 +34,7 @@ func testNewRequestBuildersInvalidClaim(t *testing.T) {
 		},
 	})
 
-	assert.Equal(ErrVariableNotAllowed, err)
+	assert.ErrorIs(err, ErrVariableNotAllowed)
 	assert.Empty(rb)
 }
 
@@ -51,7 +51,7 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 		},
 	})
 
-	assert.Equal(ErrVariableNotAllowed, err)
+	assert.ErrorIs(err, ErrVariableNotAllowed)
 	assert.Empty(rb)
 }
 
@@ -68,7 +68,7 @@ func testNewRequestBuildersInvalidPathValues(t *testing.T) {
 		},
 	})
 
-	assert.Equal(ErrVariableNotAllowed, err)
+	assert.ErrorIs(err, ErrVariableNotAllowed)
 	assert.Empty(rb)
 }
 
