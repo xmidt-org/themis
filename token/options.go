@@ -204,9 +204,8 @@ type Options struct {
 	// Metadata describes non-claim data, which can be statically configured or supplied via a request
 	Metadata []Value
 
-	// PathValues holds non-claim information about the request, usually garnered from the original HTTP request.  This
-	// PathValues is available to remote claim builders.
-	PathValues []Value
+	// (Optional) PathWildCards are the URL's named path wildcards, which can be statically configured or supplied via a HTTP request
+	PathWildCards []Value
 
 	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
 	// performed, though a partner id may still be configured as part of the claims.

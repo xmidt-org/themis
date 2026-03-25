@@ -30,13 +30,12 @@ type Request struct {
 	// but will not override time-based claims such as nbf or exp.
 	Claims map[string]interface{}
 
-	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request.  This
-	// metadata is available to lower levels of infrastructure used by the Factory.
+	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request (for remote claim requests).
 	Metadata map[string]interface{}
 
-	// PathValues holds non-claim information about the request, usually garnered from the original HTTP request.  This
-	// PathValues is available to remote claim builders.
-	PathValues map[string]interface{}
+	// (Optional) PathWildCards is a map listing the values specified for each url path wildcard (for remote claim requests).
+	// used to build request URL.
+	PathWildCards map[string]any
 
 	// TLS represents the state of any underlying TLS connection.
 	// For non-tls connections, this field is unset.
@@ -46,10 +45,10 @@ type Request struct {
 // NewRequest returns an empty, fully initialized token Request
 func NewRequest() *Request {
 	return &Request{
-		Logger:     sallust.Default(),
-		Claims:     make(map[string]interface{}),
-		Metadata:   make(map[string]interface{}),
-		PathValues: make(map[string]interface{}),
+		Logger:        sallust.Default(),
+		Claims:        make(map[string]interface{}),
+		Metadata:      make(map[string]interface{}),
+		PathWildCards: make(map[string]interface{}),
 	}
 }
 
