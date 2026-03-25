@@ -30,11 +30,12 @@ type Request struct {
 	// but will not override time-based claims such as nbf or exp.
 	Claims map[string]interface{}
 
-	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request (for remote claim requests).
+	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request.  This
+	// metadata is available to lower levels of infrastructure used by the Factory.
 	Metadata map[string]interface{}
 
-	// (Optional) PathWildCards is a map listing the values specified for each url path wildcard (for remote claim requests).
-	// used to build request URL.
+	// PathWildCards holds non-claim information about the request, usually garnered from the original HTTP request.  This
+	// PathWildCards is available to remote claim builders
 	PathWildCards map[string]any
 
 	// TLS represents the state of any underlying TLS connection.
