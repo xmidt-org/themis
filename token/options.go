@@ -70,6 +70,10 @@ func (v Value) Validate() error {
 
 	var types []string
 	if v.IsFromHTTP() {
+		if (len(v.Header) > 0 || len(v.Parameter) > 0) && len(v.Variable) > 0 {
+			return fmt.Errorf("invalid http field `%s`: %w", v.Key, ErrVariableNotAllowed)
+		}
+
 		types = append(types, "http")
 	}
 	if v.IsStatic() {
