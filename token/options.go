@@ -91,9 +91,9 @@ type PartnerID struct {
 	// is set and thus the partner id won't be transmitted to remote systems.
 	Metadata string
 
-	// PathValue is the name of the path value key for the partner id.  If unset, no path value
-	// is set and thus the partner id won't be transmitted to remote systems via url path value.
-	PathValue string
+	// PathWildCard is the name of the path wild card key for the partner id.  If unset, no path wild card
+	// value is set and thus the partner id won't be transmitted to remote systems via url path wild cards.
+	PathWildCard string
 
 	// Header is the HTTP header containing the partner id
 	Header string
