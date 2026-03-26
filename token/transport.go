@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -229,111 +230,46 @@ func setConnectionState(original *http.Request, tr *Request) error {
 // NewRequestBuilders creates a RequestBuilders sequence given an Options configuration.  Only claims
 // and metadata that are HTTP-based are included in the results.  Claims and metadata that are statically
 // assigned values are handled by ClaimBuilder objects and are part of the Factory configuration.
-func NewRequestBuilders(o Options) (RequestBuilders, error) {
-	var rb RequestBuilders
-	for _, value := range o.Claims {
-		switch {
-		case len(value.Key) == 0:
-			return nil, ErrMissingKey
+func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
+	rb, err := newRequestBuilders(o.Claims, claimsSetter)
+	rb1, err1 := newRequestBuilders(o.Metadata, metadataSetter)
+	rb2, err2 := newRequestBuilders(o.PathWildCards, pathValuesSetter)
+	if errs = errors.Join(err, err1, err2); errs != nil {
+		return nil, errs
+	}
 
-		case len(value.Header) > 0 || len(value.Parameter) > 0:
-			if len(value.Variable) > 0 {
-				return nil, ErrVariableNotAllowed
-			}
+	rbs = slices.Concat(rb, rb1, rb2)
+	if o.PartnerID != nil {
+		rbs = append(rbs, partnerIDRequestBuilder{PartnerID: *o.PartnerID})
+	}
 
-			rb = append(rb,
-				headerParameterRequestBuilder{
-					key:       value.Key,
-					header:    http.CanonicalHeaderKey(value.Header),
-					parameter: value.Parameter,
-					setter:    claimsSetter,
-				},
-			)
+	return append(rbs, RequestBuilderFunc(setConnectionState)), nil
+}
 
-		case len(value.Variable) > 0:
-			rb = append(rb,
-				variableRequestBuilder{
-					key:      value.Key,
-					variable: value.Variable,
-					setter:   claimsSetter},
-			)
+func newRequestBuilders(values []Value, setter func(string, any, *Request)) (rbs RequestBuilders, errs error) {
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsFromHTTP() {
+			continue
+		}
+
+		if len(v.Header) > 0 || len(v.Parameter) > 0 {
+			rbs = append(rbs, headerParameterRequestBuilder{
+				key:       v.Key,
+				header:    http.CanonicalHeaderKey(v.Header),
+				parameter: v.Parameter,
+				setter:    setter,
+			})
+		} else {
+			rbs = append(rbs, variableRequestBuilder{
+				key:      v.Key,
+				variable: v.Variable,
+				setter:   setter,
+			})
 		}
 	}
 
-	for _, value := range o.Metadata {
-		switch {
-		case len(value.Key) == 0:
-			return nil, ErrMissingKey
-
-		case len(value.Header) > 0 || len(value.Parameter) > 0:
-			if len(value.Variable) > 0 {
-				return nil, ErrVariableNotAllowed
-			}
-
-			rb = append(rb,
-				headerParameterRequestBuilder{
-					key:       value.Key,
-					header:    http.CanonicalHeaderKey(value.Header),
-					parameter: value.Parameter,
-					setter:    metadataSetter,
-				},
-			)
-
-		case len(value.Variable) > 0:
-			rb = append(rb,
-				variableRequestBuilder{
-					key:      value.Key,
-					variable: value.Variable,
-					setter:   metadataSetter,
-				},
-			)
-		}
-	}
-
-	for _, value := range o.PathWildCards {
-		switch {
-		case len(value.Key) == 0:
-			return nil, ErrMissingKey
-
-		case len(value.Header) > 0 || len(value.Parameter) > 0:
-			if len(value.Variable) > 0 {
-				return nil, ErrVariableNotAllowed
-			}
-
-			rb = append(rb,
-				headerParameterRequestBuilder{
-					key:       value.Key,
-					header:    http.CanonicalHeaderKey(value.Header),
-					parameter: value.Parameter,
-					setter:    pathValuesSetter,
-				},
-			)
-
-		case len(value.Variable) > 0:
-			rb = append(rb,
-				variableRequestBuilder{
-					key:      value.Key,
-					variable: value.Variable,
-					setter:   pathValuesSetter,
-				},
-			)
-		}
-	}
-
-	if o.PartnerID != nil && (len(o.PartnerID.Claim) > 0 || len(o.PartnerID.Metadata) > 0 || len(o.PartnerID.PathValue) > 0) {
-		rb = append(rb,
-			partnerIDRequestBuilder{
-				PartnerID: *o.PartnerID,
-			},
-		)
-	}
-
-	rb = append(
-		rb,
-		RequestBuilderFunc(setConnectionState),
-	)
-
-	return rb, nil
+	return
 }
 
 // BuildRequest applies a sequence of RequestBuilder instances to produce a token factory Request
