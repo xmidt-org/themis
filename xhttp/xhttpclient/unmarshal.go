@@ -3,8 +3,6 @@
 package xhttpclient
 
 import (
-	"net/http"
-
 	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/themis/config"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -30,10 +28,6 @@ type ClientUnmarshalIn struct {
 	// ChainFactory is an optional component used to create a Chain specific to a given HTTP client.
 	// Both this field and Chain may be set, in which case both are used to create a single Chain.
 	ChainFactory ChainFactory `optional:"true"`
-
-	// RoundTripper is an optional http.RoundTripper component.  If present, this field will be used
-	// for clients unmarshalled by this instance.  Configuration will be ignored in favor of this component.
-	RoundTripper http.RoundTripper `optional:"true"`
 
 	// Tracing will be used to set up tracing instrumentation code.
 	Tracing candlelight.Tracing `optional:"true"`
@@ -70,14 +64,12 @@ func (u Unmarshal) Provide(in ClientUnmarshalIn) (Interface, error) {
 		return nil, err
 	}
 
-	var rt http.RoundTripper
-	if in.RoundTripper != nil {
-		rt = in.RoundTripper
-	} else {
-		rt = NewRoundTripper(o.Transport)
+	transport, err := o.HTTPClient.Transport.NewTransport(o.HTTPClient.TLS)
+	if err != nil {
+		return nil, err
 	}
 
-	rt = otelhttp.NewTransport(rt,
+	rt := otelhttp.NewTransport(transport,
 		otelhttp.WithPropagators(in.Tracing.Propagator()),
 		otelhttp.WithTracerProvider(in.Tracing.TracerProvider()),
 	)
@@ -92,7 +84,7 @@ func (u Unmarshal) Provide(in ClientUnmarshalIn) (Interface, error) {
 		chain = chain.Extend(more)
 	}
 
-	return NewCustom(o, chain.Then(rt)), nil
+	return NewCustom(o, chain.Then(rt))
 }
 
 // Annotated returns an uber/fx Annotated instance that emits an HTTP client with a specific name.

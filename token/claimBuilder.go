@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"time"
@@ -60,9 +61,7 @@ func (cbs ClaimBuilders) AddClaims(ctx context.Context, r *Request, target map[s
 type requestClaimBuilder struct{}
 
 func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
-	for k, v := range r.Claims {
-		target[k] = v
-	}
+	maps.Copy(target, r.Claims)
 
 	return nil
 }
@@ -71,9 +70,7 @@ func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target ma
 type staticClaimBuilder map[string]interface{}
 
 func (sc staticClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
-	for k, v := range sc {
-		target[k] = v
-	}
+	maps.Copy(target, sc)
 
 	return nil
 }
@@ -116,8 +113,7 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 	return nil
 }
 
-// remoteClaimBuilder invokes a remote system to obtain claims.  The metadata from a token request
-// is passed as the payload.
+// remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
 	endpoint endpoint.Endpoint
 	url      string
@@ -125,28 +121,17 @@ type remoteClaimBuilder struct {
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
-	metadata := r.Metadata
-	if len(rc.extra) > 0 {
-		metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
-		for k, v := range r.Metadata {
-			metadata[k] = v
-		}
-
-		for k, v := range rc.extra {
-			metadata[k] = v
-		}
+	rCopy := NewRequest()
+	maps.Copy(rCopy.Metadata, r.Metadata)
+	maps.Copy(rCopy.Metadata, rc.extra)
+	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
+	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
+	result, err := rc.endpoint(ctx, rCopy)
+	if err == nil {
+		maps.Copy(target, result.(map[string]any))
 	}
 
-	result, err := rc.endpoint(ctx, metadata)
-	if err != nil {
-		return err
-	}
-
-	for k, v := range result.(map[string]interface{}) {
-		target[k] = v
-	}
-
-	return nil
+	return err
 }
 
 func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
@@ -171,7 +156,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 	c := kithttp.NewClient(
 		method,
 		url,
-		kithttp.EncodeJSONRequest,
+		EncodeRemoteClaimsRequest,
 		DecodeRemoteClaimsResponse,
 		kithttp.SetClient(client),
 		kithttp.ClientBefore(
@@ -283,28 +268,11 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
 func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
-	var (
-		builders           = ClaimBuilders{requestClaimBuilder{}}
-		staticClaimBuilder = make(staticClaimBuilder)
-	)
-
-	if o.Remote != nil { // scan the metadata looking for static values that should be applied when invoking the remote server
-		metadata := make(map[string]interface{})
-		for _, value := range o.Metadata {
-			switch {
-			case len(value.Key) == 0:
-				return nil, ErrMissingKey
-			case value.IsFromHTTP():
-				continue
-			case !value.IsStatic():
-				return nil, fmt.Errorf("a value is required for the static metadata: %s", value.Key)
-			default:
-				msg, err := value.RawMessage()
-				if err != nil {
-					return nil, err
-				}
-				metadata[value.Key] = msg
-			}
+	builders := ClaimBuilders{requestClaimBuilder{}}
+	if o.Remote != nil {
+		metadata, err := getStaticValues(o.Metadata)
+		if err != nil {
+			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
 		}
 
 		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
@@ -315,31 +283,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		builders = append(builders, remoteClaimBuilder)
 	}
 
-	for _, value := range o.Claims {
-		switch {
-		case len(value.Key) == 0:
-			return nil, ErrMissingKey
-
-		case value.IsFromHTTP():
-			continue
-
-		case !value.IsStatic():
-			return nil, fmt.Errorf("a value is required for the static claim: %s", value.Key)
-
-		default:
-			msg, err := value.RawMessage()
-			if err != nil {
-				return nil, err
-			}
-
-			staticClaimBuilder[value.Key] = msg
-		}
+	staticClaims, err := getStaticValues(o.Claims)
+	if err != nil {
+		return nil, fmt.Errorf("static claim builder configuration failure: %w", err)
 	}
 
-	if len(staticClaimBuilder) > 0 {
-		builders = append(builders, staticClaimBuilder)
-	}
-
+	builders = append(builders, staticClaimBuilder(staticClaims))
 	if o.Nonce && n != nil {
 		builders = append(builders, nonceClaimBuilder{n: n})
 	}
@@ -364,4 +313,22 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	}
 
 	return builders, err
+}
+
+func getStaticValues(vals []Value) (map[string]any, error) {
+	var errs []error
+
+	m := make(map[string]any)
+	for _, v := range vals {
+		errs = append(errs, v.Validate())
+		if !v.IsStatic() {
+			continue
+		}
+
+		msg, err := v.RawMessage()
+		errs = append(errs, err)
+		m[v.Key] = msg
+	}
+
+	return m, errors.Join(errs...)
 }

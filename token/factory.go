@@ -30,21 +30,24 @@ type Request struct {
 	// but will not override time-based claims such as nbf or exp.
 	Claims map[string]interface{}
 
-	// Metadata holds non-claim information about the request, usually garnered from the original HTTP request.  This
-	// metadata is available to lower levels of infrastructure used by the Factory.
-	Metadata map[string]interface{}
-
 	// TLS represents the state of any underlying TLS connection.
 	// For non-tls connections, this field is unset.
 	TLS *tls.ConnectionState
+
+	// The following fields are for remote claims' requests.
+	Metadata        map[string]any // Metadata is the request payload.
+	PathWildCards   map[string]any // PathWildCards are the request path wildcards.
+	QueryParameters map[string]any // QueryParameters are the request query parameters.
 }
 
 // NewRequest returns an empty, fully initialized token Request
 func NewRequest() *Request {
 	return &Request{
-		Logger:   sallust.Default(),
-		Claims:   make(map[string]interface{}),
-		Metadata: make(map[string]interface{}),
+		Logger:          sallust.Default(),
+		Claims:          make(map[string]interface{}),
+		Metadata:        make(map[string]interface{}),
+		PathWildCards:   make(map[string]interface{}),
+		QueryParameters: make(map[string]interface{}),
 	}
 }
 

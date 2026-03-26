@@ -620,6 +620,46 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 	suite.Error(err)
 }
 
+func (suite *NewClaimBuildersTestSuite) TestInvalidValueType() {
+	suite.Run("Claims", suite.testClaimsInvalidValueType)
+	suite.Run("Metadata", suite.testMetadataInvalidValueType)
+}
+
+func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
+	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+		Nonce:       false,
+		DisableTime: true,
+		Claims: []Value{
+			{
+				Key:    "test",
+				Header: "header1",
+				Value:  "value1",
+			},
+		},
+	})
+
+	suite.Nil(builder)
+	suite.Error(err)
+}
+
+func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
+	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+		Nonce:       false,
+		DisableTime: true,
+		Metadata: []Value{
+			{
+				Key:    "test",
+				Header: "header1",
+				Value:  "value1",
+			},
+		},
+		Remote: &RemoteClaims{},
+	})
+
+	suite.Nil(builder)
+	suite.Error(err)
+}
+
 func (suite *NewClaimBuildersTestSuite) TestBadJSONValue() {
 	suite.Run("Claims", suite.testClaimsBadJSONValue)
 	suite.Run("Metadata", suite.testMetadataBadJSONValue)
@@ -810,7 +850,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(

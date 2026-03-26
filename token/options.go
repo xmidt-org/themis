@@ -4,6 +4,7 @@ package token
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/xmidt-org/themis/key"
@@ -62,6 +63,32 @@ func (v Value) IsStatic() bool {
 	return len(v.JSON) > 0 || v.Value != nil
 }
 
+func (v Value) Validate() error {
+	if len(v.Key) == 0 {
+		return ErrMissingKey
+	}
+
+	var types []string
+	if v.IsFromHTTP() {
+		if (len(v.Header) > 0 || len(v.Parameter) > 0) && len(v.Variable) > 0 {
+			return fmt.Errorf("invalid http field `%s`: %w", v.Key, ErrVariableNotAllowed)
+		}
+
+		types = append(types, "http")
+	}
+	if v.IsStatic() {
+		types = append(types, "static")
+	}
+
+	if len(types) == 0 {
+		return fmt.Errorf("value `%s` must be 1 of the following: http, static", v.Key)
+	} else if len(types) > 1 {
+		return fmt.Errorf("value `%s` can't have multiple types: %s", v.Key, types)
+	}
+
+	return nil
+}
+
 // RawMessage precomputes the JSON  for this value.  If the JSON field is set,
 // it is verified by unmarshaling.  Otherwise, the Value field is marshaled.
 func (v Value) RawMessage() (json.RawMessage, error) {
@@ -90,6 +117,14 @@ type PartnerID struct {
 	// Metadata is the name of the metadata key for the partner id.  If unset, no metadata
 	// is set and thus the partner id won't be transmitted to remote systems.
 	Metadata string
+
+	// PathWildCard is the name of the path wild card key for the partner id.  If unset, no path wild card
+	// value is set and thus the partner id won't be transmitted to remote systems via url path wild cards.
+	PathWildCard string
+
+	// QueryParameter is the name of the url query parameter key for the partner id.  If unset, no path url query parameter
+	// value is set and thus the partner id won't be transmitted to remote systems via url query parameters.
+	QueryParameter string
 
 	// Header is the HTTP header containing the partner id
 	Header string
@@ -197,9 +232,6 @@ type Options struct {
 	// or statically from configuration.  For special processing around the partner id, set the PartnerID field.
 	Claims []Value
 
-	// Metadata describes non-claim data, which can be statically configured or supplied via a request
-	Metadata []Value
-
 	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
 	// performed, though a partner id may still be configured as part of the claims.
 	PartnerID *PartnerID
@@ -230,4 +262,9 @@ type Options struct {
 	// and returns a set of claims to be merged into tokens returned by the Factory.  Returned
 	// claims from the remote system do not override claims configured on the Factory.
 	Remote *RemoteClaims
+
+	// The following options are for remote claims' requests.
+	Metadata        []Value // Metadata describes the non-claim request payload, which can be statically configured or supplied via a request.
+	PathWildCards   []Value // PathWildCards are the request path wildcards, which can be statically configured or supplied via a HTTP request.
+	QueryParameters []Value // QueryParameters are the request query parameters, which can be statically configured or supplied via a HTTP request
 }

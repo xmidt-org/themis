@@ -55,6 +55,14 @@ prometheus:
   constLabels:
     development: "true"
 
+client:
+  httpClient:
+    tls:
+      minVersion: 771 # 0x0303, the TLS 1.2 version uint16
+      # certificates:
+      #   - certificateFile: /etc/comcastthemis/cert.pem
+      #     keyFile: /etc/comcastthemis/key.pem
+
 token:
   alg: RS256
   nonce: true
@@ -106,6 +114,13 @@ token:
     - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
+  pathWildCards:
+    - key: mac
+      header: X-Midt-Mac-Address
+      parameter: mac
+  remote:
+    method: GET
+    url: https://localhost:443/device/{mac}/claims?format=json
   partnerID:
     claim: partner-id
     metadata: pid
