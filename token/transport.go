@@ -112,7 +112,7 @@ func metadataSetter(key string, value interface{}, tr *Request) {
 }
 
 func pathValuesSetter(key string, value interface{}, tr *Request) {
-	tr.PathValues[key] = value
+	tr.PathWildCards[key] = value
 }
 
 type headerParameterRequestBuilder struct {
@@ -210,7 +210,7 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 		}
 
 		if len(prb.PathValue) > 0 {
-			tr.PathValues[prb.PathValue] = partnerID
+			tr.PathWildCards[prb.PathValue] = partnerID
 		}
 	}
 
@@ -290,7 +290,7 @@ func NewRequestBuilders(o Options) (RequestBuilders, error) {
 		}
 	}
 
-	for _, value := range o.PathValues {
+	for _, value := range o.PathWildCards {
 		switch {
 		case len(value.Key) == 0:
 			return nil, ErrMissingKey
@@ -449,7 +449,7 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 	}
 
 	tr := request.(*Request)
-	for k, v := range tr.PathValues {
+	for k, v := range tr.PathWildCards {
 		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
 	}
 

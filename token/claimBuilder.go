@@ -127,12 +127,11 @@ type remoteClaimBuilder struct {
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
 	rCopy := Request{
-		Metadata:   make(map[string]interface{}),
-		PathValues: make(map[string]interface{}),
+		Metadata:      make(map[string]interface{}),
+		PathWildCards: make(map[string]interface{}),
 	}
-
 	maps.Copy(rCopy.Metadata, r.Metadata)
-	maps.Copy(rCopy.PathValues, r.PathValues)
+	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	if len(rc.extra) > 0 {
 		rCopy.Metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
 		for k, v := range r.Metadata {
