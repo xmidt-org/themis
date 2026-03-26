@@ -4,6 +4,7 @@ package token
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/xmidt-org/themis/key"
@@ -60,6 +61,32 @@ func (v Value) IsFromHTTP() bool {
 // come from an HTTP request.
 func (v Value) IsStatic() bool {
 	return len(v.JSON) > 0 || v.Value != nil
+}
+
+func (v Value) Validate() error {
+	if len(v.Key) == 0 {
+		return ErrMissingKey
+	}
+
+	var types []string
+	if v.IsFromHTTP() {
+		if (len(v.Header) > 0 || len(v.Parameter) > 0) && len(v.Variable) > 0 {
+			return fmt.Errorf("invalid http field `%s`: %w", v.Key, ErrVariableNotAllowed)
+		}
+
+		types = append(types, "http")
+	}
+	if v.IsStatic() {
+		types = append(types, "static")
+	}
+
+	if len(types) == 0 {
+		return fmt.Errorf("value `%s` must be 1 of the following: http, static", v.Key)
+	} else if len(types) > 1 {
+		return fmt.Errorf("value `%s` can't have multiple types: %s", v.Key, types)
+	}
+
+	return nil
 }
 
 // RawMessage precomputes the JSON  for this value.  If the JSON field is set,
