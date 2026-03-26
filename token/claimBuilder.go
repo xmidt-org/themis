@@ -113,8 +113,7 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 	return nil
 }
 
-// remoteClaimBuilder invokes a remote system to obtain claims.  The metadata from a token request
-// is passed as the payload.
+// remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
 	endpoint endpoint.Endpoint
 	url      string

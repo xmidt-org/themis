@@ -201,12 +201,6 @@ type Options struct {
 	// or statically from configuration.  For special processing around the partner id, set the PartnerID field.
 	Claims []Value
 
-	// Metadata describes non-claim data, which can be statically configured or supplied via a request
-	Metadata []Value
-
-	// (Optional) PathWildCards are the URL's named path wildcards, which can be statically configured or supplied via a HTTP request
-	PathWildCards []Value
-
 	// PartnerID is the optional partner id configuration.  If unset, no partner id processing is
 	// performed, though a partner id may still be configured as part of the claims.
 	PartnerID *PartnerID
@@ -237,4 +231,8 @@ type Options struct {
 	// and returns a set of claims to be merged into tokens returned by the Factory.  Returned
 	// claims from the remote system do not override claims configured on the Factory.
 	Remote *RemoteClaims
+
+	// The following options are for remote claims' requests.
+	Metadata      []Value // Metadata describes the non-claim request payload, which can be statically configured or supplied via a request.
+	PathWildCards []Value // PathWildCards are the request path wildcards, which can be statically configured or supplied via a HTTP request.
 }
