@@ -256,37 +256,23 @@ func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
 }
 
 func newRequestBuilders(values []Value, setter func(string, any, *Request)) (rbs RequestBuilders, errs error) {
-	for _, value := range values {
-		var err error
-		if len(value.Key) == 0 {
-			err = ErrMissingKey
-		} else if (len(value.Header) > 0 || len(value.Parameter) > 0) && len(value.Variable) > 0 {
-			err = fmt.Errorf("invalid http field `%s`: %w", value.Key, ErrVariableNotAllowed)
-		} else if !value.IsStatic() && !value.IsFromHTTP() {
-			err = fmt.Errorf("unknown configuration value type `%s`, is not http or static type", value.Key)
-		}
-
-		if err != nil {
-			errs = multierr.Append(errs, err)
-
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsFromHTTP() {
 			continue
 		}
 
-		if !value.IsFromHTTP() {
-			continue
-		}
-
-		if len(value.Header) > 0 || len(value.Parameter) > 0 {
+		if len(v.Header) > 0 || len(v.Parameter) > 0 {
 			rbs = append(rbs, headerParameterRequestBuilder{
-				key:       value.Key,
-				header:    http.CanonicalHeaderKey(value.Header),
-				parameter: value.Parameter,
+				key:       v.Key,
+				header:    http.CanonicalHeaderKey(v.Header),
+				parameter: v.Parameter,
 				setter:    setter,
 			})
 		} else {
 			rbs = append(rbs, variableRequestBuilder{
-				key:      value.Key,
-				variable: value.Variable,
+				key:      v.Key,
+				variable: v.Variable,
 				setter:   setter,
 			})
 		}
