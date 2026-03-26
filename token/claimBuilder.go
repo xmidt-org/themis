@@ -267,28 +267,11 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
 func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
-	var (
-		builders           = ClaimBuilders{requestClaimBuilder{}}
-		staticClaimBuilder = make(staticClaimBuilder)
-	)
-
-	if o.Remote != nil { // scan the metadata looking for static values that should be applied when invoking the remote server
-		metadata := make(map[string]interface{})
-		for _, value := range o.Metadata {
-			switch {
-			case len(value.Key) == 0:
-				return nil, ErrMissingKey
-			case value.IsFromHTTP():
-				continue
-			case !value.IsStatic():
-				return nil, fmt.Errorf("a value is required for the static metadata: %s", value.Key)
-			default:
-				msg, err := value.RawMessage()
-				if err != nil {
-					return nil, err
-				}
-				metadata[value.Key] = msg
-			}
+	builders := ClaimBuilders{requestClaimBuilder{}}
+	if o.Remote != nil {
+		metadata, err := getStaticValues(o.Metadata)
+		if err != nil {
+			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
 		}
 
 		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
@@ -299,31 +282,12 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		builders = append(builders, remoteClaimBuilder)
 	}
 
-	for _, value := range o.Claims {
-		switch {
-		case len(value.Key) == 0:
-			return nil, ErrMissingKey
-
-		case value.IsFromHTTP():
-			continue
-
-		case !value.IsStatic():
-			return nil, fmt.Errorf("a value is required for the static claim: %s", value.Key)
-
-		default:
-			msg, err := value.RawMessage()
-			if err != nil {
-				return nil, err
-			}
-
-			staticClaimBuilder[value.Key] = msg
-		}
+	staticClaims, err := getStaticValues(o.Claims)
+	if err != nil {
+		return nil, fmt.Errorf("static claim builder configuration failure: %w", err)
 	}
 
-	if len(staticClaimBuilder) > 0 {
-		builders = append(builders, staticClaimBuilder)
-	}
-
+	builders = append(builders, staticClaimBuilder(staticClaims))
 	if o.Nonce && n != nil {
 		builders = append(builders, nonceClaimBuilder{n: n})
 	}
@@ -348,4 +312,22 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 	}
 
 	return builders, err
+}
+
+func getStaticValues(vals []Value) (map[string]any, error) {
+	var errs []error
+
+	m := make(map[string]any)
+	for _, v := range vals {
+		errs = append(errs, v.Validate())
+		if !v.IsStatic() {
+			continue
+		}
+
+		msg, err := v.RawMessage()
+		errs = append(errs, err)
+		m[v.Key] = msg
+	}
+
+	return m, errors.Join(errs...)
 }
