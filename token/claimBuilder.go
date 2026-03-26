@@ -125,6 +125,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.Metadata, r.Metadata)
 	maps.Copy(rCopy.Metadata, rc.extra)
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
+	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	result, err := rc.endpoint(ctx, rCopy)
 	if err == nil {
 		maps.Copy(target, result.(map[string]any))

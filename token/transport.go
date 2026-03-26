@@ -116,6 +116,10 @@ func pathWildCardsSetter(key string, value interface{}, tr *Request) {
 	tr.PathWildCards[key] = value
 }
 
+func queryParametersSetter(key string, value interface{}, tr *Request) {
+	tr.QueryParameters[key] = value
+}
+
 type headerParameterRequestBuilder struct {
 	key       string
 	header    string
@@ -213,6 +217,10 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 		if len(prb.PathWildCard) > 0 {
 			tr.PathWildCards[prb.PathWildCard] = partnerID
 		}
+
+		if len(prb.QueryParameter) > 0 {
+			tr.QueryParameters[prb.QueryParameter] = partnerID
+		}
 	}
 
 	return nil
@@ -234,11 +242,12 @@ func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
 	rb, err := newRequestBuilders(o.Claims, claimsSetter)
 	rb1, err1 := newRequestBuilders(o.Metadata, metadataSetter)
 	rb2, err2 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
-	if errs = errors.Join(err, err1, err2); errs != nil {
+	rb3, err3 := newRequestBuilders(o.QueryParameters, queryParametersSetter)
+	if errs = errors.Join(err, err1, err2, err3); errs != nil {
 		return nil, errs
 	}
 
-	rbs = slices.Concat(rb, rb1, rb2)
+	rbs = slices.Concat(rb, rb1, rb2, rb3)
 	if o.PartnerID != nil {
 		rbs = append(rbs, partnerIDRequestBuilder{PartnerID: *o.PartnerID})
 	}
@@ -389,6 +398,12 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
 	}
 
+	q := r.URL.Query()
+	for k, v := range tr.QueryParameters {
+		q.Add(k, v.(string))
+	}
+
+	r.URL.RawQuery = q.Encode()
 	b, err := json.Marshal(tr.Metadata)
 	if err != nil {
 		return err

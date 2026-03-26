@@ -35,17 +35,19 @@ type Request struct {
 	TLS *tls.ConnectionState
 
 	// The following fields are for remote claims' requests.
-	Metadata      map[string]any // Metadata is the request payload.
-	PathWildCards map[string]any // PathWildCards are the request path wildcards.
+	Metadata        map[string]any // Metadata is the request payload.
+	PathWildCards   map[string]any // PathWildCards are the request path wildcards.
+	QueryParameters map[string]any // QueryParameters are the request query parameters.
 }
 
 // NewRequest returns an empty, fully initialized token Request
 func NewRequest() *Request {
 	return &Request{
-		Logger:        sallust.Default(),
-		Claims:        make(map[string]interface{}),
-		Metadata:      make(map[string]interface{}),
-		PathWildCards: make(map[string]interface{}),
+		Logger:          sallust.Default(),
+		Claims:          make(map[string]interface{}),
+		Metadata:        make(map[string]interface{}),
+		PathWildCards:   make(map[string]interface{}),
+		QueryParameters: make(map[string]interface{}),
 	}
 }
 
