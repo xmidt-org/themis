@@ -114,7 +114,7 @@ token:
     - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
-  pathValues:
+  pathWildCards:
     - key: mac
       header: X-Midt-Mac-Address
       parameter: mac

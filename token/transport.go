@@ -112,7 +112,7 @@ func metadataSetter(key string, value interface{}, tr *Request) {
 	tr.Metadata[key] = value
 }
 
-func pathValuesSetter(key string, value interface{}, tr *Request) {
+func pathWildCardsSetter(key string, value interface{}, tr *Request) {
 	tr.PathWildCards[key] = value
 }
 
@@ -210,8 +210,8 @@ func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) er
 			tr.Metadata[prb.Metadata] = partnerID
 		}
 
-		if len(prb.PathValue) > 0 {
-			tr.PathWildCards[prb.PathValue] = partnerID
+		if len(prb.PathWildCard) > 0 {
+			tr.PathWildCards[prb.PathWildCard] = partnerID
 		}
 	}
 
@@ -233,7 +233,7 @@ func setConnectionState(original *http.Request, tr *Request) error {
 func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
 	rb, err := newRequestBuilders(o.Claims, claimsSetter)
 	rb1, err1 := newRequestBuilders(o.Metadata, metadataSetter)
-	rb2, err2 := newRequestBuilders(o.PathWildCards, pathValuesSetter)
+	rb2, err2 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
 	if errs = errors.Join(err, err1, err2); errs != nil {
 		return nil, errs
 	}

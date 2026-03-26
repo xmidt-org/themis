@@ -55,7 +55,7 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 	assert.Empty(rb)
 }
 
-func testNewRequestBuildersInvalidPathValues(t *testing.T) {
+func testNewRequestBuildersInvalidPathWildCards(t *testing.T) {
 	assert := assert.New(t)
 	rb, err := NewRequestBuilders(Options{
 		PathWildCards: []Value{
@@ -113,10 +113,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					},
 				},
 				PartnerID: &PartnerID{
-					Claim:     "partner-id-claim",
-					Metadata:  "partner-id-metadata",
-					PathValue: "partner-id-pathValue",
-					Header:    "X-Midt-Partner-ID",
+					Claim:        "partner-id-claim",
+					Metadata:     "partner-id-metadata",
+					PathWildCard: "partner-id-pathWildCard",
+					Header:       "X-Midt-Partner-ID",
 				},
 			},
 			uri: "/test",
@@ -137,8 +137,8 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"partner-id-metadata": "test",
 				},
 				PathWildCards: map[string]any{
-					"fromHeader":           "foobar",
-					"partner-id-pathValue": "test",
+					"fromHeader":              "foobar",
+					"partner-id-pathWildCard": "test",
 				},
 			},
 		},
@@ -167,7 +167,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				PathWildCards: []Value{
 					{
 						Key:       "fromParameter",
-						Parameter: "pathValue",
+						Parameter: "pathWildCard",
 					},
 					{
 						Key:       "missing",
@@ -175,13 +175,13 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					},
 				},
 				PartnerID: &PartnerID{
-					Claim:     "partner-id-claim",
-					Metadata:  "partner-id-metadata",
-					PathValue: "partner-id-pathValue",
-					Parameter: "pid",
+					Claim:        "partner-id-claim",
+					Metadata:     "partner-id-metadata",
+					PathWildCard: "partner-id-pathWildCard",
+					Parameter:    "pid",
 				},
 			},
-			uri: "/test?pid=test&claim=foo&metadata=bar&pathValue=foobar",
+			uri: "/test?pid=test&claim=foo&metadata=bar&pathWildCard=foobar&queryParameters=json",
 			expected: &Request{
 				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
@@ -193,8 +193,8 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"partner-id-metadata": "test",
 				},
 				PathWildCards: map[string]any{
-					"fromParameter":        "foobar",
-					"partner-id-pathValue": "test",
+					"fromParameter":           "foobar",
+					"partner-id-pathWildCard": "test",
 				},
 			},
 		},
@@ -215,22 +215,22 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				PathWildCards: []Value{
 					{
 						Key:      "fromVariable",
-						Variable: "pathValues",
+						Variable: "pathWildCard",
 					},
 				},
 				PartnerID: &PartnerID{
-					Claim:     "partner-id-claim",
-					Metadata:  "partner-id-metadata",
-					PathValue: "partner-id-pathValue",
-					Parameter: "pid",
-					Default:   "test",
+					Claim:        "partner-id-claim",
+					Metadata:     "partner-id-metadata",
+					PathWildCard: "partner-id-pathWildCard",
+					Parameter:    "pid",
+					Default:      "test",
 				},
 			},
 			uri: "/test/foo/bar",
 			urlVariables: map[string]string{
-				"claim":      "foo",
-				"metadata":   "bar",
-				"pathValues": "foobar",
+				"claim":        "foo",
+				"metadata":     "bar",
+				"pathWildCard": "foobar",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -243,8 +243,8 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"partner-id-metadata": "test",
 				},
 				PathWildCards: map[string]any{
-					"fromVariable":         "foobar",
-					"partner-id-pathValue": "test",
+					"fromVariable":            "foobar",
+					"partner-id-pathWildCard": "test",
 				},
 			},
 		},
@@ -265,15 +265,15 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				PathWildCards: []Value{
 					{
 						Key:      "fromVariable",
-						Variable: "pathValue",
+						Variable: "pathWildCard",
 					},
 				},
 			},
 			uri: "/test/foo/bar",
 			urlVariables: map[string]string{
-				"claim":     "foo",
-				"metadata":  "bar",
-				"pathValue": "foobar",
+				"claim":        "foo",
+				"metadata":     "bar",
+				"pathWildCard": "foobar",
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
@@ -382,7 +382,7 @@ func testNewRequestBuildersInvalidPartnerID(t *testing.T) {
 func TestNewRequestBuilders(t *testing.T) {
 	t.Run("InvalidClaim", testNewRequestBuildersInvalidClaim)
 	t.Run("InvalidMetadata", testNewRequestBuildersInvalidMetadata)
-	t.Run("InvalidPathValues", testNewRequestBuildersInvalidPathValues)
+	t.Run("InvalidPathWildCards", testNewRequestBuildersInvalidPathWildCards)
 	t.Run("MissingVariable", testNewRequestBuildersMissingVariable)
 	t.Run("InvalidPartnerID", testNewRequestBuildersInvalidPartnerID)
 	t.Run("Success", testNewRequestBuildersSuccess)
