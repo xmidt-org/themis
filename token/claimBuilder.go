@@ -61,9 +61,7 @@ func (cbs ClaimBuilders) AddClaims(ctx context.Context, r *Request, target map[s
 type requestClaimBuilder struct{}
 
 func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
-	for k, v := range r.Claims {
-		target[k] = v
-	}
+	maps.Copy(target, r.Claims)
 
 	return nil
 }
@@ -72,9 +70,7 @@ func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target ma
 type staticClaimBuilder map[string]interface{}
 
 func (sc staticClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
-	for k, v := range sc {
-		target[k] = v
-	}
+	maps.Copy(target, sc)
 
 	return nil
 }
@@ -125,33 +121,16 @@ type remoteClaimBuilder struct {
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
-	rCopy := Request{
-		Metadata:      make(map[string]interface{}),
-		PathWildCards: make(map[string]interface{}),
-	}
+	rCopy := NewRequest()
 	maps.Copy(rCopy.Metadata, r.Metadata)
+	maps.Copy(rCopy.Metadata, rc.extra)
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
-	if len(rc.extra) > 0 {
-		rCopy.Metadata = make(map[string]interface{}, len(r.Metadata)+len(rc.extra))
-		for k, v := range r.Metadata {
-			rCopy.Metadata[k] = v
-		}
-
-		for k, v := range rc.extra {
-			rCopy.Metadata[k] = v
-		}
+	result, err := rc.endpoint(ctx, rCopy)
+	if err == nil {
+		maps.Copy(target, result.(map[string]any))
 	}
 
-	result, err := rc.endpoint(ctx, &rCopy)
-	if err != nil {
-		return err
-	}
-
-	for k, v := range result.(map[string]interface{}) {
-		target[k] = v
-	}
-
-	return nil
+	return err
 }
 
 func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
