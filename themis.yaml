@@ -121,6 +121,10 @@ token:
   remote:
     method: GET
     url: https://localhost:443/device/{mac}/claims?format=json
+    # trustClaimPolicy is the policy used to determine which turst related claims are sourced from between remote claims and themis.
+    # This doesn't override remote payload claims configuration for turst, but provides additional security controls.
+	  # Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).
+    trustClaimPolicy: lowest
   partnerID:
     claim: partner-id
     metadata: pid

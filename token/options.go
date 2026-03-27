@@ -4,10 +4,12 @@ package token
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/token/trust"
 )
 
 const (
@@ -27,6 +29,11 @@ type RemoteClaims struct {
 	// URL is the remote endpoint that is expected to receive Request.Metadata and return a JSON document
 	// which is merged into the token claims
 	URL string
+
+	// TrustClaimPolicy is the policy used to determine which turst related claims are sourced from between remote claims and themis.
+	// This doesn't override remote payload claims configuration for turst, but provides additional security controls.
+	// Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).
+	TrustClaimPolicy trust.Policy
 }
 
 // Value describes how to extract a key/value pair from either an HTTP request or from configuration.

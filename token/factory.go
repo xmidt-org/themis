@@ -10,6 +10,7 @@ import (
 
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/token/trust"
 	"go.uber.org/zap"
 
 	"github.com/golang-jwt/jwt"
@@ -38,6 +39,11 @@ type Request struct {
 	Metadata        map[string]any // Metadata is the request payload.
 	PathWildCards   map[string]any // PathWildCards are the request path wildcards.
 	QueryParameters map[string]any // QueryParameters are the request query parameters.
+}
+
+func (r *Request) SetTrustMetdata(tType trust.Type, tValue int) {
+	r.Metadata[ClaimTrustType] = tType
+	r.Metadata[ClaimTrust] = tValue
 }
 
 // NewRequest returns an empty, fully initialized token Request

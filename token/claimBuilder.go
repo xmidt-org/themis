@@ -26,6 +26,9 @@ const (
 	// ClaimTrust is the name of the trust value within JWT claims issued
 	// by themis. This claim will be written based upon TLS connection state.
 	ClaimTrust = "trust"
+	// ClaimTrustType is the name of the trust type value within JWT claims issued
+	// by themis. This claim will be written based upon TLS connection state and, unlike the trust claim value, it's not configurable.
+	ClaimTrustType = "trust_type"
 )
 
 var (
@@ -200,17 +203,21 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 	// simplest case: this request either (1) didn't come from a TLS connection,
 	// or (2) the client sent no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+		r.SetTrustMetdata(trust.NoCertificates, cb.trust.NoCertificates)
 		target[ClaimTrust] = cb.trust.NoCertificates
+		target[ClaimTrustType] = trust.NoCertificates
 		return
 	}
 
 	now := time.Now()
-	var trust int
+	var trustLevel int
 	for i, pc := range r.TLS.PeerCertificates {
 		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
 			// the TLS layer already verified this certificate, so we're done
 			// we assume Trusted is the highest trust level
+			r.SetTrustMetdata(trust.Trusted, cb.trust.Trusted)
 			target[ClaimTrust] = cb.trust.Trusted
+			target[ClaimTrustType] = trust.Trusted
 			return
 		}
 
@@ -236,29 +243,37 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		switch {
 		case expired && verifyErr != nil:
-			if trust < cb.trust.ExpiredUntrusted {
-				trust = cb.trust.ExpiredUntrusted
+			if trustLevel < cb.trust.ExpiredUntrusted {
+				r.SetTrustMetdata(trust.ExpiredUntrusted, cb.trust.Trusted)
+				trustLevel = cb.trust.ExpiredUntrusted
+				target[ClaimTrustType] = trust.ExpiredUntrusted
 			}
 
 		case !expired && verifyErr != nil:
-			if trust < cb.trust.Untrusted {
-				trust = cb.trust.Untrusted
+			if trustLevel < cb.trust.Untrusted {
+				r.SetTrustMetdata(trust.Untrusted, cb.trust.Untrusted)
+				trustLevel = cb.trust.Untrusted
+				target[ClaimTrustType] = trust.Untrusted
 			}
 
 		case expired && verifyErr == nil:
-			if trust < cb.trust.ExpiredTrusted {
-				trust = cb.trust.ExpiredTrusted
+			if trustLevel < cb.trust.ExpiredTrusted {
+				r.SetTrustMetdata(trust.ExpiredTrusted, cb.trust.ExpiredTrusted)
+				trustLevel = cb.trust.ExpiredTrusted
+				target[ClaimTrustType] = trust.ExpiredTrusted
 			}
 
 		case !expired && verifyErr == nil:
+			r.SetTrustMetdata(trust.Trusted, cb.trust.Trusted)
 			// we assume Trusted is the highest trust level
 			target[ClaimTrust] = cb.trust.Trusted
+			target[ClaimTrustType] = trust.Trusted
 			return
 		}
 	}
 
 	// take the highest, non-Trusted level
-	target[ClaimTrust] = trust
+	target[ClaimTrust] = trustLevel
 	return
 }
 
