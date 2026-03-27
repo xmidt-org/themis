@@ -689,12 +689,6 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 				actual   = make(map[string]interface{})
 				builders ClaimBuilders
 			)
-			// goodPathHydrated, err := url.Parse(goodPathWithWildcardsQuery)
-			// suite.Require().NoError(err)
-
-			// query := goodPathHydrated.Query()
-			// query.Set(testQueryParameter, testCase.request.QueryParameters[testQueryParameter].(string))
-			// goodPathHydrated.RawQuery = query.Encode()
 			goodURL, err := url.JoinPath(suite.server.URL, testCase.path)
 			suite.Require().NoError(err)
 
