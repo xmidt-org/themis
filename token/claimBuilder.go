@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/xmidt-org/themis/random"
+	"github.com/xmidt-org/themis/token/trust"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 	"github.com/xmidt-org/themis/xzap"
@@ -132,10 +133,59 @@ func (vrb remotePayloadClaimBuilder) AddClaims(_ context.Context, r *Request, ta
 	case "*":
 		// Overwrite all of themis' claims with remote claims, except for trust related claims since `vrb.applyTrustPolicy` will determine which sources are used for those.
 		maps.Copy(target, r.RemoteClaims)
+		vrb.applyTrustPolicy(r, target, ClaimTrust)
+		vrb.applyTrustPolicy(r, target, ClaimTrustType)
+	case ClaimTrust, ClaimTrustType:
+		vrb.applyTrustPolicy(r, target, vrb.key)
 	default:
 		if v, ok := r.RemoteClaims[vrb.remoteKey]; ok {
 			target[vrb.key] = v
 		}
+	}
+
+	return nil
+}
+
+// applyTrustPolicy assigns the appropriate value to `target`'s trust related claim named `claimName` based on
+// the configured trust policy.
+func (vrb remotePayloadClaimBuilder) applyTrustPolicy(r *Request, target map[string]any, claimName string) error {
+	// Themis should always create the appropriate trust claims.
+	if _, ok := r.Metadata[ClaimTrust]; !ok {
+		return errors.New("expected themis to create the appropriate trust claims, but none were found")
+	}
+
+	target[claimName] = r.Metadata[claimName]
+	// If the remote claims didn't returned a 'trust' claim, then use themis' 'trust' and 'trust_type' claims.
+	if _, ok := r.RemoteClaims[ClaimTrust]; !ok {
+
+		return nil
+	}
+
+	var remoteTrust int
+	switch r.RemoteClaims[ClaimTrust].(type) {
+	case int:
+		remoteTrust = r.RemoteClaims[ClaimTrust].(int)
+	case float64:
+		remoteTrust = int(r.RemoteClaims[ClaimTrust].(float64))
+	}
+
+	// Update remote claims' `trust` claim to match themis' trust value type.
+	if claimName == ClaimTrust {
+		r.RemoteClaims[claimName] = remoteTrust
+	}
+
+	switch vrb.trustPolicy {
+	case trust.Lowest:
+		if remoteTrust < r.Metadata[ClaimTrust].(int) {
+			target[claimName] = r.RemoteClaims[claimName]
+		}
+	case trust.Highest:
+		if remoteTrust > r.Metadata[ClaimTrust].(int) {
+			target[claimName] = r.RemoteClaims[claimName]
+		}
+	// Default behavior - themis' 'trust' and 'trust_type' claims will always be overwritten by remote claims (if provided).
+	default:
+		target[claimName] = r.RemoteClaims[claimName]
 	}
 
 	return nil
