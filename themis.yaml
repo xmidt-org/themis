@@ -13,9 +13,9 @@ servers:
   issuer:
     address: :6501
     disableHTTPKeepAlives: true
-#   tls:
-#     key: "/etc/themis/key.pem"
-#     certificateFile: "/etc/themis/cert.pem"
+    #   tls:
+    #     key: "/etc/themis/key.pem"
+    #     certificateFile: "/etc/themis/cert.pem"
     header:
       X-Midt-Server:
         - issuer
@@ -100,10 +100,17 @@ token:
       value:
         - x1:issuer:test:.*:all
     - key: nestedClaims
-      json: '{
-          "casePreservedScalar": "true",
-          "casePreservedArray": ["casePreserved1", "casePreserved2"]
-      }'
+      json: '{"casePreservedScalar": "true",
+        "casePreservedArray": ["casePreserved1", "casePreserved2"]}'
+    # Remote payload claims.
+    # Legacy behavior - if no remote payload claims have be configured, then all of themis' claims
+    # can/will be overwritten by remote payload claims.
+    - key: accountID
+      remoteKey: accountID
+    - key: trust
+      remoteKey: trust
+    - key: trust_type
+      remoteKey: trust_type
   metadata:
     - key: mac
       header: X-Midt-Mac-Address
@@ -121,6 +128,10 @@ token:
   remote:
     method: GET
     url: https://localhost:443/device/{mac}/claims?format=json
+    # trustClaimPolicy is the policy used to determine which turst related claims are sourced from between remote claims and themis.
+    # This doesn't override remote payload claims configuration for turst, but provides additional security controls.
+    # Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).
+    trustClaimPolicy: lowest
   partnerID:
     claim: partner-id
     metadata: pid

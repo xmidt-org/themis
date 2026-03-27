@@ -13,9 +13,11 @@ import (
 	"time"
 
 	"github.com/xmidt-org/themis/random"
+	"github.com/xmidt-org/themis/token/trust"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 	"github.com/xmidt-org/themis/xzap"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
 	"github.com/go-kit/kit/endpoint"
@@ -26,6 +28,9 @@ const (
 	// ClaimTrust is the name of the trust value within JWT claims issued
 	// by themis. This claim will be written based upon TLS connection state.
 	ClaimTrust = "trust"
+	// ClaimTrustType is the name of the trust type value within JWT claims issued
+	// by themis. This claim will be written based upon TLS connection state and, unlike the trust claim value, it's not configurable.
+	ClaimTrustType = "trust_type"
 )
 
 var (
@@ -113,6 +118,79 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 	return nil
 }
 
+type remotePayloadClaimBuilder struct {
+	key         string
+	remoteKey   string
+	trustPolicy trust.Policy
+}
+
+func (vrb remotePayloadClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
+	if len(r.RemoteClaims) == 0 {
+		return nil
+	}
+
+	switch vrb.key {
+	case "*":
+		// Overwrite all of themis' claims with remote claims, except for trust related claims since `vrb.applyTrustPolicy` will determine which sources are used for those.
+		maps.Copy(target, r.RemoteClaims)
+		vrb.applyTrustPolicy(r, target, ClaimTrust)
+		vrb.applyTrustPolicy(r, target, ClaimTrustType)
+	case ClaimTrust, ClaimTrustType:
+		vrb.applyTrustPolicy(r, target, vrb.key)
+	default:
+		if v, ok := r.RemoteClaims[vrb.remoteKey]; ok {
+			target[vrb.key] = v
+		}
+	}
+
+	return nil
+}
+
+// applyTrustPolicy assigns the appropriate value to `target`'s trust related claim named `claimName` based on
+// the configured trust policy.
+func (vrb remotePayloadClaimBuilder) applyTrustPolicy(r *Request, target map[string]any, claimName string) error {
+	// Themis should always create the appropriate trust claims.
+	if _, ok := r.Metadata[ClaimTrust]; !ok {
+		return errors.New("expected themis to create the appropriate trust claims, but none were found")
+	}
+
+	target[claimName] = r.Metadata[claimName]
+	// If the remote claims didn't returned a 'trust' claim, then use themis' trust related claims.
+	if _, ok := r.RemoteClaims[ClaimTrust]; !ok {
+
+		return nil
+	}
+
+	var remoteTrust int
+	switch r.RemoteClaims[ClaimTrust].(type) {
+	case int:
+		remoteTrust = r.RemoteClaims[ClaimTrust].(int)
+	case float64:
+		remoteTrust = int(r.RemoteClaims[ClaimTrust].(float64))
+	}
+
+	// Update remote claims' `trust` value to match themis' trust value type.
+	if claimName == ClaimTrust {
+		r.RemoteClaims[claimName] = remoteTrust
+	}
+
+	switch vrb.trustPolicy {
+	case trust.Lowest:
+		if remoteTrust < r.Metadata[ClaimTrust].(int) {
+			target[claimName] = r.RemoteClaims[claimName]
+		}
+	case trust.Highest:
+		if remoteTrust > r.Metadata[ClaimTrust].(int) {
+			target[claimName] = r.RemoteClaims[claimName]
+		}
+	// Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).
+	default:
+		target[claimName] = r.RemoteClaims[claimName]
+	}
+
+	return nil
+}
+
 // remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
 	endpoint endpoint.Endpoint
@@ -128,7 +206,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	result, err := rc.endpoint(ctx, rCopy)
 	if err == nil {
-		maps.Copy(target, result.(map[string]any))
+		r.RemoteClaims = result.(map[string]any)
 	}
 
 	return err
@@ -160,6 +238,8 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		DecodeRemoteClaimsResponse,
 		kithttp.SetClient(client),
 		kithttp.ClientBefore(
+			// Themis' assumes the response content-type is application/json.
+			kithttp.SetRequestHeader("Accept", "application/json"),
 			kithttp.SetRequestHeader("Content-Type", "application/json"),
 		),
 	)
@@ -200,17 +280,21 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 	// simplest case: this request either (1) didn't come from a TLS connection,
 	// or (2) the client sent no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+		r.SetTrustMetdata(trust.NoCertificates, cb.trust.NoCertificates)
 		target[ClaimTrust] = cb.trust.NoCertificates
+		target[ClaimTrustType] = trust.NoCertificates
 		return
 	}
 
 	now := time.Now()
-	var trust int
+	var trustLevel int
 	for i, pc := range r.TLS.PeerCertificates {
 		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
 			// the TLS layer already verified this certificate, so we're done
 			// we assume Trusted is the highest trust level
+			r.SetTrustMetdata(trust.Trusted, cb.trust.Trusted)
 			target[ClaimTrust] = cb.trust.Trusted
+			target[ClaimTrustType] = trust.Trusted
 			return
 		}
 
@@ -236,29 +320,37 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		switch {
 		case expired && verifyErr != nil:
-			if trust < cb.trust.ExpiredUntrusted {
-				trust = cb.trust.ExpiredUntrusted
+			if trustLevel < cb.trust.ExpiredUntrusted {
+				r.SetTrustMetdata(trust.ExpiredUntrusted, cb.trust.Trusted)
+				trustLevel = cb.trust.ExpiredUntrusted
+				target[ClaimTrustType] = trust.ExpiredUntrusted
 			}
 
 		case !expired && verifyErr != nil:
-			if trust < cb.trust.Untrusted {
-				trust = cb.trust.Untrusted
+			if trustLevel < cb.trust.Untrusted {
+				r.SetTrustMetdata(trust.Untrusted, cb.trust.Untrusted)
+				trustLevel = cb.trust.Untrusted
+				target[ClaimTrustType] = trust.Untrusted
 			}
 
 		case expired && verifyErr == nil:
-			if trust < cb.trust.ExpiredTrusted {
-				trust = cb.trust.ExpiredTrusted
+			if trustLevel < cb.trust.ExpiredTrusted {
+				r.SetTrustMetdata(trust.ExpiredTrusted, cb.trust.ExpiredTrusted)
+				trustLevel = cb.trust.ExpiredTrusted
+				target[ClaimTrustType] = trust.ExpiredTrusted
 			}
 
 		case !expired && verifyErr == nil:
+			r.SetTrustMetdata(trust.Trusted, cb.trust.Trusted)
 			// we assume Trusted is the highest trust level
 			target[ClaimTrust] = cb.trust.Trusted
+			target[ClaimTrustType] = trust.Trusted
 			return
 		}
 	}
 
 	// take the highest, non-Trusted level
-	target[ClaimTrust] = trust
+	target[ClaimTrust] = trustLevel
 	return
 }
 
@@ -312,6 +404,21 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		)
 	}
 
+	if o.Remote != nil {
+		payloadClaimsbuilders, err := newRemotePayloadClaimBuilder(o.Claims, o.Remote.TrustClaimPolicy)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(payloadClaimsbuilders) == 0 {
+			// Legacy behavior - if no remote payload claims have be configured, then assume all of themis' claims
+			// can be overwritten by remote claims.
+			payloadClaimsbuilders = ClaimBuilders{remotePayloadClaimBuilder{key: "*", remoteKey: "*"}}
+		}
+
+		builders = append(builders, payloadClaimsbuilders)
+	}
+
 	return builders, err
 }
 
@@ -331,4 +438,48 @@ func getStaticValues(vals []Value) (map[string]any, error) {
 	}
 
 	return m, errors.Join(errs...)
+}
+
+func newRemotePayloadClaimBuilder(values []Value, trustPolicy trust.Policy) (rbs ClaimBuilders, errs error) {
+	var (
+		claimTrustUsed     bool
+		claimTrustTypeUsed bool
+	)
+
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsFromRemote() {
+			continue
+		}
+
+		rbs = append(rbs, remotePayloadClaimBuilder{
+			key:         v.Key,
+			remoteKey:   v.RemoteKey,
+			trustPolicy: trustPolicy,
+		})
+		switch v.Key {
+		case ClaimTrust:
+			claimTrustUsed = true
+		case ClaimTrustType:
+			claimTrustTypeUsed = true
+		}
+	}
+
+	// Since `trust_type` is the description of the numerical value of `trust`, we can't mix and match these two claims
+	// between the remote claims and themis.
+	if claimTrustTypeUsed && !claimTrustUsed {
+		errs = multierr.Append(errs, errors.New("invalid remote payload claims configuration: can't use `trust_type` without `trust` claim"))
+	}
+	// If a remote payload claim configuration for `trust` was  provided but `trust_type` was not,
+	// then a remote payload claim configuration for `trust_type` will be added by default.
+	// Worst case, `trust_type` will be set as an empty claim.
+	if claimTrustUsed && !claimTrustTypeUsed {
+		rbs = append(rbs, remotePayloadClaimBuilder{
+			key:         ClaimTrustType,
+			remoteKey:   ClaimTrustType,
+			trustPolicy: trustPolicy,
+		})
+	}
+
+	return
 }

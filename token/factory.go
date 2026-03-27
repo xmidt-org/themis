@@ -10,6 +10,7 @@ import (
 
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/token/trust"
 	"go.uber.org/zap"
 
 	"github.com/golang-jwt/jwt"
@@ -34,10 +35,19 @@ type Request struct {
 	// For non-tls connections, this field is unset.
 	TLS *tls.ConnectionState
 
+	// RemoteClaims holds the claims from the remote claims endpoint response. By default these claims will override all themis derived claims,
+	// but will not override time-based claims such as nbf or exp. This default behavior is disabled once a single remote payload claims builder is configured.
+	RemoteClaims map[string]any
+
 	// The following fields are for remote claims' requests.
 	Metadata        map[string]any // Metadata is the request payload.
 	PathWildCards   map[string]any // PathWildCards are the request path wildcards.
 	QueryParameters map[string]any // QueryParameters are the request query parameters.
+}
+
+func (r *Request) SetTrustMetdata(tType trust.Type, tValue int) {
+	r.Metadata[ClaimTrustType] = tType
+	r.Metadata[ClaimTrust] = tValue
 }
 
 // NewRequest returns an empty, fully initialized token Request
@@ -45,6 +55,7 @@ func NewRequest() *Request {
 	return &Request{
 		Logger:          sallust.Default(),
 		Claims:          make(map[string]interface{}),
+		RemoteClaims:    make(map[string]interface{}),
 		Metadata:        make(map[string]interface{}),
 		PathWildCards:   make(map[string]interface{}),
 		QueryParameters: make(map[string]interface{}),

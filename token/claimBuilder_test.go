@@ -10,11 +10,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/xmidt-org/themis/random/randomtest"
+	"github.com/xmidt-org/themis/token/trust"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 
 	"github.com/stretchr/testify/suite"
@@ -34,6 +36,13 @@ const (
 	contextKeyRequestID contextKey = "foo"
 	val                 string     = "value"
 	trueString          string     = "true"
+
+	testPathWildCard                 = "path_wild_card"
+	testQueryParameter               = "trust_query_parameter"
+	testDisablePayloadQueryParameter = "disable_payload_query_parameter"
+	goodPath                         = "/good"
+	goodPathWithWildcardsQuery       = "/{" + testPathWildCard + "}"
+	badPath                          = "/bad"
 )
 
 func (suite *ClaimBuildersTestSuite) SetupSuite() {
@@ -128,7 +137,8 @@ func (suite *RequestClaimBuilderTestSuite) Test() {
 		},
 		{
 			request: &Request{
-				Claims: map[string]interface{}{"foo": 1, "bar": val},
+				Claims:   map[string]interface{}{"foo": 1, "bar": val},
+				Metadata: make(map[string]any),
 			},
 			expected: map[string]interface{}{"foo": 1, "bar": val},
 		},
@@ -318,7 +328,6 @@ func TestNonceClaimBuilder(t *testing.T) {
 type RemoteClaimBuilderTestSuite struct {
 	suite.Suite
 	server         *httptest.Server
-	goodURL        string
 	badURL         string
 	expectedMethod string
 }
@@ -328,11 +337,14 @@ var _ suite.TearDownAllSuite = (*RemoteClaimBuilderTestSuite)(nil)
 
 func (suite *RemoteClaimBuilderTestSuite) SetupSuite() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/good", suite.goodHandler)
-	mux.HandleFunc("/bad", suite.badHandler)
+	mux.HandleFunc(goodPath, suite.goodHandler)
+	mux.HandleFunc(goodPathWithWildcardsQuery, suite.goodHandler)
+	mux.HandleFunc(badPath, suite.badHandler)
 	suite.server = httptest.NewServer(mux)
-	suite.goodURL = suite.server.URL + "/good"
-	suite.badURL = suite.server.URL + "/bad"
+
+	var err error
+	suite.badURL, err = url.JoinPath(suite.server.URL, badPath)
+	suite.Require().NoError(err)
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TearDownSuite() {
@@ -362,6 +374,20 @@ func (suite *RemoteClaimBuilderTestSuite) goodHandler(response http.ResponseWrit
 	}
 
 	input["custom"] = val
+	if v := request.PathValue(testPathWildCard); len(v) != 0 {
+		input[testPathWildCard] = request.PathValue(testPathWildCard)
+	}
+	if v := request.PathValue(testPathWildCard); len(v) != 0 {
+		input[testQueryParameter] = request.URL.Query().Get(testQueryParameter)
+	}
+	if v := request.URL.Query().Get(testQueryParameter); len(v) != 0 {
+		input[ClaimTrustType] = "remote_claims_trust"
+		input[ClaimTrust], err = strconv.Atoi(request.URL.Query().Get(testQueryParameter))
+		suite.Require().NoError(err)
+	}
+	if v := request.URL.Query().Get(testDisablePayloadQueryParameter); len(v) != 0 {
+		input = make(map[string]any)
+	}
 
 	response.Header().Set("Content-Type", "application/json")
 	b, err = json.Marshal(input)
@@ -376,23 +402,29 @@ func (suite *RemoteClaimBuilderTestSuite) badHandler(response http.ResponseWrite
 
 func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 	cases := []struct {
-		method   string
-		client   xhttpclient.Interface
-		metadata map[string]interface{}
-		request  *Request
-		expected map[string]interface{}
+		method      string
+		client      xhttpclient.Interface
+		path        string
+		metadata    map[string]interface{}
+		request     *Request
+		claims      []Value
+		trustPolicy trust.Policy
+		expected    map[string]interface{}
 	}{
 		{
+			path:     goodPath,
 			request:  new(Request),
 			expected: map[string]interface{}{"custom": val},
 		},
 		{
+			path:     goodPath,
 			request:  &Request{Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"request": val, "custom": val},
 		},
 		{
 			method:   http.MethodPut,
 			client:   new(http.Client),
+			path:     goodPath,
 			metadata: map[string]interface{}{"external": val},
 			request:  new(Request),
 			expected: map[string]interface{}{"external": val, "custom": val},
@@ -400,35 +432,291 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 		{
 			method:   http.MethodPatch,
 			client:   new(http.Client),
+			path:     goodPath,
 			metadata: map[string]interface{}{"external": val},
 			request:  &Request{Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     100,
+					ClaimTrustType: trust.Trusted,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			// Testing legacy default behavior.
+			claims:      []Value{},
+			trustPolicy: trust.UnknownPolicy,
+			expected: map[string]any{
+				"external":         val,
+				"request":          val,
+				"custom":           val,
+				testPathWildCard:   "wild-card-0",
+				testQueryParameter: "100",
+				ClaimTrust:         100,
+				ClaimTrustType:     "remote_claims_trust",
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     100,
+					ClaimTrustType: trust.Trusted,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			claims: []Value{
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+			},
+			trustPolicy: trust.UnknownPolicy,
+			expected: map[string]any{
+				"custom":         val,
+				testPathWildCard: "wild-card-0",
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     100,
+					ClaimTrustType: trust.Trusted,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			claims: []Value{
+				{Key: "external", RemoteKey: "external"},
+				{Key: "request", RemoteKey: "request"},
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+				{Key: testQueryParameter, RemoteKey: testQueryParameter},
+				{Key: ClaimTrust, RemoteKey: ClaimTrust},
+			},
+			trustPolicy: trust.UnknownPolicy,
+			expected: map[string]any{
+				"external":         val,
+				"request":          val,
+				"custom":           val,
+				testPathWildCard:   "wild-card-0",
+				testQueryParameter: "100",
+				ClaimTrust:         100,
+				ClaimTrustType:     "remote_claims_trust",
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     0,
+					ClaimTrustType: trust.NoCertificates,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			claims: []Value{
+				{Key: "external", RemoteKey: "external"},
+				{Key: "request", RemoteKey: "request"},
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+				{Key: testQueryParameter, RemoteKey: testQueryParameter},
+				{Key: ClaimTrust, RemoteKey: ClaimTrust},
+			},
+			trustPolicy: trust.Lowest,
+			expected: map[string]any{
+				"external":         val,
+				"request":          val,
+				"custom":           val,
+				testPathWildCard:   "wild-card-0",
+				testQueryParameter: "100",
+				ClaimTrust:         0,
+				ClaimTrustType:     trust.NoCertificates,
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     1000000,
+					ClaimTrustType: trust.Trusted,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			claims: []Value{
+				{Key: "external", RemoteKey: "external"},
+				{Key: "request", RemoteKey: "request"},
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+				{Key: testQueryParameter, RemoteKey: testQueryParameter},
+				{Key: ClaimTrust, RemoteKey: ClaimTrust},
+			},
+			trustPolicy: trust.Lowest,
+			expected: map[string]any{
+				"external":         val,
+				"request":          val,
+				"custom":           val,
+				testPathWildCard:   "wild-card-0",
+				testQueryParameter: "100",
+				ClaimTrust:         100,
+				ClaimTrustType:     "remote_claims_trust",
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     0,
+					ClaimTrustType: trust.NoCertificates,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter: "100",
+				},
+			},
+			claims: []Value{
+				{Key: "external", RemoteKey: "external"},
+				{Key: "request", RemoteKey: "request"},
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+				{Key: testQueryParameter, RemoteKey: testQueryParameter},
+				{Key: ClaimTrust, RemoteKey: ClaimTrust},
+			},
+			trustPolicy: trust.Highest,
+			expected: map[string]any{
+				"external":         val,
+				"request":          val,
+				"custom":           val,
+				testPathWildCard:   "wild-card-0",
+				testQueryParameter: "100",
+				ClaimTrust:         100,
+				ClaimTrustType:     "remote_claims_trust",
+			},
+		},
+		{
+			method:   http.MethodPatch,
+			client:   new(http.Client),
+			path:     goodPathWithWildcardsQuery,
+			metadata: map[string]interface{}{"external": val},
+			request: &Request{
+				Claims: map[string]any{
+					ClaimTrust:     0,
+					ClaimTrustType: trust.NoCertificates,
+				},
+				Metadata: map[string]interface{}{
+					"request":      val,
+					ClaimTrust:     1000,
+					ClaimTrustType: trust.Trusted,
+				},
+				PathWildCards: map[string]any{
+					testPathWildCard: "wild-card-0",
+				},
+				QueryParameters: map[string]any{
+					testQueryParameter:               "100",
+					testDisablePayloadQueryParameter: "foobar",
+				},
+			},
+			claims: []Value{
+				{Key: "external", RemoteKey: "external"},
+				{Key: "request", RemoteKey: "request"},
+				{Key: "custom", RemoteKey: "custom"},
+				{Key: testPathWildCard, RemoteKey: testPathWildCard},
+				{Key: testQueryParameter, RemoteKey: testQueryParameter},
+				{Key: ClaimTrust, RemoteKey: ClaimTrust},
+			},
+			trustPolicy: trust.Highest,
+			expected: map[string]any{
+				ClaimTrust:     0,
+				ClaimTrustType: trust.NoCertificates,
+			},
 		},
 	}
 
 	for i, testCase := range cases {
 		suite.Run(strconv.Itoa(i), func() {
 			var (
-				actual = make(map[string]interface{})
-
-				remoteClaims = &RemoteClaims{
-					URL:    suite.goodURL,
-					Method: testCase.method,
-				}
-
-				builder, err = newRemoteClaimBuilder(
-					testCase.client,
-					testCase.metadata,
-					remoteClaims,
-				)
+				actual   = make(map[string]interface{})
+				builders ClaimBuilders
 			)
+			goodURL, err := url.JoinPath(suite.server.URL, testCase.path)
+			suite.Require().NoError(err)
 
+			remoteClaims := &RemoteClaims{
+				URL:    goodURL,
+				Method: testCase.method,
+			}
+			builder, err := newRemoteClaimBuilder(
+				testCase.client,
+				testCase.metadata,
+				remoteClaims,
+			)
 			suite.Require().NoError(err)
 			suite.Require().NotNil(builder)
+
+			builders = append(builders, ClaimBuilders{requestClaimBuilder{}})
+			builders = append(builders, builder)
+			payloadClaimBuilders, err := newRemotePayloadClaimBuilder(testCase.claims, testCase.trustPolicy)
+			suite.Require().NoError(err)
+
+			if len(testCase.claims) == 0 {
+				payloadClaimBuilders = ClaimBuilders{remotePayloadClaimBuilder{key: "*", remoteKey: "*"}}
+			}
+			builders = append(builders, payloadClaimBuilders...)
 			suite.expectedMethod = testCase.method
 
 			suite.Require().NoError(
-				builder.AddClaims(context.Background(), testCase.request, actual),
+				builders.AddClaims(context.Background(), testCase.request, actual),
 			)
 
 			suite.Equal(testCase.expected, actual)
@@ -541,11 +829,11 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, Metadata: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
-		map[string]interface{}{"request": 123, "trust": 0},
+		map[string]interface{}{"request": 123, "trust": 0, ClaimTrustType: trust.NoCertificates},
 		actual,
 	)
 }
@@ -631,11 +919,61 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 		DisableTime: true,
 		Claims: []Value{
 			{
-				Key:    "test",
-				Header: "header1",
-				Value:  "value1",
+				Key:       "test",
+				Header:    "header1",
+				Value:     "value1",
+				RemoteKey: "remoteKey1",
 			},
 		},
+	})
+
+	suite.Nil(builder)
+	suite.Error(err)
+
+	builder, err = NewClaimBuilders(suite.noncer, nil, Options{
+		Nonce:       false,
+		DisableTime: true,
+		Claims: []Value{
+			{
+				Key:       "*",
+				RemoteKey: "*",
+			},
+		},
+		Remote: &RemoteClaims{URL: "example.com"},
+	})
+
+	suite.Nil(builder)
+	suite.Error(err)
+
+	builder, err = NewClaimBuilders(suite.noncer, nil, Options{
+		Nonce:       false,
+		DisableTime: true,
+		Claims: []Value{
+			{
+				Key:       "*",
+				RemoteKey: "*",
+			},
+			{
+				Key:       ClaimTrust,
+				RemoteKey: ClaimTrust,
+			},
+		},
+		Remote: &RemoteClaims{URL: "example.com"},
+	})
+
+	suite.Nil(builder)
+	suite.Error(err)
+
+	builder, err = NewClaimBuilders(suite.noncer, nil, Options{
+		Nonce:       false,
+		DisableTime: true,
+		Claims: []Value{
+			{
+				Key:       ClaimTrustType,
+				RemoteKey: ClaimTrustType,
+			},
+		},
+		Remote: &RemoteClaims{URL: "example.com"},
 	})
 
 	suite.Nil(builder)
@@ -648,9 +986,10 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 		DisableTime: true,
 		Metadata: []Value{
 			{
-				Key:    "test",
-				Header: "header1",
-				Value:  "value1",
+				Key:       "test",
+				Header:    "header1",
+				Value:     "value1",
+				RemoteKey: "remoteKey1",
 			},
 		},
 		Remote: &RemoteClaims{},
@@ -723,15 +1062,16 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, Metadata: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
 		map[string]interface{}{
-			"static1": suite.rawMessage(-72.5),
-			"static2": suite.rawMessage([]string{"a", "b"}),
-			"request": 123,
-			"trust":   0,
+			"static1":      suite.rawMessage(-72.5),
+			"static2":      suite.rawMessage([]string{"a", "b"}),
+			"request":      123,
+			"trust":        0,
+			ClaimTrustType: trust.NoCertificates,
 		},
 		actual,
 	)
@@ -766,19 +1106,20 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, Metadata: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
 		map[string]interface{}{
-			"static1": suite.rawMessage(-72.5),
-			"static2": suite.rawMessage([]string{"a", "b"}),
-			"request": 123,
-			"jti":     "test",
-			"iat":     suite.expectedNow.UTC().Unix(),
-			"nbf":     suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
-			"exp":     suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
-			"trust":   0,
+			"static1":      suite.rawMessage(-72.5),
+			"static2":      suite.rawMessage([]string{"a", "b"}),
+			"request":      123,
+			"jti":          "test",
+			"iat":          suite.expectedNow.UTC().Unix(),
+			"nbf":          suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
+			"exp":          suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
+			"trust":        0,
+			ClaimTrustType: trust.NoCertificates,
 		},
 		actual,
 	)
@@ -850,20 +1191,21 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
+		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, Metadata: make(map[string]any), PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
 		map[string]interface{}{
-			"static1": suite.rawMessage(-72.5),
-			"static2": suite.rawMessage([]string{"a", "b"}),
-			"request": 123,
-			"remote":  val,
-			"jti":     "test",
-			"iat":     suite.expectedNow.UTC().Unix(),
-			"nbf":     suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
-			"exp":     suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
-			"trust":   0,
+			"static1":    suite.rawMessage(-72.5),
+			"static2":    suite.rawMessage([]string{"a", "b"}),
+			"request":    123,
+			"remote":     val,
+			"jti":        "test",
+			"iat":        suite.expectedNow.UTC().Unix(),
+			"nbf":        suite.expectedNow.Add(15 * time.Second).UTC().Unix(),
+			"exp":        suite.expectedNow.Add(24 * time.Hour).UTC().Unix(),
+			"trust":      0,
+			"trust_type": trust.NoCertificates,
 		},
 		actual,
 	)

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/InVisionApp/go-health"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/sallust"
@@ -91,6 +92,14 @@ func main() {
 			func(u config.Unmarshaller) (c sallust.Config, err error) {
 				err = u.UnmarshalKey("log", &c)
 				return
+			},
+			func() (opts []viper.DecoderConfigOption) {
+				return append(opts, viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
+					// Allow time.Duration Unmarshalling.
+					mapstructure.StringToTimeDurationHookFunc(),
+					// Allow custom TextUnmarshalling.
+					mapstructure.TextUnmarshallerHookFunc(),
+				)))
 			},
 			xhealth.Unmarshal("health"),
 			random.Provide,

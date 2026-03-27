@@ -405,11 +405,9 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 
 	r.URL.RawQuery = q.Encode()
 	b, err := json.Marshal(tr.Metadata)
-	if err != nil {
-		return err
+	if err == nil {
+		r.Body = io.NopCloser(bytes.NewReader(b))
 	}
 
-	r.Body = io.NopCloser(bytes.NewReader(b))
-
-	return nil
+	return err
 }
