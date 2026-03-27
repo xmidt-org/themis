@@ -47,6 +47,11 @@ type Value struct {
 	// Parameter is a URL query parameter (including form data) from which the value is pulled
 	Parameter string
 
+	// RemoteKey is the remote claims payload key from which the value is pulled.
+	// Noop if the remote claims is not configured or the remote claims' payload does not contain
+	// the key.
+	RemoteKey string
+
 	// Variable is a URL gorilla/mux variable from with the value is pulled
 	Variable string
 
@@ -70,6 +75,11 @@ func (v Value) IsStatic() bool {
 	return len(v.JSON) > 0 || v.Value != nil
 }
 
+// IsFromRemote tests if this value is extracted from the remote claim's response payload.
+func (v Value) IsFromRemote() bool {
+	return len(v.RemoteKey) > 0
+}
+
 func (v Value) Validate() error {
 	if len(v.Key) == 0 {
 		return ErrMissingKey
@@ -86,9 +96,16 @@ func (v Value) Validate() error {
 	if v.IsStatic() {
 		types = append(types, "static")
 	}
+	if v.IsFromRemote() {
+		if v.RemoteKey == "*" || v.Key == "*" {
+			return errors.New("'overwrite all claims with remote calims' is the legacy default behavior and can't be explicitly enabled")
+		}
+
+		types = append(types, "remote")
+	}
 
 	if len(types) == 0 {
-		return fmt.Errorf("value `%s` must be 1 of the following: http, static", v.Key)
+		return fmt.Errorf("value `%s` must be 1 of the following: http, static, remote", v.Key)
 	} else if len(types) > 1 {
 		return fmt.Errorf("value `%s` can't have multiple types: %s", v.Key, types)
 	}

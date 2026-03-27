@@ -16,6 +16,7 @@ import (
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
 	"github.com/xmidt-org/themis/xzap"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
 	"github.com/go-kit/kit/endpoint"
@@ -116,6 +117,30 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 	return nil
 }
 
+type remotePayloadClaimBuilder struct {
+	key         string
+	remoteKey   string
+	trustPolicy trust.Policy
+}
+
+func (vrb remotePayloadClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
+	if len(r.RemoteClaims) == 0 {
+		return nil
+	}
+
+	switch vrb.key {
+	case "*":
+		// Overwrite all of themis' claims with remote claims, except for trust related claims since `vrb.applyTrustPolicy` will determine which sources are used for those.
+		maps.Copy(target, r.RemoteClaims)
+	default:
+		if v, ok := r.RemoteClaims[vrb.remoteKey]; ok {
+			target[vrb.key] = v
+		}
+	}
+
+	return nil
+}
+
 // remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
 	endpoint endpoint.Endpoint
@@ -131,7 +156,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	result, err := rc.endpoint(ctx, rCopy)
 	if err == nil {
-		maps.Copy(target, result.(map[string]any))
+		r.RemoteClaims = result.(map[string]any)
 	}
 
 	return err
@@ -163,6 +188,8 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		DecodeRemoteClaimsResponse,
 		kithttp.SetClient(client),
 		kithttp.ClientBefore(
+			// Themis' assumes the response content-type is application/json.
+			kithttp.SetRequestHeader("Accept", "application/json"),
 			kithttp.SetRequestHeader("Content-Type", "application/json"),
 		),
 	)
@@ -327,6 +354,21 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 		)
 	}
 
+	if o.Remote != nil {
+		payloadClaimsbuilders, err := newRemotePayloadClaimBuilder(o.Claims, o.Remote.TrustClaimPolicy)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(payloadClaimsbuilders) == 0 {
+			// Legacy behavior - if no remote payload claims have be configured, then assume all of themis' claims
+			// can be overwritten by remote claims.
+			payloadClaimsbuilders = ClaimBuilders{remotePayloadClaimBuilder{key: "*", remoteKey: "*"}}
+		}
+
+		builders = append(builders, payloadClaimsbuilders)
+	}
+
 	return builders, err
 }
 
@@ -346,4 +388,48 @@ func getStaticValues(vals []Value) (map[string]any, error) {
 	}
 
 	return m, errors.Join(errs...)
+}
+
+func newRemotePayloadClaimBuilder(values []Value, trustPolicy trust.Policy) (rbs ClaimBuilders, errs error) {
+	var (
+		claimTrustUsed     bool
+		claimTrustTypeUsed bool
+	)
+
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsFromRemote() {
+			continue
+		}
+
+		rbs = append(rbs, remotePayloadClaimBuilder{
+			key:         v.Key,
+			remoteKey:   v.RemoteKey,
+			trustPolicy: trustPolicy,
+		})
+		switch v.Key {
+		case ClaimTrust:
+			claimTrustUsed = true
+		case ClaimTrustType:
+			claimTrustTypeUsed = true
+		}
+	}
+
+	// Since `trust_type` is the description of the numerical value of `trust`, we can't mix and match these two claims
+	// between the remote claims and themis.
+	if claimTrustTypeUsed && !claimTrustUsed {
+		errs = multierr.Append(errs, errors.New("invalid remote payload claims configuration: can't use `trust_type` without `trust` claim"))
+	}
+	// If a remote payload claim configuration for `trust` was  provided but `trust_type` was not,
+	// then a remote payload claim configuration for `trust_type` will be added by default.
+	// Worst case, `trust_type` will be set as an empty claim.
+	if claimTrustUsed && !claimTrustTypeUsed {
+		rbs = append(rbs, remotePayloadClaimBuilder{
+			key:         ClaimTrustType,
+			remoteKey:   ClaimTrustType,
+			trustPolicy: trustPolicy,
+		})
+	}
+
+	return
 }

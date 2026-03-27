@@ -157,6 +157,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromHeader":       "foo",
 					"partner-id-claim": "test",
 				},
+				RemoteClaims: make(map[string]any),
 				Metadata: map[string]interface{}{
 					"fromHeader":          "bar",
 					"partner-id-metadata": "test",
@@ -224,6 +225,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromParameter":    "foo",
 					"partner-id-claim": "test",
 				},
+				RemoteClaims: make(map[string]any),
 				Metadata: map[string]interface{}{
 					"fromParameter":       "bar",
 					"partner-id-metadata": "test",
@@ -286,6 +288,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromVariable":     "foo",
 					"partner-id-claim": "test",
 				},
+				RemoteClaims: make(map[string]any),
 				Metadata: map[string]interface{}{
 					"fromVariable":        "bar",
 					"partner-id-metadata": "test",
@@ -339,6 +342,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 				Claims: map[string]interface{}{
 					"fromVariable": "foo",
 				},
+				RemoteClaims: make(map[string]any),
 				Metadata: map[string]interface{}{
 					"fromVariable": "bar",
 				},
@@ -473,6 +477,7 @@ func testBuildRequestSuccess(t *testing.T) {
 			expected: &Request{
 				Logger:          sallust.Default(),
 				Claims:          map[string]interface{}{"claim": []int{1, 2, 3}},
+				RemoteClaims:    make(map[string]any),
 				Metadata:        make(map[string]interface{}),
 				PathWildCards:   make(map[string]interface{}),
 				QueryParameters: make(map[string]any),
@@ -488,6 +493,7 @@ func testBuildRequestSuccess(t *testing.T) {
 			expected: &Request{
 				Logger:          sallust.Default(),
 				Claims:          make(map[string]interface{}),
+				RemoteClaims:    make(map[string]any),
 				Metadata:        map[string]interface{}{"metadata": -75.8},
 				PathWildCards:   make(map[string]interface{}),
 				QueryParameters: make(map[string]any),
@@ -512,6 +518,7 @@ func testBuildRequestSuccess(t *testing.T) {
 			expected: &Request{
 				Logger:          sallust.Default(),
 				Claims:          map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
+				RemoteClaims:    make(map[string]any),
 				Metadata:        map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
 				PathWildCards:   make(map[string]interface{}),
 				QueryParameters: make(map[string]any),
@@ -707,6 +714,7 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 		Request{
 			Logger:          sallust.Default(),
 			Claims:          map[string]interface{}{"claim": "value"},
+			RemoteClaims:    make(map[string]any),
 			Metadata:        make(map[string]interface{}),
 			PathWildCards:   make(map[string]interface{}),
 			QueryParameters: make(map[string]any),

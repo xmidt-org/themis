@@ -35,6 +35,10 @@ type Request struct {
 	// For non-tls connections, this field is unset.
 	TLS *tls.ConnectionState
 
+	// RemoteClaims holds the claims from the remote claims endpoint response. By default these claims will override all themis derived claims,
+	// but will not override time-based claims such as nbf or exp. This default behavior is disabled once a single remote payload claims builder is configured.
+	RemoteClaims map[string]any
+
 	// The following fields are for remote claims' requests.
 	Metadata        map[string]any // Metadata is the request payload.
 	PathWildCards   map[string]any // PathWildCards are the request path wildcards.
@@ -51,6 +55,7 @@ func NewRequest() *Request {
 	return &Request{
 		Logger:          sallust.Default(),
 		Claims:          make(map[string]interface{}),
+		RemoteClaims:    make(map[string]interface{}),
 		Metadata:        make(map[string]interface{}),
 		PathWildCards:   make(map[string]interface{}),
 		QueryParameters: make(map[string]interface{}),

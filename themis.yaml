@@ -104,6 +104,15 @@ token:
           "casePreservedScalar": "true",
           "casePreservedArray": ["casePreserved1", "casePreserved2"]
       }'
+      # Remote payload claims.
+      # Legacy behavior - if no remote payload claims have be configured, then all of themis' claims
+			# can/will be overwritten by remote payload claims.
+    - key: accountID
+      remoteKey: accountID
+    - key: trust
+      remoteKey: trust
+    - key: trust_type
+      remoteKey: trust_type
   metadata:
     - key: mac
       header: X-Midt-Mac-Address
