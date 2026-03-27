@@ -155,7 +155,7 @@ func (vrb remotePayloadClaimBuilder) applyTrustPolicy(r *Request, target map[str
 	}
 
 	target[claimName] = r.Metadata[claimName]
-	// If the remote claims didn't returned a 'trust' claim, then use themis' 'trust' and 'trust_type' claims.
+	// If the remote claims didn't returned a 'trust' claim, then use themis' trust related claims.
 	if _, ok := r.RemoteClaims[ClaimTrust]; !ok {
 
 		return nil
@@ -169,7 +169,7 @@ func (vrb remotePayloadClaimBuilder) applyTrustPolicy(r *Request, target map[str
 		remoteTrust = int(r.RemoteClaims[ClaimTrust].(float64))
 	}
 
-	// Update remote claims' `trust` claim to match themis' trust value type.
+	// Update remote claims' `trust` value to match themis' trust value type.
 	if claimName == ClaimTrust {
 		r.RemoteClaims[claimName] = remoteTrust
 	}
@@ -183,7 +183,7 @@ func (vrb remotePayloadClaimBuilder) applyTrustPolicy(r *Request, target map[str
 		if remoteTrust > r.Metadata[ClaimTrust].(int) {
 			target[claimName] = r.RemoteClaims[claimName]
 		}
-	// Default behavior - themis' 'trust' and 'trust_type' claims will always be overwritten by remote claims (if provided).
+	// Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).
 	default:
 		target[claimName] = r.RemoteClaims[claimName]
 	}
