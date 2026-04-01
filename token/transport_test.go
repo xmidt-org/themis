@@ -609,12 +609,10 @@ func testDecodeClaimsErrorError(t *testing.T) {
 		var (
 			assert  = assert.New(t)
 			errText = (&DecodeClaimsError{
-				URL:        "https://testy.com/foo?bar=1",
 				StatusCode: 511,
 			}).Error()
 		)
 
-		assert.Contains(errText, "https://testy.com/foo?bar=1")
 		assert.Contains(errText, "511")
 	})
 
@@ -622,13 +620,11 @@ func testDecodeClaimsErrorError(t *testing.T) {
 		var (
 			assert  = assert.New(t)
 			errText = (&DecodeClaimsError{
-				URL:        "ftp://something.net",
 				StatusCode: 499,
 				Err:        errors.New("this is a nested error"),
 			}).Error()
 		)
 
-		assert.Contains(errText, "ftp://something.net")
 		assert.Contains(errText, "499")
 		assert.Contains(errText, "this is a nested error")
 	})
@@ -642,10 +638,8 @@ func testDecodeClaimsErrorMarshalJSON(t *testing.T) {
 		{
 			err: &DecodeClaimsError{
 				StatusCode: 475,
-				URL:        "http://comcast.testy.test/moo",
 			},
 			expected: `{
-				"url": "http://comcast.testy.test/moo",
 				"statusCode": 475,
 				"err": ""
 			}`,
@@ -653,11 +647,9 @@ func testDecodeClaimsErrorMarshalJSON(t *testing.T) {
 		{
 			err: &DecodeClaimsError{
 				StatusCode: 314,
-				URL:        "http://pi.numbers.com",
 				Err:        errors.New("this is a nested error"),
 			},
 			expected: `{
-				"url": "http://pi.numbers.com",
 				"statusCode": 314,
 				"err": "this is a nested error"
 			}`,
@@ -807,7 +799,7 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 		response = &http.Response{
 			StatusCode: 523,
 			Body:       io.NopCloser(strings.NewReader("this is not JSON")),
-			Request:    httptest.NewRequest("POST", "http://schmoogle.com", nil),
+			Request:    httptest.NewRequest("POST", "https://example.com", nil),
 		}
 	)
 
@@ -819,8 +811,7 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	var dce *DecodeClaimsError
 	assert.ErrorAs(err, &dce)
 	assert.Equal(523, dce.StatusCode)
-	assert.Equal("http://schmoogle.com", dce.URL)
-	assert.Nil(dce.Err)
+	assert.Equal(dce.Err.Error(), "this is not JSON")
 }
 
 func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {
