@@ -696,6 +696,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 				URL:    goodURL,
 				Method: testCase.method,
 			}
+			enforceLegacyRemoteSuccessStatusCodes(remoteClaims)
 			builder, err := newRemoteClaimBuilder(
 				testCase.client,
 				testCase.metadata,
@@ -1182,6 +1183,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 		}
 	)
 
+	enforceLegacyRemoteSuccessStatusCodes(options.Remote)
 	builder, err := NewClaimBuilders(suite.noncer, nil, options)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)

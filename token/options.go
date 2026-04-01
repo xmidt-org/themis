@@ -30,6 +30,13 @@ type RemoteClaims struct {
 	// which is merged into the token claims
 	URL string
 
+	// SuccesCodes, a list of HTTP status codes.
+	// If a remote endpoint response with a non-SuccesCodes, then themis will treat it as a non-successful response
+	// and will result in a 500 themis response.
+	// Otherwise, themis will treat it as a successful response, resulting in a 200 themis response.
+	// Default (legacy) - treat any 2XX as a successful remote endpoint response.
+	SuccesCodes []int
+
 	// TrustClaimPolicy is the policy used to determine which turst related claims are sourced from between remote claims and themis.
 	// This doesn't override remote payload claims configuration for turst, but provides additional security controls.
 	// Default behavior - themis' trust related claims will always be overwritten by remote claims (if provided).

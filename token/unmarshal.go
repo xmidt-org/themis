@@ -3,6 +3,8 @@
 package token
 
 import (
+	"net/http"
+
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
@@ -46,6 +48,7 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			in.Logger.Info("trust settings", zap.Reflect("trust", Trust{}.enforceDefaults()))
 		}
 
+		enforceLegacyRemoteSuccessStatusCodes(o.Remote)
 		cb, err := NewClaimBuilders(in.Noncer, in.Client, o)
 		if err != nil {
 			return TokenOut{}, err
@@ -75,4 +78,25 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			),
 		}, nil
 	}
+}
+
+// enforceLegacyRemoteSuccessStatusCodes implements the legacy default behavior of remote endpoint response status code handling,
+// i.e.: treat any 2XX as a successful remote endpoint response.
+func enforceLegacyRemoteSuccessStatusCodes(rc *RemoteClaims) {
+	if rc == nil || len(rc.SuccesCodes) != 0 {
+		return
+	}
+
+	rc.SuccesCodes = make([]int, 100)
+	var i int
+	for code := 200; code < 300; code += 1 {
+		if len(http.StatusText(code)) == 0 {
+			continue
+		}
+
+		rc.SuccesCodes[i] = code
+		i += 1
+	}
+
+	rc.SuccesCodes = rc.SuccesCodes[:i]
 }

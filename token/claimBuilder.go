@@ -235,7 +235,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		method,
 		url,
 		EncodeRemoteClaimsRequest,
-		DecodeRemoteClaimsResponse,
+		DecodeRemoteClaimsResponse(r.SuccesCodes),
 		kithttp.SetClient(client),
 		kithttp.ClientBefore(
 			// Themis' assumes the response content-type is application/json.

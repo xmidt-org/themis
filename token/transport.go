@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -356,34 +357,38 @@ func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
 
 	return output.Bytes(), nil
 }
-
-func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (interface{}, error) {
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode < 200 || response.StatusCode > 299 {
-		err := &DecodeClaimsError{
-			StatusCode: response.StatusCode,
-		}
-
-		if response.Request != nil {
-			err.URL = response.Request.URL.String()
-		}
-
-		return nil, err
-	}
-
-	// allow empty bodies
-	var claims map[string]interface{}
-	if len(body) > 0 {
-		if err := json.Unmarshal(body, &claims); err != nil {
+func DecodeRemoteClaimsResponse(succesCodes []int) kithttp.DecodeResponseFunc {
+	return func(_ context.Context, response *http.Response) (interface{}, error) {
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	return claims, nil
+		if !slices.Contains(succesCodes, response.StatusCode) {
+			err := &DecodeClaimsError{
+				StatusCode: response.StatusCode,
+			}
+
+			if response.Request != nil {
+				err.URL = response.Request.URL.String()
+			}
+
+			return nil, err
+		}
+
+		// allow empty bodies
+		var claims map[string]interface{}
+		if response.StatusCode != http.StatusOK {
+			return claims, nil
+		}
+		if len(body) > 0 {
+			if err := json.Unmarshal(body, &claims); err != nil {
+				return nil, err
+			}
+		}
+
+		return claims, nil
+	}
 }
 
 func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request interface{}) error {

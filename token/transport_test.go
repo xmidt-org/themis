@@ -788,6 +788,8 @@ func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 		},
 	}
 
+	rc := RemoteClaims{}
+	enforceLegacyRemoteSuccessStatusCodes(&rc)
 	for i, record := range testData {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			var (
@@ -800,7 +802,7 @@ func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 				}
 			)
 
-			v, err := DecodeRemoteClaimsResponse(context.Background(), response)
+			v, err := DecodeRemoteClaimsResponse(rc.SuccesCodes)(context.Background(), response)
 			require.NoError(err)
 			require.IsType(map[string]interface{}{}, v)
 			assert.Equal(record.expected, v)
@@ -818,8 +820,9 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 			Request:    httptest.NewRequest("POST", "http://schmoogle.com", nil),
 		}
 	)
-
-	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
+	rc := RemoteClaims{}
+	enforceLegacyRemoteSuccessStatusCodes(&rc)
+	v, err := DecodeRemoteClaimsResponse(rc.SuccesCodes)(context.Background(), response)
 	assert.Nil(v)
 	require.Error(err)
 	require.IsType((*DecodeClaimsError)(nil), err)
@@ -844,7 +847,9 @@ func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {
 		}
 	)
 
-	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
+	rc := RemoteClaims{}
+	enforceLegacyRemoteSuccessStatusCodes(&rc)
+	v, err := DecodeRemoteClaimsResponse(rc.SuccesCodes)(context.Background(), response)
 	assert.Nil(v)
 	require.Error(err)
 }
