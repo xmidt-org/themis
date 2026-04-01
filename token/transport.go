@@ -357,6 +357,7 @@ func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
 
 	return output.Bytes(), nil
 }
+
 func DecodeRemoteClaimsResponse(succesCodes []int) kithttp.DecodeResponseFunc {
 	return func(_ context.Context, response *http.Response) (interface{}, error) {
 		body, err := io.ReadAll(response.Body)
