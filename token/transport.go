@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -163,6 +164,18 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 	return xhttpserver.MissingVariableError{Variable: vrb.variable}
 }
 
+type staticRequestBuilder struct {
+	key    string
+	value  any
+	setter func(string, interface{}, *Request)
+}
+
+func (srb staticRequestBuilder) Build(original *http.Request, tr *Request) error {
+	srb.setter(srb.key, srb.value, tr)
+
+	return nil
+}
+
 type partnerIDRequestBuilder struct {
 	PartnerID
 }
@@ -241,13 +254,16 @@ func setConnectionState(original *http.Request, tr *Request) error {
 func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
 	rb, err := newRequestBuilders(o.Claims, claimsSetter)
 	rb1, err1 := newRequestBuilders(o.Metadata, metadataSetter)
-	rb2, err2 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
-	rb3, err3 := newRequestBuilders(o.QueryParameters, queryParametersSetter)
-	if errs = errors.Join(err, err1, err2, err3); errs != nil {
+	rb2, err2 := newRequestStaticBuilders(o.PathWildCards, pathWildCardsSetter)
+	rb3, err3 := newRequestStaticBuilders(o.QueryParameters, queryParametersSetter)
+	rb4, err4 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
+	rb5, err5 := newRequestBuilders(o.QueryParameters, queryParametersSetter)
+
+	if errs = errors.Join(err, err1, err2, err3, err4, err5); errs != nil {
 		return nil, errs
 	}
 
-	rbs = slices.Concat(rb, rb1, rb2, rb3)
+	rbs = slices.Concat(rb, rb1, rb2, rb3, rb4, rb5)
 	if o.PartnerID != nil {
 		rbs = append(rbs, partnerIDRequestBuilder{PartnerID: *o.PartnerID})
 	}
@@ -276,6 +292,23 @@ func newRequestBuilders(values []Value, setter func(string, any, *Request)) (rbs
 				setter:   setter,
 			})
 		}
+	}
+
+	return
+}
+
+func newRequestStaticBuilders(values []Value, setter func(string, any, *Request)) (rbs RequestBuilders, errs error) {
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsStatic() {
+			continue
+		}
+
+		rbs = append(rbs, staticRequestBuilder{
+			key:    v.Key,
+			value:  v.Value,
+			setter: setter,
+		})
 	}
 
 	return
@@ -395,7 +428,12 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 
 	tr := request.(*Request)
 	for k, v := range tr.PathWildCards {
-		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
+		s, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("remote claims expected a string path wild card value: %s", reflect.TypeOf(v))
+		}
+
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), s)
 	}
 
 	q := r.URL.Query()
