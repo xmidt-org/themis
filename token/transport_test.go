@@ -325,6 +325,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 						Key:      "fromVariable",
 						Variable: "queryParameter",
 					},
+					{
+						Key:   "fromStatic",
+						Value: "StaticValue0",
+					},
 				},
 			},
 			uri: "/test/foo/bar/foobar/json",
@@ -346,6 +350,7 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 					"fromVariable": "foobar",
 				},
 				QueryParameters: map[string]any{
+					"fromStatic":   "StaticValue0",
 					"fromVariable": "json",
 				},
 			},
