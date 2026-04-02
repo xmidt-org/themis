@@ -351,7 +351,6 @@ func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value 
 }
 
 type DecodeClaimsError struct {
-	URL        string
 	StatusCode int
 	Err        error
 }
@@ -370,8 +369,7 @@ func (dce *DecodeClaimsError) nestedErrorText() string {
 
 func (dce *DecodeClaimsError) Error() string {
 	return fmt.Sprintf(
-		"Failed to decode remote claims from [%s]: statusCode=%d, err=%s",
-		dce.URL,
+		"Failed to decode remote claims from: statusCode=%d, err=%s",
 		dce.StatusCode,
 		dce.nestedErrorText(),
 	)
@@ -381,8 +379,7 @@ func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
 	var output bytes.Buffer
 	fmt.Fprintf(
 		&output,
-		`{"url": "%s", "statusCode": %d, "err": "%s"}`,
-		dce.URL,
+		`{"statusCode": %d, "err": "%s"}`,
 		dce.StatusCode,
 		dce.nestedErrorText(),
 	)
@@ -401,8 +398,8 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 			StatusCode: response.StatusCode,
 		}
 
-		if response.Request != nil {
-			err.URL = response.Request.URL.String()
+		if len(body) != 0 {
+			err.Err = errors.New(string(body))
 		}
 
 		return nil, err
