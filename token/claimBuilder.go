@@ -269,20 +269,6 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
 func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
-	if o.Remote != nil {
-		metadata, err := getStaticValues(o.Metadata)
-		if err != nil {
-			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
-		}
-
-		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
-		if err != nil {
-			return nil, err
-		}
-
-		builders = append(builders, remoteClaimBuilder)
-	}
-
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
 		return nil, fmt.Errorf("static claim builder configuration failure: %w", err)
@@ -310,6 +296,20 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			builders,
 			cb,
 		)
+	}
+
+	if o.Remote != nil {
+		metadata, err := getStaticValues(o.Metadata)
+		if err != nil {
+			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
+		}
+
+		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
+		if err != nil {
+			return nil, err
+		}
+
+		builders = append(builders, remoteClaimBuilder)
 	}
 
 	return builders, err
