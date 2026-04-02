@@ -34,4 +34,5 @@ jobs:
         LICENSE
         NOTICE
       yaml-lint-skip: false
+      lint-skip: false
     secrets: inherit
