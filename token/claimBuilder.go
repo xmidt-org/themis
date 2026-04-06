@@ -127,11 +127,16 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	result, err := rc.endpoint(ctx, rCopy)
+	respErr := DecodeClaimsError{}
 	if err == nil {
 		maps.Copy(target, result.(map[string]any))
+	} else if errors.As(err, &respErr) {
+		return respErr
+	} else {
+		return errors.New("either remote claims' configuration is invalid or the remote claims' endpoint is down")
 	}
 
-	return err
+	return nil
 }
 
 func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
