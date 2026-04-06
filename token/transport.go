@@ -355,11 +355,11 @@ type DecodeClaimsError struct {
 	Err        error
 }
 
-func (dce *DecodeClaimsError) Unwrap() error {
+func (dce DecodeClaimsError) Unwrap() error {
 	return dce.Err
 }
 
-func (dce *DecodeClaimsError) nestedErrorText() string {
+func (dce DecodeClaimsError) nestedErrorText() string {
 	if dce.Err != nil {
 		return dce.Err.Error()
 	}
@@ -367,7 +367,7 @@ func (dce *DecodeClaimsError) nestedErrorText() string {
 	return ""
 }
 
-func (dce *DecodeClaimsError) Error() string {
+func (dce DecodeClaimsError) Error() string {
 	return fmt.Sprintf(
 		"Failed to decode remote claims from: statusCode=%d, err=%s",
 		dce.StatusCode,
@@ -375,7 +375,7 @@ func (dce *DecodeClaimsError) Error() string {
 	)
 }
 
-func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
+func (dce DecodeClaimsError) MarshalJSON() ([]byte, error) {
 	var output bytes.Buffer
 	fmt.Fprintf(
 		&output,
@@ -394,7 +394,7 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 	}
 
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		err := &DecodeClaimsError{
+		err := DecodeClaimsError{
 			StatusCode: response.StatusCode,
 		}
 

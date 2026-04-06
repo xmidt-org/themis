@@ -811,9 +811,9 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
 	assert.Nil(v)
 	require.Error(err)
-	require.IsType((*DecodeClaimsError)(nil), err)
+	require.IsType(DecodeClaimsError{}, err)
 
-	var dce *DecodeClaimsError
+	var dce DecodeClaimsError
 	assert.ErrorAs(err, &dce)
 	assert.Equal(523, dce.StatusCode)
 	assert.Equal(dce.Err.Error(), "this is not JSON")
