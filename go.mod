@@ -17,7 +17,7 @@ require (
 	github.com/xmidt-org/arrange v0.5.2
 	github.com/xmidt-org/candlelight v0.2.4
 	github.com/xmidt-org/sallust v0.2.4
-	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.67.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.68.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0
 	go.uber.org/fx v1.24.0
 	go.uber.org/multierr v1.11.0
