@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -163,6 +164,18 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 	return xhttpserver.MissingVariableError{Variable: vrb.variable}
 }
 
+type staticRequestBuilder struct {
+	key    string
+	value  any
+	setter func(string, interface{}, *Request)
+}
+
+func (srb staticRequestBuilder) Build(original *http.Request, tr *Request) error {
+	srb.setter(srb.key, srb.value, tr)
+
+	return nil
+}
+
 type partnerIDRequestBuilder struct {
 	PartnerID
 }
@@ -241,13 +254,16 @@ func setConnectionState(original *http.Request, tr *Request) error {
 func NewRequestBuilders(o Options) (rbs RequestBuilders, errs error) {
 	rb, err := newRequestBuilders(o.Claims, claimsSetter)
 	rb1, err1 := newRequestBuilders(o.Metadata, metadataSetter)
-	rb2, err2 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
-	rb3, err3 := newRequestBuilders(o.QueryParameters, queryParametersSetter)
-	if errs = errors.Join(err, err1, err2, err3); errs != nil {
+	rb2, err2 := newRequestStaticBuilders(o.PathWildCards, pathWildCardsSetter)
+	rb3, err3 := newRequestStaticBuilders(o.QueryParameters, queryParametersSetter)
+	rb4, err4 := newRequestBuilders(o.PathWildCards, pathWildCardsSetter)
+	rb5, err5 := newRequestBuilders(o.QueryParameters, queryParametersSetter)
+
+	if errs = errors.Join(err, err1, err2, err3, err4, err5); errs != nil {
 		return nil, errs
 	}
 
-	rbs = slices.Concat(rb, rb1, rb2, rb3)
+	rbs = slices.Concat(rb, rb1, rb2, rb3, rb4, rb5)
 	if o.PartnerID != nil {
 		rbs = append(rbs, partnerIDRequestBuilder{PartnerID: *o.PartnerID})
 	}
@@ -276,6 +292,23 @@ func newRequestBuilders(values []Value, setter func(string, any, *Request)) (rbs
 				setter:   setter,
 			})
 		}
+	}
+
+	return
+}
+
+func newRequestStaticBuilders(values []Value, setter func(string, any, *Request)) (rbs RequestBuilders, errs error) {
+	for _, v := range values {
+		errs = multierr.Append(errs, v.Validate())
+		if !v.IsStatic() {
+			continue
+		}
+
+		rbs = append(rbs, staticRequestBuilder{
+			key:    v.Key,
+			value:  v.Value,
+			setter: setter,
+		})
 	}
 
 	return
@@ -318,16 +351,15 @@ func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value 
 }
 
 type DecodeClaimsError struct {
-	URL        string
 	StatusCode int
 	Err        error
 }
 
-func (dce *DecodeClaimsError) Unwrap() error {
+func (dce DecodeClaimsError) Unwrap() error {
 	return dce.Err
 }
 
-func (dce *DecodeClaimsError) nestedErrorText() string {
+func (dce DecodeClaimsError) nestedErrorText() string {
 	if dce.Err != nil {
 		return dce.Err.Error()
 	}
@@ -335,21 +367,19 @@ func (dce *DecodeClaimsError) nestedErrorText() string {
 	return ""
 }
 
-func (dce *DecodeClaimsError) Error() string {
+func (dce DecodeClaimsError) Error() string {
 	return fmt.Sprintf(
-		"Failed to decode remote claims from [%s]: statusCode=%d, err=%s",
-		dce.URL,
+		"Failed to decode remote claims from: statusCode=%d, err=%s",
 		dce.StatusCode,
 		dce.nestedErrorText(),
 	)
 }
 
-func (dce *DecodeClaimsError) MarshalJSON() ([]byte, error) {
+func (dce DecodeClaimsError) MarshalJSON() ([]byte, error) {
 	var output bytes.Buffer
 	fmt.Fprintf(
 		&output,
-		`{"url": "%s", "statusCode": %d, "err": "%s"}`,
-		dce.URL,
+		`{"statusCode": %d, "err": "%s"}`,
 		dce.StatusCode,
 		dce.nestedErrorText(),
 	)
@@ -364,12 +394,12 @@ func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (int
 	}
 
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		err := &DecodeClaimsError{
+		err := DecodeClaimsError{
 			StatusCode: response.StatusCode,
 		}
 
-		if response.Request != nil {
-			err.URL = response.Request.URL.String()
+		if len(body) != 0 {
+			err.Err = errors.New(string(body))
 		}
 
 		return nil, err
@@ -395,7 +425,12 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 
 	tr := request.(*Request)
 	for k, v := range tr.PathWildCards {
-		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), v.(string))
+		s, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("remote claims expected a string path wild card value: %s", reflect.TypeOf(v))
+		}
+
+		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), s)
 	}
 
 	q := r.URL.Query()

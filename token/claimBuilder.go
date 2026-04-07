@@ -127,11 +127,16 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	result, err := rc.endpoint(ctx, rCopy)
+	respErr := DecodeClaimsError{}
 	if err == nil {
 		maps.Copy(target, result.(map[string]any))
+	} else if errors.As(err, &respErr) {
+		return respErr
+	} else {
+		return errors.New("either remote claims' configuration is invalid or the remote claims' endpoint is down")
 	}
 
-	return err
+	return nil
 }
 
 func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
@@ -269,20 +274,6 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
 func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
-	if o.Remote != nil {
-		metadata, err := getStaticValues(o.Metadata)
-		if err != nil {
-			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
-		}
-
-		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
-		if err != nil {
-			return nil, err
-		}
-
-		builders = append(builders, remoteClaimBuilder)
-	}
-
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
 		return nil, fmt.Errorf("static claim builder configuration failure: %w", err)
@@ -310,6 +301,20 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			builders,
 			cb,
 		)
+	}
+
+	if o.Remote != nil {
+		metadata, err := getStaticValues(o.Metadata)
+		if err != nil {
+			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
+		}
+
+		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
+		if err != nil {
+			return nil, err
+		}
+
+		builders = append(builders, remoteClaimBuilder)
 	}
 
 	return builders, err
