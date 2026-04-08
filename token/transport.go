@@ -371,7 +371,7 @@ func (dce DecodeClaimsError) nestedErrorText() string {
 
 func (dce DecodeClaimsError) Error() string {
 	return fmt.Sprintf(
-		"Failed to decode remote claims from: statusCode=%d, err=%s",
+		"remote claims endpoint failure: statusCode=%d, err=%s",
 		dce.StatusCode,
 		dce.nestedErrorText(),
 	)

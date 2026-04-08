@@ -142,16 +142,18 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 		rc.results.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: strconv.Itoa(http.StatusOK), OutcomeLabelKey: SuccessOutcome}).Add(1)
 		maps.Copy(target, result.(map[string]any))
 	} else if errors.As(err, &respErr) {
+		// Handle response decoding related errors.
 		code := respErr.StatusCode
+		// Handle non-HTTP/response related errors.
 		if respErr.StatusCode == 0 {
 			// Failure outcome.
-			// Not a HTTP/Response related error.
 			rc.duration.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: ""}).Observe(endTime.Sub(startTime).Seconds())
 			rc.results.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: "", OutcomeLabelKey: FailOutcome}).Add(1)
 
 			return respErr
 		}
 
+		// Handle HTTP/response related errors.
 		rc.duration.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: strconv.Itoa(code)}).Observe(endTime.Sub(startTime).Seconds())
 		switch code - code%100 {
 		case 500:
@@ -180,6 +182,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 		// don't result in a non-200 themis response, i.e. success outcome.
 		rc.results.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: strconv.Itoa(code), OutcomeLabelKey: SuccessOutcome}).Add(1)
 	} else if errors.Is(err, ErrRemoteClaimsEncodingFailure) {
+		// Handle request encoding related errors.
 		// Failure outcome.
 		rc.duration.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: ""}).Observe(endTime.Sub(startTime).Seconds())
 		rc.results.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: "", OutcomeLabelKey: FailOutcome}).Add(1)
@@ -187,6 +190,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 
 		return ErrRemoteClaimsEncodingFailure
 	} else {
+		// Handle gokit/configuration related errors.
 		// Failure outcome.
 		rc.duration.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: ""}).Observe(endTime.Sub(startTime).Seconds())
 		rc.results.With(prometheus.Labels{EndpointLabelKey: rc.url, MethodLabelKey: GetMethod, CodeLabelKey: "", OutcomeLabelKey: FailOutcome}).Add(1)
