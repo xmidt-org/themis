@@ -5,9 +5,11 @@ package token
 import (
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/fx"
@@ -146,11 +148,20 @@ func testUnmarshalSuccess(t *testing.T) {
 		factory Factory
 
 		app = fxtest.New(t,
+
+			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
 				config.ProvideViper(
 					config.Json(`
 						{
+							"prometheus": {
+								"defaultNamespace": "xmidt",
+								"defaultSubsystem": "issuer",
+								"constLabels":{
+									"development": "true"
+								}
+							},
 							"token": {
 								"claims": [
 									{
@@ -164,11 +175,11 @@ func testUnmarshalSuccess(t *testing.T) {
 				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),
 		)
 	)
-
 	assert.NoError(app.Err())
 	assert.NotNil(factory)
 }

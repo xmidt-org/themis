@@ -600,12 +600,12 @@ func testDecodeClaimsErrorUnwrap(t *testing.T) {
 	)
 
 	assert.Nil(
-		(&DecodeClaimsError{}).Unwrap(),
+		(&RemoteClaimsResponseError{}).Unwrap(),
 	)
 
 	assert.Equal(
 		unwrappedErr,
-		(&DecodeClaimsError{Err: unwrappedErr}).Unwrap(),
+		(&RemoteClaimsResponseError{Err: unwrappedErr}).Unwrap(),
 	)
 }
 
@@ -613,7 +613,7 @@ func testDecodeClaimsErrorError(t *testing.T) {
 	t.Run("NoNested", func(t *testing.T) {
 		var (
 			assert  = assert.New(t)
-			errText = (&DecodeClaimsError{
+			errText = (&RemoteClaimsResponseError{
 				StatusCode: 511,
 			}).Error()
 		)
@@ -624,7 +624,7 @@ func testDecodeClaimsErrorError(t *testing.T) {
 	t.Run("WithNested", func(t *testing.T) {
 		var (
 			assert  = assert.New(t)
-			errText = (&DecodeClaimsError{
+			errText = (&RemoteClaimsResponseError{
 				StatusCode: 499,
 				Err:        errors.New("this is a nested error"),
 			}).Error()
@@ -641,7 +641,7 @@ func testDecodeClaimsErrorMarshalJSON(t *testing.T) {
 		expected string
 	}{
 		{
-			err: &DecodeClaimsError{
+			err: &RemoteClaimsResponseError{
 				StatusCode: 475,
 			},
 			expected: `{
@@ -650,7 +650,7 @@ func testDecodeClaimsErrorMarshalJSON(t *testing.T) {
 			}`,
 		},
 		{
-			err: &DecodeClaimsError{
+			err: &RemoteClaimsResponseError{
 				StatusCode: 314,
 				Err:        errors.New("this is a nested error"),
 			},
@@ -811,12 +811,12 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	v, err := DecodeRemoteClaimsResponse(context.Background(), response)
 	assert.Nil(v)
 	require.Error(err)
-	require.IsType(DecodeClaimsError{}, err)
+	require.IsType(RemoteClaimsResponseError{}, err)
 
-	var dce DecodeClaimsError
+	var dce RemoteClaimsResponseError
 	assert.ErrorAs(err, &dce)
 	assert.Equal(523, dce.StatusCode)
-	assert.Equal(dce.Err.Error(), "this is not JSON")
+	assert.Contains(dce.Err.Error(), "this is not JSON")
 }
 
 func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {
