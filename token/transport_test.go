@@ -816,7 +816,7 @@ func testDecodeRemoteClaimsResponseFailure(t *testing.T) {
 	var dce DecodeClaimsError
 	assert.ErrorAs(err, &dce)
 	assert.Equal(523, dce.StatusCode)
-	assert.Equal(dce.Err.Error(), "this is not JSON")
+	assert.Contains(dce.Err.Error(), "this is not JSON")
 }
 
 func testDecodeRemoteClaimsResponseBodyError(t *testing.T) {

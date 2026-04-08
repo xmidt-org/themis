@@ -20,10 +20,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 var (
-	ErrVariableNotAllowed = errors.New("either header/parameter or variable can specified, but not all three")
+	ErrVariableNotAllowed          = errors.New("either header/parameter or variable can specified, but not all three")
+	ErrRemoteClaimsEncodingFailure = errors.New("failed to encode remote claims request")
 )
 
 // InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise
@@ -387,28 +389,46 @@ func (dce DecodeClaimsError) MarshalJSON() ([]byte, error) {
 	return output.Bytes(), nil
 }
 
-func DecodeRemoteClaimsResponse(_ context.Context, response *http.Response) (interface{}, error) {
+func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (interface{}, error) {
+	l := sallust.Get(ctx)
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
+		err := DecodeClaimsError{
+			Err: fmt.Errorf("failed to send request to remote claims endpoint: %w", err),
+		}
+
 		return nil, err
 	}
 
-	if response.StatusCode < 200 || response.StatusCode > 299 {
-		err := DecodeClaimsError{
-			StatusCode: response.StatusCode,
+	code := response.StatusCode
+	switch code - code%100 {
+	case 500:
+		return nil, DecodeClaimsError{
+			StatusCode: code,
+			Err: fmt.Errorf("unexpected 5XX response from remote claims endpoint: %d - %s: %s",
+				code, http.StatusText(code), body),
 		}
-
-		if len(body) != 0 {
-			err.Err = errors.New(string(body))
+	case 400, 300, 100, 0:
+		return nil, DecodeClaimsError{
+			StatusCode: code,
+			Err: fmt.Errorf("unexpected %dXX response from remote claims endpoint: %d - %s: %s",
+				code/100, code, http.StatusText(code), body),
 		}
-
-		return nil, err
+	case 200:
+		l.Info("successful response from remote claims endpoint")
 	}
 
 	// allow empty bodies
 	var claims map[string]interface{}
 	if len(body) > 0 {
 		if err := json.Unmarshal(body, &claims); err != nil {
+			err := DecodeClaimsError{
+				StatusCode: code,
+				Err:        fmt.Errorf("failed to decode response from remote claims endpoint: %w", err),
+			}
+			internalErr := fmt.Errorf("internal error details: %w: %s", err, body)
+			l.Error(internalErr.Error(), zap.Error(internalErr))
+
 			return nil, err
 		}
 	}
@@ -427,7 +447,7 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 	for k, v := range tr.PathWildCards {
 		s, ok := v.(string)
 		if !ok {
-			return fmt.Errorf("remote claims expected a string path wild card value: %s", reflect.TypeOf(v))
+			return multierr.Append(ErrRemoteClaimsEncodingFailure, fmt.Errorf("remote claims expected a string path wild card value: %s", reflect.TypeOf(v)))
 		}
 
 		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), s)
@@ -441,7 +461,7 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 	r.URL.RawQuery = q.Encode()
 	b, err := json.Marshal(tr.Metadata)
 	if err != nil {
-		return err
+		return multierr.Append(ErrRemoteClaimsEncodingFailure, err)
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(b))

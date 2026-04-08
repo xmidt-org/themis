@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/random/randomtest"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 
@@ -420,6 +422,27 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 					testCase.client,
 					testCase.metadata,
 					remoteClaims,
+					prometheus.NewCounterVec(
+						prometheus.CounterOpts{
+							Name: "testPutCounter",
+							Help: "testPutCounter",
+						},
+						[]string{
+							EndpointLabelKey,
+							MethodLabelKey,
+							CodeLabelKey,
+							OutcomeLabelKey},
+					),
+					prometheus.NewHistogramVec(
+						prometheus.HistogramOpts{
+							Name: "testPutCounter",
+							Help: "testPutCounter",
+						},
+						[]string{
+							EndpointLabelKey,
+							MethodLabelKey,
+							CodeLabelKey},
+					),
 				)
 			)
 
@@ -437,17 +460,59 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
-	builder, err := newRemoteClaimBuilder(nil, nil, &RemoteClaims{URL: suite.badURL})
+	builder, err := newRemoteClaimBuilder(nil, nil, &RemoteClaims{URL: suite.badURL},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 	suite.Require().NoError(err)
 	suite.Require().NotNil(builder)
 
 	suite.Error(
-		builder.AddClaims(context.Background(), new(Request), make(map[string]interface{})),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, make(map[string]interface{})),
 	)
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
-	builder, err := newRemoteClaimBuilder(new(http.Client), nil, new(RemoteClaims))
+	builder, err := newRemoteClaimBuilder(new(http.Client), nil, new(RemoteClaims),
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 	suite.Nil(builder)
 	suite.Error(err)
 }
@@ -458,7 +523,28 @@ func (suite *RemoteClaimBuilderTestSuite) TestBadURL() {
 			URL: "this is not valid (%$&@!()&*()*%",
 		}
 
-		builder, err = newRemoteClaimBuilder(new(http.Client), nil, remoteClaims)
+		builder, err = newRemoteClaimBuilder(new(http.Client), nil, remoteClaims,
+			prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "testPutCounter",
+					Help: "testPutCounter",
+				},
+				[]string{
+					EndpointLabelKey,
+					MethodLabelKey,
+					CodeLabelKey,
+					OutcomeLabelKey},
+			),
+			prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name: "testPutCounter",
+					Help: "testPutCounter",
+				},
+				[]string{
+					EndpointLabelKey,
+					MethodLabelKey,
+					CodeLabelKey},
+			))
 	)
 
 	suite.Nil(builder)
@@ -534,7 +620,28 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
@@ -562,7 +669,28 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingKey() {
 		Claims: []Value{
 			{}, // the value should have something configured
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -576,7 +704,28 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingKey() {
 			{}, // the value should have something configured
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -597,7 +746,28 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 				// either JSON or Value should be set
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -614,7 +784,28 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -636,7 +827,28 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 				Value:  "value1",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -654,7 +866,28 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -675,7 +908,28 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 				JSON: `{"this isn't valid JSON`,
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -692,7 +946,28 @@ func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -716,7 +991,28 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 				Header: "X-Ignore-Me",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
@@ -756,7 +1052,28 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 				Header: "X-Ignore-Me",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
@@ -800,7 +1117,28 @@ func (suite *NewClaimBuildersTestSuite) TestBadRemote() {
 			},
 		},
 		Remote: &RemoteClaims{}, // invalid: missing a URL
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 
 	suite.Error(err)
 }
@@ -841,7 +1179,28 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 		}
 	)
 
-	builder, err := NewClaimBuilders(suite.noncer, nil, options)
+	builder, err := NewClaimBuilders(suite.noncer, nil, options,
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testPutCounter",
+				Help: "testPutCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey},
+		))
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
