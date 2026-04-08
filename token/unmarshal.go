@@ -3,6 +3,7 @@
 package token
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
 	"github.com/xmidt-org/themis/random"
@@ -15,11 +16,13 @@ import (
 type TokenIn struct {
 	fx.In
 
-	Logger       *zap.Logger
-	Noncer       random.Noncer `optional:"true"`
-	Keys         key.Registry
-	Unmarshaller config.Unmarshaller
-	Client       xhttpclient.Interface `optional:"true"`
+	Logger         *zap.Logger
+	Noncer         random.Noncer `optional:"true"`
+	Keys           key.Registry
+	Unmarshaller   config.Unmarshaller
+	Client         xhttpclient.Interface    `optional:"true"`
+	RemoteResults  *prometheus.CounterVec   `name:"remote_claims_api_result_total"`
+	RemoteDuration *prometheus.HistogramVec `name:"remote_claims_api_request_duration_seconds"`
 }
 
 type TokenOut struct {
@@ -46,7 +49,7 @@ func Unmarshal(configKey string, b ...RequestBuilder) func(TokenIn) (TokenOut, e
 			in.Logger.Info("trust settings", zap.Reflect("trust", Trust{}.enforceDefaults()))
 		}
 
-		cb, err := NewClaimBuilders(in.Noncer, in.Client, o)
+		cb, err := NewClaimBuilders(in.Noncer, in.Client, o, in.RemoteResults, in.RemoteDuration)
 		if err != nil {
 			return TokenOut{}, err
 		}
