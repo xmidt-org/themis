@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+# SPDX-FileCopyrightText: 2023 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 ---
 name: 'PROJ: xmidt-team'
@@ -17,6 +17,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  package:
-    uses: xmidt-org/shared-go/.github/workflows/proj.yml@60838be4a68ca029af165c3d9067aa41f4e8db14
+  proj:
+    # yamllint disable-line
+    uses: xmidt-org/shared-go/.github/workflows/proj.yml@aff0471aa7e2f96ddb059beb178f63747a7cc57e # v4.9.41
     secrets: inherit
