@@ -14,7 +14,7 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/xmidt-org/arrange v0.5.2
+	github.com/xmidt-org/arrange v0.5.3
 	github.com/xmidt-org/candlelight v0.2.5
 	github.com/xmidt-org/sallust v0.2.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.68.0
