@@ -86,6 +86,7 @@ func main() {
 		sallust.WithLogger(),
 		config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
 		provideMetrics(),
+		token.ProvideMetrics(),
 		fx.Provide(
 			config.ProvideViper(setupViper),
 			func(u config.Unmarshaller) (c sallust.Config, err error) {

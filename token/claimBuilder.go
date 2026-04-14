@@ -10,8 +10,11 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/random"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
@@ -29,8 +32,9 @@ const (
 )
 
 var (
-	ErrRemoteURLRequired = errors.New("a URL for the remote claimer is required")
-	ErrMissingKey        = errors.New("a key is required for all claims and metadata values")
+	ErrRemoteURLRequired                = errors.New("a URL for the remote claimer is required")
+	ErrMissingKey                       = errors.New("a key is required for all claims and metadata values")
+	ErrInvalidRemoteClaimsConfiguration = errors.New("invalid remote claims' configuration")
 )
 
 // ClaimBuilder is a strategy for building token claims, given a token Request
@@ -115,9 +119,11 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 
 // remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
-	endpoint endpoint.Endpoint
-	url      string
-	extra    map[string]interface{}
+	endpoint    endpoint.Endpoint
+	url         string
+	extra       map[string]interface{}
+	apiResults  *prometheus.CounterVec
+	apiDuration prometheus.ObserverVec
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
@@ -126,20 +132,92 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.Metadata, rc.extra)
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
-	result, err := rc.endpoint(ctx, rCopy)
-	respErr := DecodeClaimsError{}
-	if err == nil {
+	startTime := time.Now()
+	result, err := rc.endpoint(sallust.With(ctx, r.Logger), rCopy)
+	duration := time.Since(startTime).Seconds()
+	respErr := RemoteClaimsResponseError{}
+	if err == nil { // Handle success outcomes.
+		r.Logger.Info("successful response from remote claims endpoint")
+		rc.apiDuration.With(prometheus.Labels{CodeLabelKey: strconv.Itoa(http.StatusOK), OutcomeLabelKey: SuccessOutcome}).Observe(duration)
+		rc.apiResults.With(prometheus.Labels{CodeLabelKey: strconv.Itoa(http.StatusOK), OutcomeLabelKey: SuccessOutcome, ReasonLabelKey: ""}).Add(1)
 		maps.Copy(target, result.(map[string]any))
-	} else if errors.As(err, &respErr) {
-		return respErr
-	} else {
-		return errors.New("either remote claims' configuration is invalid or the remote claims' endpoint is down")
+	} else if errors.As(err, &respErr) { // Handle response related errors.
+		code := respErr.StatusCode
+		apiDuration := rc.apiDuration.MustCurryWith(prometheus.Labels{CodeLabelKey: strconv.Itoa(code)})
+		apiResults := rc.apiResults.MustCurryWith(prometheus.Labels{CodeLabelKey: strconv.Itoa(code), ReasonLabelKey: GetRemoteClaimsReasonFromError(err)})
+		if errors.Is(respErr, ErrRemoteClaimsResponseDecodingFailure) { // Handle decoding related errors.
+			// Failure outcome.
+			// Results in themis responding with a 500.
+			ls := prometheus.Labels{OutcomeLabelKey: FailOutcome}
+			apiDuration.With(ls).Observe(duration)
+			apiResults.With(ls).Add(1)
+
+			return respErr
+		}
+
+		switch codeCategory := code - code%100; codeCategory {
+		case 500: // Success outcome.
+			// 5XX HTTP responses from the remote claims endpoint
+			// results in a 200 themis response, but no added remote claims to themis' jwt.
+			r.Logger.Error(err.Error(), zap.Error(err))
+		case 400, 300, 100, 0: // Success outcome.
+			// 4XX, 3XX, 1XX or XX HTTP responses from the remote claims endpoint
+			// results in a 200 themis response, but no added remote claims to themis' jwt.
+			r.Logger.Warn(err.Error(), zap.Error(err))
+		case 200: // Failure outcome.
+			// Successful 2XX responses from remote claims that triggered a non-ErrRemoteClaimsResponseDecodingFailure error
+			// results in themis responding with a 500.
+			fallthrough
+		default: // Failure outcome.
+			// Results in themis responding with a 500.
+			ls := prometheus.Labels{OutcomeLabelKey: FailOutcome}
+			apiDuration.With(ls).Observe(duration)
+			apiResults.With(ls).Add(1)
+			r.Logger.Error(err.Error(), zap.Error(err))
+
+			return respErr
+		}
+
+		// Success outcomes.
+		// Results in a 200 themis response, but no added remote claims to themis' jwt.
+		ls := prometheus.Labels{OutcomeLabelKey: SuccessOutcome}
+		apiDuration.With(ls).Observe(duration)
+		apiResults.With(ls).Add(1)
+	} else if errors.Is(err, ErrRemoteClaimsRequestEncodingFailure) { // Handle request encoding related errors.
+		// Failure outcome.
+		// Results in themis responding with a 500.
+		rc.apiDuration.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: FailOutcome}).Observe(duration)
+		rc.apiResults.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: FailOutcome, ReasonLabelKey: GetRemoteClaimsReasonFromError(err)}).Add(1)
+		r.Logger.Error("remote claims request encoding failure", zap.Error(err))
+
+		return ErrRemoteClaimsRequestEncodingFailure
+	} else if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) { // Handle request context related errors.
+		rc.apiDuration.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: SuccessOutcome}).Observe(duration)
+		rc.apiResults.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: SuccessOutcome, ReasonLabelKey: GetRemoteClaimsReasonFromError(err)}).Add(1)
+		if errors.Is(err, context.DeadlineExceeded) {
+			msg := "remote claims timeout"
+			err = fmt.Errorf("%s: %s", msg, err.Error())
+			r.Logger.Error(msg, zap.Error(err))
+		} else {
+			msg := "remote claims request canceled: themis token request was canceled"
+			err = fmt.Errorf("%s: %s", msg, err.Error())
+			r.Logger.Info(msg, zap.Error(err))
+		}
+	} else { // Handle gokit/configuration related errors.
+		// Failure outcome.
+		// Results in themis responding with a 500.
+		rc.apiDuration.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: FailOutcome}).Observe(duration)
+		rc.apiResults.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: FailOutcome, ReasonLabelKey: GetRemoteClaimsReasonFromError(err)}).Add(1)
+		internalErr := fmt.Errorf("internal error details: %w: %s", ErrInvalidRemoteClaimsConfiguration, err.Error())
+		r.Logger.Error("unknown remote claims failure", zap.Error(internalErr))
+
+		return ErrInvalidRemoteClaimsConfiguration
 	}
 
 	return nil
 }
 
-func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims) (*remoteClaimBuilder, error) {
+func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
 	if len(r.URL) == 0 {
 		return nil, ErrRemoteURLRequired
 	}
@@ -169,7 +247,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		),
 	)
 
-	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata}, nil
+	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata, apiResults: apiResults.MustCurryWith(prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method}), apiDuration: duration.MustCurryWith(prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method})}, nil
 }
 
 // newClientCertificateClaimBuiler creates a claim builder that sets trust based
@@ -272,7 +350,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 //
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
-func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) (ClaimBuilders, error) {
+func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
@@ -309,7 +387,7 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options) 
 			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
 		}
 
-		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote)
+		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote, remoteResults, remoteDuration)
 		if err != nil {
 			return nil, err
 		}

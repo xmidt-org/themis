@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/random/randomtest"
 	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 
@@ -47,7 +49,7 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 		suite.Run(fmt.Sprintf("count=%d", count), func() {
 			var (
 				builder         ClaimBuilders
-				expectedRequest = new(Request)
+				expectedRequest = &Request{Logger: sallust.Default()}
 				expected        = make(map[string]interface{})
 				actual          = make(map[string]interface{})
 			)
@@ -76,7 +78,7 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 
 func (suite *ClaimBuildersTestSuite) TestError() {
 	var (
-		expectedRequest = new(Request)
+		expectedRequest = &Request{Logger: sallust.Default()}
 		expected        = map[string]interface{}{
 			"first": trueString,
 		}
@@ -123,11 +125,12 @@ func (suite *RequestClaimBuilderTestSuite) Test() {
 		expected map[string]interface{}
 	}{
 		{
-			request:  new(Request),
+			request:  &Request{Logger: sallust.Default()},
 			expected: map[string]interface{}{},
 		},
 		{
 			request: &Request{
+				Logger: sallust.Default(),
 				Claims: map[string]interface{}{"foo": 1, "bar": val},
 			},
 			expected: map[string]interface{}{"foo": 1, "bar": val},
@@ -176,7 +179,7 @@ func (suite *StaticClaimBuilderTestSuite) Test() {
 		suite.Run(strconv.Itoa(i), func() {
 			actual := make(map[string]interface{})
 			suite.NoError(
-				testCase.builder.AddClaims(context.Background(), new(Request), actual),
+				testCase.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
 			)
 
 			suite.Equal(testCase.expected, actual)
@@ -255,7 +258,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 		suite.Run(strconv.Itoa(i), func() {
 			actual := make(map[string]interface{})
 			suite.NoError(
-				testCase.builder.AddClaims(context.Background(), new(Request), actual),
+				testCase.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
 			)
 
 			suite.Equal(testCase.expected, actual)
@@ -291,7 +294,7 @@ func (suite *NonceClaimBuilderTestSuite) TestSuccess() {
 	actual := make(map[string]interface{})
 	suite.noncer.ExpectNonce().Return("test", error(nil)).Once()
 	suite.NoError(
-		suite.builder.AddClaims(context.Background(), new(Request), actual),
+		suite.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
 	)
 
 	suite.Equal(
@@ -305,7 +308,7 @@ func (suite *NonceClaimBuilderTestSuite) TestError() {
 	suite.noncer.ExpectNonce().Return("", suite.expectedErr).Once()
 	suite.Equal(
 		suite.expectedErr,
-		suite.builder.AddClaims(context.Background(), new(Request), actual),
+		suite.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
 	)
 
 	suite.Empty(actual)
@@ -383,25 +386,25 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 		expected map[string]interface{}
 	}{
 		{
-			request:  new(Request),
+			request:  &Request{Logger: sallust.Default()},
 			expected: map[string]interface{}{"custom": val},
 		},
 		{
-			request:  &Request{Metadata: map[string]interface{}{"request": val}},
+			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"request": val, "custom": val},
 		},
 		{
 			method:   http.MethodPut,
 			client:   new(http.Client),
 			metadata: map[string]interface{}{"external": val},
-			request:  new(Request),
+			request:  &Request{Logger: sallust.Default()},
 			expected: map[string]interface{}{"external": val, "custom": val},
 		},
 		{
 			method:   http.MethodPatch,
 			client:   new(http.Client),
 			metadata: map[string]interface{}{"external": val},
-			request:  &Request{Metadata: map[string]interface{}{"request": val}},
+			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
 		},
 	}
@@ -420,6 +423,30 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 					testCase.client,
 					testCase.metadata,
 					remoteClaims,
+					prometheus.NewCounterVec(
+						prometheus.CounterOpts{
+							Name: "testAPIResultsCounter",
+							Help: "testAPIResultsCounter",
+						},
+						[]string{
+							EndpointLabelKey,
+							MethodLabelKey,
+							CodeLabelKey,
+
+							OutcomeLabelKey,
+							ReasonLabelKey},
+					),
+					prometheus.NewHistogramVec(
+						prometheus.HistogramOpts{
+							Name: "testAPIDurationCounter",
+							Help: "testAPIDurationCounter",
+						},
+						[]string{
+							EndpointLabelKey,
+							MethodLabelKey,
+							CodeLabelKey,
+							OutcomeLabelKey},
+					),
 				)
 			)
 
@@ -437,17 +464,63 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
-	builder, err := newRemoteClaimBuilder(nil, nil, &RemoteClaims{URL: suite.badURL})
+	builder, err := newRemoteClaimBuilder(nil, nil, &RemoteClaims{URL: suite.badURL},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 	suite.Require().NoError(err)
 	suite.Require().NotNil(builder)
 
 	suite.Error(
-		builder.AddClaims(context.Background(), new(Request), make(map[string]interface{})),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, make(map[string]interface{})),
 	)
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
-	builder, err := newRemoteClaimBuilder(new(http.Client), nil, new(RemoteClaims))
+	builder, err := newRemoteClaimBuilder(new(http.Client), nil, new(RemoteClaims),
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 	suite.Nil(builder)
 	suite.Error(err)
 }
@@ -458,7 +531,31 @@ func (suite *RemoteClaimBuilderTestSuite) TestBadURL() {
 			URL: "this is not valid (%$&@!()&*()*%",
 		}
 
-		builder, err = newRemoteClaimBuilder(new(http.Client), nil, remoteClaims)
+		builder, err = newRemoteClaimBuilder(new(http.Client), nil, remoteClaims,
+			prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "testAPIResultsCounter",
+					Help: "testAPIResultsCounter",
+				},
+				[]string{
+					EndpointLabelKey,
+					MethodLabelKey,
+					CodeLabelKey,
+
+					OutcomeLabelKey,
+					ReasonLabelKey},
+			),
+			prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name: "testAPIDurationCounter",
+					Help: "testAPIDurationCounter",
+				},
+				[]string{
+					EndpointLabelKey,
+					MethodLabelKey,
+					CodeLabelKey,
+					OutcomeLabelKey},
+			))
 	)
 
 	suite.Nil(builder)
@@ -534,14 +631,37 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -562,7 +682,30 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingKey() {
 		Claims: []Value{
 			{}, // the value should have something configured
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -576,7 +719,30 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingKey() {
 			{}, // the value should have something configured
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -597,7 +763,30 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 				// either JSON or Value should be set
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -614,7 +803,30 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -636,7 +848,30 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 				Value:  "value1",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -654,7 +889,30 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -675,7 +933,30 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 				JSON: `{"this isn't valid JSON`,
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -692,7 +973,30 @@ func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
 			},
 		},
 		Remote: &RemoteClaims{},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
@@ -716,14 +1020,37 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 				Header: "X-Ignore-Me",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -756,7 +1083,30 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 				Header: "X-Ignore-Me",
 			},
 		},
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
@@ -766,7 +1116,7 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -800,7 +1150,30 @@ func (suite *NewClaimBuildersTestSuite) TestBadRemote() {
 			},
 		},
 		Remote: &RemoteClaims{}, // invalid: missing a URL
-	})
+	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Error(err)
 }
@@ -841,7 +1214,30 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 		}
 	)
 
-	builder, err := NewClaimBuilders(suite.noncer, nil, options)
+	builder, err := NewClaimBuilders(suite.noncer, nil, options,
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
@@ -850,7 +1246,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
+		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
