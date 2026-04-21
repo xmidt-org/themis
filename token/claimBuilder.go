@@ -191,7 +191,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 		r.Logger.Error("remote claims request encoding failure", zap.Error(err))
 
 		return ErrRemoteClaimsRequestEncodingFailure
-	} else if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) { // Handle request context related errors.
+	} else if IsErrorNetworkOrContextRelated(err) { // Handle network and request context related errors.
 		rc.apiDuration.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: SuccessOutcome}).Observe(duration)
 		rc.apiResults.With(prometheus.Labels{CodeLabelKey: "", OutcomeLabelKey: SuccessOutcome, ReasonLabelKey: GetRemoteClaimsReasonFromError(err)}).Add(1)
 		if errors.Is(err, context.DeadlineExceeded) {

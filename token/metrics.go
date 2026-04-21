@@ -45,7 +45,6 @@ const (
 	ConnClosedReason                      = "connection_closed"
 	OpErrReason                           = "op_error"
 	NetworkErrReason                      = "unknown_network_error"
-	UpdateRequestURLFailedReason          = "update_request_url_failed"
 	ConnectionUnexpectedlyClosedEOFReason = "connection_unexpectedly_closed_eof"
 	NoErrReason                           = "no_error"
 
