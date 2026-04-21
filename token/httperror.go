@@ -10,6 +10,37 @@ import (
 	"strings"
 )
 
+// IsErrorNetworkOrContextRelated determines whether an HTTP error is network or context related.
+func IsErrorNetworkOrContextRelated(err error) bool {
+	var d *net.DNSError
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	} else if errors.Is(err, context.Canceled) {
+		return true
+	} else if errors.As(err, &d) {
+		switch {
+		case d.IsTimeout:
+			return true
+		case d.IsTemporary, d.IsNotFound:
+		default:
+		}
+	} else if errors.Is(err, net.ErrClosed) {
+		return true
+	} else if errors.Is(err, &net.OpError{}) {
+		return true
+	} else if n := net.UnknownNetworkError(""); errors.As(err, &n) {
+		switch {
+		case n.Timeout():
+			return true
+		case n.Temporary(), d.IsNotFound:
+		default:
+		}
+	}
+
+	return false
+
+}
+
 func GetRemoteClaimsReasonFromError(err error) string {
 	var d *net.DNSError
 	if err == nil {
