@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/xhttp/xhttpserver"
@@ -459,6 +460,7 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 		}
 
 		r.URL.Path = strings.ReplaceAll(r.URL.Path, fmt.Sprintf("{%s}", k), s)
+		r.SetPathValue(k, s)
 	}
 
 	q := r.URL.Query()
@@ -475,4 +477,29 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 	r.Body = io.NopCloser(bytes.NewReader(b))
 
 	return nil
+}
+
+func EndpointWrapper(remoteEndpoint endpoint.Endpoint, url string) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response any, err error) {
+		req, err := http.NewRequestWithContext(ctx, "", url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := EncodeRemoteClaimsRequest(ctx, req, request); err != nil {
+			return nil, err
+		}
+
+		if err := req.ParseForm(); err != nil {
+			return nil, err
+		}
+
+		resp, err := remoteEndpoint(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		return DecodeRemoteClaimsResponse(ctx, resp.(*http.Response))
+	}
+
 }

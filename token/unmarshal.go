@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrRemoteClaimsEndpointConflict = errors.New("remote claims builder's gokit endpoint can either be configured or provided as an fx.Option")
+	ErrRemoteClaimsEndpointMisconfigured = errors.New("remote claims builder must be configured if a remote claim builder endpoint was provided as an fx.Option")
 )
 
 type RemoteClaimsEndpointIn struct {
@@ -34,22 +34,18 @@ type RemoteClaimsEndpointOut struct {
 	Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
 }
 
-func RemoteClaimsEndpoint(in RemoteClaimsEndpointIn) (RemoteClaimsEndpointOut, error) {
-	if in.Client != nil && in.Endpoint != nil {
-		return RemoteClaimsEndpointOut{}, ErrRemoteClaimsEndpointConflict
+func RemoteClaimsEndpoint(in RemoteClaimsEndpointIn) (out RemoteClaimsEndpointOut, err error) {
+	if in.Endpoint != nil && in.Options.Remote == nil {
+		return RemoteClaimsEndpointOut{}, ErrRemoteClaimsEndpointMisconfigured
 	}
 
-	var (
-		endpoint endpoint.Endpoint
-		err      error
-	)
 	if in.Endpoint != nil {
-		endpoint = in.Endpoint
+		out.Endpoint = EndpointWrapper(in.Endpoint, in.Options.Remote.URL)
 	} else if in.Options.Remote != nil {
-		endpoint, err = newRemoteEndpoint(in.Client, in.Options.Remote)
+		out.Endpoint, err = newRemoteEndpoint(in.Client, in.Options.Remote)
 	}
 
-	return RemoteClaimsEndpointOut{Endpoint: endpoint}, err
+	return
 }
 
 func Unmarshal(configKey string) func(config.Unmarshaller) (Options, error) {
