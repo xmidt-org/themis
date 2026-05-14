@@ -183,6 +183,7 @@ func testUnmarshalRemoteEndpointConflict(t *testing.T) {
 					`), fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
+				// nolint:goconst
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
 				RemoteClaimsEndpoint,
@@ -215,7 +216,6 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 		factory Factory
 
 		app = fxtest.New(t,
-
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,

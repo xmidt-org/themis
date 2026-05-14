@@ -455,23 +455,22 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 						MethodLabelKey,
 						CodeLabelKey,
 
-							OutcomeLabelKey,
-							ReasonLabelKey},
-					),
-					prometheus.NewHistogramVec(
-						prometheus.HistogramOpts{
-							// nolint:goconst
-							Name: "testAPIDurationCounter",
-							// nolint:goconst
-							Help: "testAPIDurationCounter",
-						},
-						[]string{
-							EndpointLabelKey,
-							MethodLabelKey,
-							CodeLabelKey,
-							OutcomeLabelKey},
-					),
-				)
+						OutcomeLabelKey,
+						ReasonLabelKey},
+				),
+				prometheus.NewHistogramVec(
+					prometheus.HistogramOpts{
+						// nolint:goconst
+						Name: "testAPIDurationCounter",
+						// nolint:goconst
+						Help: "testAPIDurationCounter",
+					},
+					[]string{
+						EndpointLabelKey,
+						MethodLabelKey,
+						CodeLabelKey,
+						OutcomeLabelKey},
+				),
 			)
 
 			suite.Require().NoError(err)
