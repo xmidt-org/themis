@@ -28,7 +28,7 @@ jobs:
     # yamllint disable-line
     uses: xmidt-org/shared-go/.github/workflows/ci.yml@5e3c53728d34f8c9b80758bc47868d985411f9c6 # v4.11.2
     with:
-      release-type:          program
+      release-type:          library
       release-arch-amd64:    true
       release-arch-arm64:    true
       release-docker:        true

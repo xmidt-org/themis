@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/random/randomtest"
@@ -486,7 +487,9 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
-	builder, err := newRemoteClaimBuilder(nil, nil, nil, nil, Trust{}, &RemoteClaims{URL: suite.badURL},
+	builder, err := newRemoteClaimBuilder(
+		func(context.Context, interface{}) (interface{}, error) { return nil, errors.New("") },
+		nil, nil, nil, Trust{}, &RemoteClaims{URL: suite.badURL},
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -521,32 +524,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestError() {
 func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
 	remoteClaims := new(RemoteClaims)
 	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
-	suite.Error(err)
-	builder, err := newRemoteClaimBuilder(endpoint, nil, nil, nil, Trust{}, remoteClaims,
-		prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "testAPIResultsCounter",
-				Help: "testAPIResultsCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-				OutcomeLabelKey,
-				ReasonLabelKey},
-		),
-		prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name: "testAPIDurationCounter",
-				Help: "testAPIDurationCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-				OutcomeLabelKey},
-		))
-	suite.Nil(builder)
+	suite.Nil(endpoint)
 	suite.Error(err)
 }
 
@@ -555,35 +533,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestBadURL() {
 		URL: "this is not valid (%$&@!()&*()*%",
 	}
 	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
-	suite.Error(err)
-
-	builder, err := newRemoteClaimBuilder(endpoint, nil, nil, nil, Trust{}, remoteClaims,
-		prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "testAPIResultsCounter",
-				Help: "testAPIResultsCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-
-				OutcomeLabelKey,
-				ReasonLabelKey},
-		),
-		prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name: "testAPIDurationCounter",
-				Help: "testAPIDurationCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-				OutcomeLabelKey},
-		))
-
-	suite.Nil(builder)
+	suite.Nil(endpoint)
 	suite.Error(err)
 }
 
@@ -739,7 +689,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingKey() {
 }
 
 func (suite *NewClaimBuildersTestSuite) testMetadataMissingKey() {
-	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
 		Metadata: []Value{
@@ -820,7 +770,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 }
 
 func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
-	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
 		Metadata: []Value{
@@ -908,7 +858,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 }
 
 func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
-	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
 		Metadata: []Value{
@@ -993,7 +943,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 }
 
 func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
-	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
+	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
 		Metadata: []Value{
@@ -1169,13 +1119,33 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 }
 
 func (suite *NewClaimBuildersTestSuite) TestBadRemote() {
-	_, err := NewClaimBuilders(nil, nil, Options{
+	endpoint, err := newRemoteEndpoint(nil, &RemoteClaims{})
+	suite.Error(err)
+	suite.Nil(endpoint)
+}
+
+func (suite *NewClaimBuildersTestSuite) TestFull() {
+	options := Options{
 		Nonce:          true,
 		Duration:       24 * time.Hour,
 		NotBeforeDelta: 15 * time.Second,
+		Claims: []Value{
+			{
+				Key:   "static1",
+				Value: -72.5,
+			},
+			{
+				Key:   "static2",
+				Value: []string{"a", "b"},
+			},
+			{
+				Key:    "http1",
+				Header: "X-Ignore-Me",
+			},
+		},
 		Metadata: []Value{
 			{
-				Key:   "extra1",
+				Key:   "extra",
 				Value: "extra stuff",
 			},
 			{
@@ -1183,72 +1153,13 @@ func (suite *NewClaimBuildersTestSuite) TestBadRemote() {
 				Parameter: "foo",
 			},
 		},
-		Remote: &RemoteClaims{}, // invalid: missing a URL
-	},
-		prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "testAPIResultsCounter",
-				Help: "testAPIResultsCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-				OutcomeLabelKey,
-				ReasonLabelKey},
-		),
-		prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name: "testAPIDurationCounter",
-				Help: "testAPIDurationCounter",
-			},
-			[]string{
-				EndpointLabelKey,
-				MethodLabelKey,
-				CodeLabelKey,
-				OutcomeLabelKey},
-		))
-
-	suite.Error(err)
-}
-
-func (suite *NewClaimBuildersTestSuite) TestFull() {
-	var (
-		options = Options{
-			Nonce:          true,
-			Duration:       24 * time.Hour,
-			NotBeforeDelta: 15 * time.Second,
-			Claims: []Value{
-				{
-					Key:   "static1",
-					Value: -72.5,
-				},
-				{
-					Key:   "static2",
-					Value: []string{"a", "b"},
-				},
-				{
-					Key:    "http1",
-					Header: "X-Ignore-Me",
-				},
-			},
-			Metadata: []Value{
-				{
-					Key:   "extra",
-					Value: "extra stuff",
-				},
-				{
-					Key:       "http2",
-					Parameter: "foo",
-				},
-			},
-			Remote: &RemoteClaims{
-				URL: suite.server.URL,
-			},
-		}
-	)
-
-	builder, err := NewClaimBuilders(suite.noncer, nil, options,
+		Remote: &RemoteClaims{
+			URL: suite.server.URL,
+		},
+	}
+	endpoint, err := newRemoteEndpoint(nil, options.Remote)
+	suite.Require().NoError(err)
+	builder, err := NewClaimBuilders(suite.noncer, endpoint, options,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",

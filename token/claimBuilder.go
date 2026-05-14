@@ -253,19 +253,9 @@ func newRemoteEndpoint(client xhttpclient.Interface, r *RemoteClaims) (endpoint.
 }
 
 func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, roots *x509.CertPool, intermediates *x509.CertPool, trust Trust, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
-	method := "internal_call"
-	if endpoint == nil {
-		var err error
-
-		endpoint, err = newRemoteEndpoint(nil, r)
-		if err != nil {
-			return nil, err
-		}
-
-		method = r.Method
-		if len(method) == 0 {
-			method = http.MethodPost
-		}
+	method := r.Method
+	if len(method) == 0 {
+		method = http.MethodPost
 	}
 
 	ls := prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method}
@@ -404,7 +394,7 @@ func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Optio
 		)
 	}
 
-	if o.Remote != nil || remoteEndpoint != nil {
+	if o.Remote != nil && remoteEndpoint != nil {
 		metadata, err := getStaticValues(o.Metadata)
 		if err != nil {
 			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
