@@ -442,7 +442,9 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 				remoteClaims,
 				prometheus.NewCounterVec(
 					prometheus.CounterOpts{
+						// nolint:goconst
 						Name: "testAPIResultsCounter",
+						// nolint:goconst
 						Help: "testAPIResultsCounter",
 					},
 					[]string{
@@ -455,7 +457,9 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 				),
 				prometheus.NewHistogramVec(
 					prometheus.HistogramOpts{
+						// nolint:goconst
 						Name: "testAPIDurationCounter",
+						// nolint:goconst
 						Help: "testAPIDurationCounter",
 					},
 					[]string{
