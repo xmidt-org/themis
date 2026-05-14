@@ -71,10 +71,13 @@ func TestResponseHeaders(t *testing.T) {
 			Header: http.Header{},
 		},
 		{Header: http.Header{
+			// nolint:goconst
 			"x-test": []string{"value"},
 		}},
 		{Header: http.Header{
+			// nolint:goconst
 			"X-Single": []string{"value"},
+			// nolint:goconst
 			"x-douBLe": []string{"value1", "value2"},
 		}},
 	}

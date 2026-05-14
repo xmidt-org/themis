@@ -79,6 +79,7 @@ func testNewTlsConfigNoKeyFile(t *testing.T) {
 func testNewTlsConfigLoadCertificateError(t *testing.T) {
 	assert := assert.New(t)
 	_, err := NewTlsConfig(&Tls{
+		// nolint:goconst
 		CertificateFile: "nosuch",
 		KeyFile:         "nosuch",
 	})

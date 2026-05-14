@@ -22,7 +22,8 @@ func testTrackingWriterBasic(t *testing.T) {
 		next = new(mockResponseWriter)
 		tr   = NewTrackingWriter(next)
 
-		actualHeader   = make(http.Header)
+		actualHeader = make(http.Header)
+		// nolint:goconst
 		expectedHeader = http.Header{"X-Test": []string{"value1", "value2"}}
 
 		firstWrite  = []byte("test")
@@ -214,8 +215,10 @@ func TestNewTrackingWriter(t *testing.T) {
 	tr := NewTrackingWriter(next)
 	require.NotNil(tr)
 
+	// nolint:goconst
 	next.ExpectHeader().Once().Return(http.Header{"X-Test": []string{"value"}})
 	assert.Equal(
+		// nolint:goconst
 		http.Header{"X-Test": []string{"value"}},
 		tr.Header(),
 	)

@@ -61,7 +61,8 @@ func testNewClaimsEndpointSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		builder        = new(mockClaimBuilder)
+		builder = new(mockClaimBuilder)
+		// nolint:goconst
 		expectedClaims = map[string]interface{}{"key": "value"}
 		request        = NewRequest()
 		endpoint       = NewClaimsEndpoint(builder)
@@ -70,6 +71,7 @@ func testNewClaimsEndpointSuccess(t *testing.T) {
 	require.NotNil(endpoint)
 	builder.ExpectAddClaims(context.Background(), request, map[string]interface{}{}).Once().Return(error(nil)).
 		Run(func(arguments mock.Arguments) {
+			// nolint:goconst
 			arguments.Get(2).(map[string]interface{})["key"] = "value"
 		})
 

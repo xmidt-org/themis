@@ -26,10 +26,14 @@ func testNewRequestBuildersInvalidClaim(t *testing.T) {
 	rb, err := NewRequestBuilders(Options{
 		Claims: []Value{
 			{
-				Key:       "bad",
-				Header:    "xxx",
+				// nolint:goconst
+				Key: "bad",
+				// nolint:goconst
+				Header: "xxx",
+				// nolint:goconst
 				Parameter: "yyy",
-				Variable:  "zzz",
+				// nolint:goconst
+				Variable: "zzz",
 			},
 		},
 	})
@@ -43,10 +47,14 @@ func testNewRequestBuildersInvalidMetadata(t *testing.T) {
 	rb, err := NewRequestBuilders(Options{
 		Metadata: []Value{
 			{
-				Key:       "bad",
-				Header:    "xxx",
+				// nolint:goconst
+				Key: "bad",
+				// nolint:goconst
+				Header: "xxx",
+				// nolint:goconst
 				Parameter: "yyy",
-				Variable:  "zzz",
+				// nolint:goconst
+				Variable: "zzz",
 			},
 		},
 	})
@@ -60,10 +68,14 @@ func testNewRequestBuildersInvalidPathWildCards(t *testing.T) {
 	rb, err := NewRequestBuilders(Options{
 		PathWildCards: []Value{
 			{
-				Key:       "bad",
-				Header:    "xxx",
+				// nolint:goconst
+				Key: "bad",
+				// nolint:goconst
+				Header: "xxx",
+				// nolint:goconst
 				Parameter: "yyy",
-				Variable:  "zzz",
+				// nolint:goconst
+				Variable: "zzz",
 			},
 		},
 	})
@@ -77,10 +89,14 @@ func testNewRequestBuildersInvalidQueryParameters(t *testing.T) {
 	rb, err := NewRequestBuilders(Options{
 		QueryParameters: []Value{
 			{
-				Key:       "bad",
-				Header:    "xxx",
+				// nolint:goconst
+				Key: "bad",
+				// nolint:goconst
+				Header: "xxx",
+				// nolint:goconst
 				Parameter: "yyy",
-				Variable:  "zzz",
+				// nolint:goconst
+				Variable: "zzz",
 			},
 		},
 	})
@@ -105,68 +121,98 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			options: Options{
 				Claims: []Value{
 					{
-						Key:    "fromHeader",
+						// nolint:goconst
+						Key: "fromHeader",
+						// nolint:goconst
 						Header: "X-Claim",
 					},
 					{
-						Key:    "missing",
+						// nolint:goconst
+						Key: "missing",
+						// nolint:goconst
 						Header: "X-Missing",
 					},
 				},
 				Metadata: []Value{
 					{
-						Key:    "fromHeader",
+						// nolint:goconst
+						Key: "fromHeader",
+						// nolint:goconst
 						Header: "X-Metadata",
 					},
 					{
-						Key:    "missing",
+						// nolint:goconst
+						Key: "missing",
+						// nolint:goconst
 						Header: "X-Missing",
 					},
 				},
 				PathWildCards: []Value{
 					{
-						Key:    "fromHeader",
+						// nolint:goconst
+						Key: "fromHeader",
+						// nolint:goconst
 						Header: "X-PathVlaue",
 					},
 				},
 				QueryParameters: []Value{
 					{
-						Key:    "fromHeader",
+						// nolint:goconst
+						Key: "fromHeader",
+						// nolint:goconst
 						Header: "Accept",
 					},
 				},
 				PartnerID: &PartnerID{
-					Claim:          "partner-id-claim",
-					Metadata:       "partner-id-metadata",
-					PathWildCard:   "partner-id-pathWildCard",
+					// nolint:goconst
+					Claim: "partner-id-claim",
+					// nolint:goconst
+					Metadata: "partner-id-metadata",
+					// nolint:goconst
+					PathWildCard: "partner-id-pathWildCard",
+					// nolint:goconst
 					QueryParameter: "partner-id-queryParameter",
-					Header:         "X-Midt-Partner-ID",
+					// nolint:goconst
+					Header: "X-Midt-Partner-ID",
 				},
 			},
 			uri: "/test",
 			header: http.Header{
-				"X-Claim":           []string{"foo"},
-				"X-Metadata":        []string{"bar"},
-				"X-PathVlaue":       []string{"foobar"},
+				// nolint:goconst
+				"X-Claim": []string{"foo"},
+				// nolint:goconst
+				"X-Metadata": []string{"bar"},
+				// nolint:goconst
+				"X-PathVlaue": []string{"foobar"},
+				// nolint:goconst
 				"X-Midt-Partner-ID": []string{"test"},
-				"Accept":            []string{"json"},
+				// nolint:goconst
+				"Accept": []string{"json"},
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
-					"fromHeader":       "foo",
+					// nolint:goconst
+					"fromHeader": "foo",
+					// nolint:goconst
 					"partner-id-claim": "test",
 				},
 				Metadata: map[string]interface{}{
-					"fromHeader":          "bar",
+					// nolint:goconst
+					"fromHeader": "bar",
+					// nolint:goconst
 					"partner-id-metadata": "test",
 				},
 				PathWildCards: map[string]any{
-					"fromHeader":              "foobar",
+					// nolint:goconst
+					"fromHeader": "foobar",
+					// nolint:goconst
 					"partner-id-pathWildCard": "test",
 				},
 				QueryParameters: map[string]any{
-					"fromHeader":                "json",
+					// nolint:goconst
+					"fromHeader": "json",
+					// nolint:goconst
 					"partner-id-queryParameter": "test",
 				},
 			},
@@ -175,37 +221,51 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			options: Options{
 				Claims: []Value{
 					{
-						Key:       "fromParameter",
+						// nolint:goconst
+						Key: "fromParameter",
+						// nolint:goconst
 						Parameter: "claim",
 					},
 					{
-						Key:       "missing",
+						// nolint:goconst
+						Key: "missing",
+						// nolint:goconst
 						Parameter: "missing",
 					},
 				},
 				Metadata: []Value{
 					{
-						Key:       "fromParameter",
+						// nolint:goconst
+						Key: "fromParameter",
+						// nolint:goconst
 						Parameter: "metadata",
 					},
 					{
-						Key:       "missing",
+						// nolint:goconst
+						Key: "missing",
+						// nolint:goconst
 						Parameter: "missing",
 					},
 				},
 				PathWildCards: []Value{
 					{
-						Key:       "fromParameter",
+						// nolint:goconst
+						Key: "fromParameter",
+						// nolint:goconst
 						Parameter: "pathWildCard",
 					},
 					{
-						Key:       "missing",
+						// nolint:goconst
+						Key: "missing",
+						// nolint:goconst
 						Parameter: "missing",
 					},
 				},
 				QueryParameters: []Value{
 					{
-						Key:       "fromParameter",
+						// nolint:goconst
+						Key: "fromParameter",
+						// nolint:goconst
 						Parameter: "queryParameter",
 					},
 				},
@@ -221,19 +281,27 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			expected: &Request{
 				Logger: sallust.Default(),
 				Claims: map[string]interface{}{
-					"fromParameter":    "foo",
+					// nolint:goconst
+					"fromParameter": "foo",
+					// nolint:goconst
 					"partner-id-claim": "test",
 				},
 				Metadata: map[string]interface{}{
-					"fromParameter":       "bar",
+					// nolint:goconst
+					"fromParameter": "bar",
+					// nolint:goconst
 					"partner-id-metadata": "test",
 				},
 				PathWildCards: map[string]any{
-					"fromParameter":           "foobar",
+					// nolint:goconst
+					"fromParameter": "foobar",
+					// nolint:goconst
 					"partner-id-pathWildCard": "test",
 				},
 				QueryParameters: map[string]any{
-					"fromParameter":             "json",
+					// nolint:goconst
+					"fromParameter": "json",
+					// nolint:goconst
 					"partner-id-queryParameter": "test",
 				},
 			},
@@ -242,25 +310,33 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			options: Options{
 				Claims: []Value{
 					{
-						Key:      "fromVariable",
+						// nolint:goconst
+						Key: "fromVariable",
+						// nolint:goconst
 						Variable: "claim",
 					},
 				},
 				Metadata: []Value{
 					{
-						Key:      "fromVariable",
+						// nolint:goconst
+						Key: "fromVariable",
+						// nolint:goconst
 						Variable: "metadata",
 					},
 				},
 				PathWildCards: []Value{
 					{
-						Key:      "fromVariable",
+						// nolint:goconst
+						Key: "fromVariable",
+						// nolint:goconst
 						Variable: "pathWildCard",
 					},
 				},
 				QueryParameters: []Value{
 					{
-						Key:      "fromVariable",
+						// nolint:goconst
+						Key: "fromVariable",
+						// nolint:goconst
 						Variable: "queryParameter",
 					},
 				},
@@ -501,15 +577,19 @@ func testBuildRequestSuccess(t *testing.T) {
 		{
 			builders: RequestBuilders{
 				RequestBuilderFunc(func(_ *http.Request, r *Request) error {
+					// nolint:goconst
 					r.Claims["claim1"] = 238947123
 					return nil
 				}),
 				RequestBuilderFunc(func(_ *http.Request, r *Request) error {
+					// nolint:goconst
 					r.Metadata["metadata1"] = "value1"
 					return nil
 				}),
 				RequestBuilderFunc(func(_ *http.Request, r *Request) error {
+					// nolint:goconst
 					r.Claims["claim2"] = []byte{1, 2, 3}
+					// nolint:goconst
 					r.Metadata["metadata2"] = 15.7
 					return nil
 				}),
@@ -688,6 +768,7 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 
 		builders = RequestBuilders{
 			RequestBuilderFunc(func(_ *http.Request, r *Request) error {
+				// nolint:goconst
 				r.Claims["claim"] = "value"
 				return nil
 			}),

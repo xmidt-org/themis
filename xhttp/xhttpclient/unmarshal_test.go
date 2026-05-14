@@ -78,6 +78,7 @@ func testUnmarshalProvideFull(t *testing.T) {
 					})
 				},
 				Unmarshal{
+					// nolint:goconst
 					Key: "client",
 					Chain: NewChain(
 						func(delegate http.RoundTripper) http.RoundTripper {
