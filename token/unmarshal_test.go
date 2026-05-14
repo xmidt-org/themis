@@ -5,13 +5,16 @@ package token
 import (
 	"testing"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/themis/config"
 	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/xhttp/xhttpclient"
 	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 )
@@ -142,9 +145,78 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 	assert.Nil(factory)
 }
 
-func testUnmarshalSuccess(t *testing.T) {
+func testUnmarshalRemoteEndpointConflict(t *testing.T) {
+	type requiredIn struct {
+		fx.In
+
+		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
+		Client   xhttpclient.Interface
+	}
+
 	var (
 		assert  = assert.New(t)
+		require = require.New(t)
+		factory Factory
+		app     = fx.New(
+			ProvideMetrics(),
+			fx.Provide(
+				sallust.Default,
+				config.ProvideViper(
+					config.Json(`
+						{
+							"prometheus": {
+								"defaultNamespace": "xmidt",
+								"defaultSubsystem": "issuer",
+								"constLabels":{
+									"development": "true"
+								}
+							},
+							"token": {
+								"claims": [
+									{
+										"key": "static",
+										"value": "foo"
+									}
+								],
+								"remote": {
+									"method": "post",
+									"url": "https//example.com"
+								}
+							},
+							"client": {}
+						}
+					`),
+				),
+				func() key.Registry { return key.NewRegistry(nil) },
+				Unmarshal("token"),
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				TokenFactory(),
+				RemoteClaimsEndpoint,
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+				func() endpoint.Endpoint { return endpoint.Nop },
+			),
+			fx.Populate(&factory),
+			fx.Invoke(func(in requiredIn) {
+				require.NotNil(in.Endpoint)
+				require.NotNil(in.Client)
+			}),
+		)
+	)
+
+	assert.Error(app.Err())
+	assert.Nil(factory)
+}
+
+func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
+	type requiredIn struct {
+		fx.In
+
+		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint" optional:"true"`
+	}
+
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
 		factory Factory
 
 		app = fxtest.New(t,
@@ -175,9 +247,185 @@ func testUnmarshalSuccess(t *testing.T) {
 				),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				TokenFactory(),
+				RemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),
+			fx.Invoke(func(in requiredIn) { require.Nil(in.Endpoint) }),
+		)
+	)
+	assert.NoError(app.Err())
+	assert.NotNil(factory)
+}
+
+func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
+	type requiredIn struct {
+		fx.In
+
+		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
+	}
+
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+		factory Factory
+		app     = fxtest.New(t,
+			ProvideMetrics(),
+			fx.Provide(
+				sallust.Default,
+				config.ProvideViper(
+					config.Json(`
+						{
+							"prometheus": {
+								"defaultNamespace": "xmidt",
+								"defaultSubsystem": "issuer",
+								"constLabels":{
+									"development": "true"
+								}
+							},
+							"token": {
+								"claims": [
+									{
+										"key": "static",
+										"value": "foo"
+									}
+								]
+							}
+						}
+					`),
+				),
+				func() key.Registry { return key.NewRegistry(nil) },
+				Unmarshal("token"),
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				TokenFactory(),
+				RemoteClaimsEndpoint,
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+				func() endpoint.Endpoint { return endpoint.Nop },
+			),
+			fx.Populate(&factory),
+			fx.Invoke(func(in requiredIn) { require.NotNil(in.Endpoint) }),
+		)
+	)
+	assert.NoError(app.Err())
+	assert.NotNil(factory)
+}
+
+func testUnmarshalWithConfiguredRemoteEndpointSuccess(t *testing.T) {
+	type requiredIn struct {
+		fx.In
+
+		Endpoint endpoint.Endpoint     `name:"remote_claims_endpoint"`
+		Client   xhttpclient.Interface `optional:"true"`
+	}
+
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+		factory Factory
+		app     = fxtest.New(t,
+			ProvideMetrics(),
+			fx.Provide(
+				sallust.Default,
+				config.ProvideViper(
+					config.Json(`
+						{
+							"prometheus": {
+								"defaultNamespace": "xmidt",
+								"defaultSubsystem": "issuer",
+								"constLabels":{
+									"development": "true"
+								}
+							},
+							"token": {
+								"claims": [
+									{
+										"key": "static",
+										"value": "foo"
+									}
+								],
+								"remote": {
+									"method": "post",
+									"url": "https//example.com"
+								}
+							}
+						}
+					`),
+				),
+				func() key.Registry { return key.NewRegistry(nil) },
+				Unmarshal("token"),
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				TokenFactory(),
+				RemoteClaimsEndpoint,
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+				func() endpoint.Endpoint { return endpoint.Nop },
+			),
+			fx.Populate(&factory),
+			fx.Invoke(func(in requiredIn) {
+				require.NotNil(in.Endpoint)
+				require.Nil(in.Client)
+			}),
+		)
+	)
+	assert.NoError(app.Err())
+	assert.NotNil(factory)
+}
+
+func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
+	type requiredIn struct {
+		fx.In
+
+		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
+		Client   xhttpclient.Interface
+	}
+
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+		factory Factory
+		app     = fxtest.New(t,
+			ProvideMetrics(),
+			fx.Provide(
+				sallust.Default,
+				config.ProvideViper(
+					config.Json(`
+						{
+							"prometheus": {
+								"defaultNamespace": "xmidt",
+								"defaultSubsystem": "issuer",
+								"constLabels":{
+									"development": "true"
+								}
+							},
+							"token": {
+								"claims": [
+									{
+										"key": "static",
+										"value": "foo"
+									}
+								],
+								"remote": {
+									"method": "post",
+									"url": "https//example.com"
+								}
+							},
+							"client": {}
+						}
+					`),
+				),
+				func() key.Registry { return key.NewRegistry(nil) },
+				Unmarshal("token"),
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				TokenFactory(),
+				RemoteClaimsEndpoint,
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+			),
+			fx.Populate(&factory),
+			fx.Invoke(func(in requiredIn) {
+				require.NotNil(in.Endpoint)
+				require.NotNil(in.Client)
+			}),
 		)
 	)
 	assert.NoError(app.Err())
@@ -189,5 +437,9 @@ func TestUnmarshal(t *testing.T) {
 	t.Run("ClaimBuilderError", testUnmarshalClaimBuilderError)
 	t.Run("FactoryError", testUnmarshalFactoryError)
 	t.Run("RequestBuilderError", testUnmarshalRequestBuilderError)
-	t.Run("Success", testUnmarshalSuccess)
+	t.Run("RemoteEndpointConflictError", testUnmarshalRemoteEndpointConflict)
+	t.Run("UnmarshalWithoutRemoteEndpointSuccess", testUnmarshalWithoutRemoteEndpointSuccess)
+	t.Run("UnmarshalWithProvidedRemoteEndpointSuccess", testUnmarshalWithProvidedRemoteEndpointSuccess)
+	t.Run("UnmarshalWithConfiguredRemoteEndpointSuccess", testUnmarshalWithConfiguredRemoteEndpointSuccess)
+	t.Run("UnmarshalWithConfiguredRemoteEndpointAndClientSuccess", testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess)
 }
