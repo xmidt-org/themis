@@ -411,43 +411,43 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 
 	for i, testCase := range cases {
 		suite.Run(strconv.Itoa(i), func() {
-			var (
-				actual = make(map[string]interface{})
+			remoteClaims := &RemoteClaims{
+				URL:    suite.goodURL,
+				Method: testCase.method,
+			}
 
-				remoteClaims = &RemoteClaims{
-					URL:    suite.goodURL,
-					Method: testCase.method,
-				}
+			endpoint, err := newRemoteEndpoint(testCase.client, remoteClaims)
+			suite.Require().NoError(err)
 
-				builder, err = newRemoteClaimBuilder(
-					testCase.client,
-					testCase.metadata,
-					remoteClaims,
-					prometheus.NewCounterVec(
-						prometheus.CounterOpts{
-							Name: "testAPIResultsCounter",
-							Help: "testAPIResultsCounter",
-						},
-						[]string{
-							EndpointLabelKey,
-							MethodLabelKey,
-							CodeLabelKey,
+			actual := make(map[string]interface{})
+			builder, err := newRemoteClaimBuilder(
+				endpoint,
+				testCase.metadata,
+				remoteClaims,
+				prometheus.NewCounterVec(
+					prometheus.CounterOpts{
+						Name: "testAPIResultsCounter",
+						Help: "testAPIResultsCounter",
+					},
+					[]string{
+						EndpointLabelKey,
+						MethodLabelKey,
+						CodeLabelKey,
 
-							OutcomeLabelKey,
-							ReasonLabelKey},
-					),
-					prometheus.NewHistogramVec(
-						prometheus.HistogramOpts{
-							Name: "testAPIDurationCounter",
-							Help: "testAPIDurationCounter",
-						},
-						[]string{
-							EndpointLabelKey,
-							MethodLabelKey,
-							CodeLabelKey,
-							OutcomeLabelKey},
-					),
-				)
+						OutcomeLabelKey,
+						ReasonLabelKey},
+				),
+				prometheus.NewHistogramVec(
+					prometheus.HistogramOpts{
+						Name: "testAPIDurationCounter",
+						Help: "testAPIDurationCounter",
+					},
+					[]string{
+						EndpointLabelKey,
+						MethodLabelKey,
+						CodeLabelKey,
+						OutcomeLabelKey},
+				),
 			)
 
 			suite.Require().NoError(err)
@@ -497,7 +497,10 @@ func (suite *RemoteClaimBuilderTestSuite) TestError() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
-	builder, err := newRemoteClaimBuilder(new(http.Client), nil, new(RemoteClaims),
+	remoteClaims := new(RemoteClaims)
+	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
+	suite.Error(err)
+	builder, err := newRemoteClaimBuilder(endpoint, nil, remoteClaims,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -526,37 +529,37 @@ func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestBadURL() {
-	var (
-		remoteClaims = &RemoteClaims{
-			URL: "this is not valid (%$&@!()&*()*%",
-		}
+	remoteClaims := &RemoteClaims{
+		URL: "this is not valid (%$&@!()&*()*%",
+	}
+	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
+	suite.Error(err)
 
-		builder, err = newRemoteClaimBuilder(new(http.Client), nil, remoteClaims,
-			prometheus.NewCounterVec(
-				prometheus.CounterOpts{
-					Name: "testAPIResultsCounter",
-					Help: "testAPIResultsCounter",
-				},
-				[]string{
-					EndpointLabelKey,
-					MethodLabelKey,
-					CodeLabelKey,
+	builder, err := newRemoteClaimBuilder(endpoint, nil, remoteClaims,
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "testAPIResultsCounter",
+				Help: "testAPIResultsCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
 
-					OutcomeLabelKey,
-					ReasonLabelKey},
-			),
-			prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name: "testAPIDurationCounter",
-					Help: "testAPIDurationCounter",
-				},
-				[]string{
-					EndpointLabelKey,
-					MethodLabelKey,
-					CodeLabelKey,
-					OutcomeLabelKey},
-			))
-	)
+				OutcomeLabelKey,
+				ReasonLabelKey},
+		),
+		prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "testAPIDurationCounter",
+				Help: "testAPIDurationCounter",
+			},
+			[]string{
+				EndpointLabelKey,
+				MethodLabelKey,
+				CodeLabelKey,
+				OutcomeLabelKey},
+		))
 
 	suite.Nil(builder)
 	suite.Error(err)
