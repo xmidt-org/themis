@@ -28,15 +28,14 @@ func testUnmarshalError(t *testing.T) {
 	app := fx.New(
 		fx.NopLogger,
 		fx.Provide(
-			config.ProvideViper(
-				config.Json(`
+			config.ProvideViper,
+			fx.Annotate(config.Json(`
 					{
 						"token": {
 							"nonce": "this is not a valid bool"
 						}
 					}
-				`),
-			),
+				`), fx.ResultTags(`group:"viperBuilders"`)),
 			func() key.Registry { return key.NewRegistry(nil) },
 			Unmarshal("token"),
 		),
@@ -55,8 +54,8 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 		app = fx.New(
 			fx.NopLogger,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(config.Json(`
 						{
 							"token": {
 								"metadata": [
@@ -69,8 +68,7 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`), fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -90,15 +88,14 @@ func testUnmarshalFactoryError(t *testing.T) {
 		app = fx.New(
 			fx.NopLogger,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(config.Json(`
 						{
 							"token": {
 								"alg": "this is not a signing method"
 							}
 						}
-					`),
-				),
+					`), fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -118,8 +115,8 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 		app = fx.New(
 			fx.NopLogger,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(config.Json(`
 						{
 							"token": {
 								"claims": [
@@ -132,8 +129,7 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 								]
 							}
 						}
-					`),
-				),
+					`), fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -161,8 +157,8 @@ func testUnmarshalRemoteEndpointConflict(t *testing.T) {
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -183,10 +179,8 @@ func testUnmarshalRemoteEndpointConflict(t *testing.T) {
 									"url": "https//example.com"
 								}
 							},
-							"client": {}
 						}
-					`),
-				),
+					`), fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
@@ -211,7 +205,8 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 	type requiredIn struct {
 		fx.In
 
-		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint" optional:"true"`
+		Endpoint endpoint.Endpoint     `name:"remote_claims_endpoint" optional:"true"`
+		Client   xhttpclient.Interface `optional:"true"`
 	}
 
 	var (
@@ -224,8 +219,9 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -243,8 +239,8 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 								]
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
@@ -253,7 +249,10 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),
-			fx.Invoke(func(in requiredIn) { require.Nil(in.Endpoint) }),
+			fx.Invoke(func(in requiredIn) {
+				require.Nil(in.Endpoint)
+				require.Nil(in.Client)
+			}),
 		)
 	)
 	assert.NoError(app.Err())
@@ -264,7 +263,8 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 	type requiredIn struct {
 		fx.In
 
-		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
+		Endpoint endpoint.Endpoint     `name:"remote_claims_endpoint"`
+		Client   xhttpclient.Interface `optional:"true"`
 	}
 
 	var (
@@ -275,8 +275,9 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -294,8 +295,8 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 								]
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
@@ -305,7 +306,10 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 				func() endpoint.Endpoint { return endpoint.Nop },
 			),
 			fx.Populate(&factory),
-			fx.Invoke(func(in requiredIn) { require.NotNil(in.Endpoint) }),
+			fx.Invoke(func(in requiredIn) {
+				require.NotNil(in.Endpoint)
+				require.Nil(in.Client)
+			}),
 		)
 	)
 	assert.NoError(app.Err())
@@ -328,8 +332,9 @@ func testUnmarshalWithConfiguredRemoteEndpointSuccess(t *testing.T) {
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -351,15 +356,14 @@ func testUnmarshalWithConfiguredRemoteEndpointSuccess(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
 				RemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
-				func() endpoint.Endpoint { return endpoint.Nop },
 			),
 			fx.Populate(&factory),
 			fx.Invoke(func(in requiredIn) {
@@ -376,8 +380,8 @@ func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
 	type requiredIn struct {
 		fx.In
 
-		Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
-		Client   xhttpclient.Interface
+		Endpoint endpoint.Endpoint     `name:"remote_claims_endpoint"`
+		Client   xhttpclient.Interface `optional:"true"`
 	}
 
 	var (
@@ -388,8 +392,9 @@ func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
 			ProvideMetrics(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -412,8 +417,8 @@ func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
 							},
 							"client": {}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,

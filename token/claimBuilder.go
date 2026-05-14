@@ -35,6 +35,7 @@ var (
 	ErrRemoteURLRequired                = errors.New("a URL for the remote claimer is required")
 	ErrMissingKey                       = errors.New("a key is required for all claims and metadata values")
 	ErrInvalidRemoteClaimsConfiguration = errors.New("invalid remote claims' configuration")
+	ErrRemoteClaimBuilderEndpoint       = errors.New("remote claim builder configuration failure: endpoint configuration error")
 )
 
 // ClaimBuilder is a strategy for building token claims, given a token Request
@@ -119,11 +120,13 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 
 // remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
-	endpoint    endpoint.Endpoint
-	url         string
-	extra       map[string]interface{}
-	apiResults  *prometheus.CounterVec
-	apiDuration prometheus.ObserverVec
+	endpoint      endpoint.Endpoint
+	roots         *x509.CertPool
+	intermediates *x509.CertPool
+	trust         Trust
+	extra         map[string]interface{}
+	apiResults    *prometheus.CounterVec
+	apiDuration   prometheus.ObserverVec
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
@@ -133,6 +136,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	startTime := time.Now()
+	ctx = SetConnectionDetails(ctx, tlsDetails{TLS: *r.TLS, Roots: rc.roots, Intermediates: rc.intermediates, Trust: rc.trust})
 	result, err := rc.endpoint(sallust.With(ctx, r.Logger), rCopy)
 	duration := time.Since(startTime).Seconds()
 	respErr := RemoteClaimsResponseError{}
@@ -217,14 +221,14 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	return nil
 }
 
-func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]interface{}, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
+func newRemoteEndpoint(client xhttpclient.Interface, r *RemoteClaims) (endpoint.Endpoint, error) {
 	if len(r.URL) == 0 {
-		return nil, ErrRemoteURLRequired
+		return nil, errors.Join(ErrRemoteClaimBuilderEndpoint, ErrRemoteURLRequired)
 	}
 
 	url, err := url.Parse(r.URL)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(ErrRemoteClaimBuilderEndpoint, err)
 	}
 
 	method := r.Method
@@ -236,7 +240,7 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		client = new(http.Client)
 	}
 
-	c := kithttp.NewClient(
+	return kithttp.NewClient(
 		method,
 		url,
 		EncodeRemoteClaimsRequest,
@@ -245,9 +249,18 @@ func newRemoteClaimBuilder(client xhttpclient.Interface, metadata map[string]int
 		kithttp.ClientBefore(
 			kithttp.SetRequestHeader("Content-Type", "application/json"),
 		),
-	)
+	).Endpoint(), nil
+}
 
-	return &remoteClaimBuilder{endpoint: c.Endpoint(), url: r.URL, extra: metadata, apiResults: apiResults.MustCurryWith(prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method}), apiDuration: duration.MustCurryWith(prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method})}, nil
+func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, roots *x509.CertPool, intermediates *x509.CertPool, trust Trust, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
+	method := r.Method
+	if len(method) == 0 {
+		method = http.MethodPost
+	}
+
+	ls := prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method}
+
+	return &remoteClaimBuilder{endpoint: endpoint, roots: roots, intermediates: intermediates, trust: trust, extra: metadata, apiResults: apiResults.MustCurryWith(ls), apiDuration: duration.MustCurryWith(ls)}, nil
 }
 
 // newClientCertificateClaimBuiler creates a claim builder that sets trust based
@@ -350,7 +363,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 //
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
-func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
+func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Options, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
@@ -381,13 +394,13 @@ func NewClaimBuilders(n random.Noncer, client xhttpclient.Interface, o Options, 
 		)
 	}
 
-	if o.Remote != nil {
+	if o.Remote != nil && remoteEndpoint != nil {
 		metadata, err := getStaticValues(o.Metadata)
 		if err != nil {
 			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
 		}
 
-		remoteClaimBuilder, err := newRemoteClaimBuilder(client, metadata, o.Remote, remoteResults, remoteDuration)
+		remoteClaimBuilder, err := newRemoteClaimBuilder(remoteEndpoint, metadata, cb.roots, cb.intermediates, cb.trust, o.Remote, remoteResults, remoteDuration)
 		if err != nil {
 			return nil, err
 		}
