@@ -311,7 +311,7 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 					`),
 				),
 				Unmarshal{
-					Key:  "server",
+					Key:  "client",
 					Name: "componentName",
 				}.Annotated(),
 			),
