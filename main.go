@@ -38,6 +38,12 @@ var (
 	BuildTime = "undefined"
 )
 
+func Themis(opts ...fx.Option) (*fx.App, error) {
+	app := fx.New(provideAppOptions(opts...))
+
+	return app, app.Err()
+}
+
 func setupFlagSet(fs *pflag.FlagSet) error {
 	fs.StringP("file", "f", "", "the configuration file to use.  Overrides the search path.")
 	fs.Bool("dev", false, "development mode")
@@ -81,65 +87,72 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 	return
 }
 
-func main() {
-	app := fx.New(
-		sallust.WithLogger(),
-		config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
-		provideMetrics(),
-		token.ProvideMetrics(),
-		fx.Provide(
-			config.ProvideViper(setupViper),
-			func(u config.Unmarshaller) (c sallust.Config, err error) {
-				err = u.UnmarshalKey("log", &c)
-				return
-			},
-			xhealth.Unmarshal("health"),
-			random.Provide,
-			key.Provide,
-			token.Unmarshal("token"),
-			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
-			provideClientChain,
-			provideServerChainFactory,
-			xhttpclient.Unmarshal{Key: "client"}.Provide,
-			xhttpserver.Unmarshal{Key: "servers.key", Optional: true}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.issuer", Optional: true}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.claims", Optional: true}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
-			xhttpserver.Unmarshal{Key: "servers.pprof", Optional: true}.Annotated(),
-			candlelight.New,
-			func(u config.Unmarshaller) (candlelight.Config, error) {
-				var config candlelight.Config
-				err := u.UnmarshalKey("tracing", &config)
-				if err != nil {
-					return candlelight.Config{}, err
-				}
-				config.ApplicationName = applicationName
-				return config, nil
-			},
-		),
-		fx.Invoke(
-			xhealth.ApplyChecks(
-				&health.Config{
-					Name:     applicationName,
-					Interval: 24 * time.Hour,
-					Checker: xhealth.NopCheckable{
-						Details: map[string]interface{}{
-							"StartTime": time.Now().UTC().Format(time.RFC3339),
-						},
-					},
+func provideAppOptions(opts ...fx.Option) fx.Option {
+	return fx.Options(
+		append(opts,
+			sallust.WithLogger(),
+			config.CommandLine{Name: applicationName}.Provide(setupFlagSet),
+			provideMetrics(),
+			token.ProvideMetrics(),
+			fx.Provide(
+				config.ProvideViper(setupViper),
+				func(u config.Unmarshaller) (c sallust.Config, err error) {
+					err = u.UnmarshalKey("log", &c)
+					return
+				},
+				xhealth.Unmarshal("health"),
+				random.Provide,
+				key.Provide,
+				token.Unmarshal("token"),
+				token.RemoteClaimsEndpoint,
+				token.TokenFactory(),
+				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+				provideClientChain,
+				provideServerChainFactory,
+				xhttpclient.Unmarshal{Key: "client"}.Provide,
+				xhttpserver.Unmarshal{Key: "servers.key", Optional: true}.Annotated(),
+				xhttpserver.Unmarshal{Key: "servers.issuer", Optional: true}.Annotated(),
+				xhttpserver.Unmarshal{Key: "servers.claims", Optional: true}.Annotated(),
+				xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
+				xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
+				xhttpserver.Unmarshal{Key: "servers.pprof", Optional: true}.Annotated(),
+				candlelight.New,
+				func(u config.Unmarshaller) (candlelight.Config, error) {
+					var config candlelight.Config
+					err := u.UnmarshalKey("tracing", &config)
+					if err != nil {
+						return candlelight.Config{}, err
+					}
+					config.ApplicationName = applicationName
+					return config, nil
 				},
 			),
-			BuildKeyRoutes,
-			BuildIssuerRoutes,
-			BuildClaimsRoutes,
-			BuildMetricsRoutes,
-			BuildHealthRoutes,
-			BuildPprofRoutes,
-			CheckServerRequirements,
-		),
+			fx.Invoke(
+				xhealth.ApplyChecks(
+					&health.Config{
+						Name:     applicationName,
+						Interval: 24 * time.Hour,
+						Checker: xhealth.NopCheckable{
+							Details: map[string]interface{}{
+								"StartTime": time.Now().UTC().Format(time.RFC3339),
+							},
+						},
+					},
+				),
+				BuildKeyRoutes,
+				BuildIssuerRoutes,
+				BuildClaimsRoutes,
+				BuildMetricsRoutes,
+				BuildHealthRoutes,
+				BuildPprofRoutes,
+				CheckServerRequirements,
+			),
+		)...,
 	)
-	err := app.Err()
+}
+
+func main() {
+	app, err := Themis()
 	if errors.Is(err, pflag.ErrHelp) {
 		return
 	} else if errors.Is(err, nil) {
