@@ -131,6 +131,7 @@ func (suite *RequestClaimBuilderTestSuite) Test() {
 		{
 			request: &Request{
 				Logger: sallust.Default(),
+				// nolint:goconst
 				Claims: map[string]interface{}{"foo": 1, "bar": val},
 			},
 			expected: map[string]interface{}{"foo": 1, "bar": val},
@@ -217,6 +218,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				disableNotBefore: true,
 			},
 			expected: map[string]interface{}{
+				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
 			},
 		},
@@ -225,7 +227,9 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				now: suite.now,
 			},
 			expected: map[string]interface{}{
+				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
+				// nolint:goconst
 				"nbf": suite.expectedNow.UTC().Unix(),
 			},
 		},
@@ -236,8 +240,11 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				notBeforeDelta: 5 * time.Minute,
 			},
 			expected: map[string]interface{}{
+				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
+				// nolint:goconst
 				"nbf": suite.expectedNow.UTC().Add(5 * time.Minute).Unix(),
+				// nolint:goconst
 				"exp": suite.expectedNow.UTC().Add(24 * time.Hour).Unix(),
 			},
 		},
@@ -248,7 +255,9 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				disableNotBefore: true,
 			},
 			expected: map[string]interface{}{
+				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
+				// nolint:goconst
 				"exp": suite.expectedNow.UTC().Add(30 * time.Minute).Unix(),
 			},
 		},
@@ -298,6 +307,7 @@ func (suite *NonceClaimBuilderTestSuite) TestSuccess() {
 	)
 
 	suite.Equal(
+		// nolint:goconst
 		map[string]interface{}{"jti": "test"},
 		actual,
 	)
@@ -386,25 +396,31 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 		expected map[string]interface{}
 	}{
 		{
-			request:  &Request{Logger: sallust.Default()},
+			request: &Request{Logger: sallust.Default()},
+			// nolint:goconst
 			expected: map[string]interface{}{"custom": val},
 		},
 		{
+			// nolint:goconst
 			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"request": val, "custom": val},
 		},
 		{
-			method:   http.MethodPut,
-			client:   new(http.Client),
+			method: http.MethodPut,
+			client: new(http.Client),
+			// nolint:goconst
 			metadata: map[string]interface{}{"external": val},
 			request:  &Request{Logger: sallust.Default()},
+			// nolint:goconst
 			expected: map[string]interface{}{"external": val, "custom": val},
 		},
 		{
-			method:   http.MethodPatch,
-			client:   new(http.Client),
+			method: http.MethodPatch,
+			client: new(http.Client),
+			// nolint:goconst
 			metadata: map[string]interface{}{"external": val},
 			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
+			// nolint:goconst
 			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
 		},
 	}
@@ -425,7 +441,9 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 					remoteClaims,
 					prometheus.NewCounterVec(
 						prometheus.CounterOpts{
+							// nolint:goconst
 							Name: "testAPIResultsCounter",
+							// nolint:goconst
 							Help: "testAPIResultsCounter",
 						},
 						[]string{
@@ -438,7 +456,9 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 					),
 					prometheus.NewHistogramVec(
 						prometheus.HistogramOpts{
+							// nolint:goconst
 							Name: "testAPIDurationCounter",
+							// nolint:goconst
 							Help: "testAPIDurationCounter",
 						},
 						[]string{
@@ -621,6 +641,7 @@ func (suite *NewClaimBuildersTestSuite) handleRemoteClaims(response http.Respons
 
 	var metadata map[string]interface{}
 	suite.Require().NoError(json.Unmarshal(body, &metadata))
+	// nolint:goconst
 	suite.Equal(map[string]interface{}{"extra": "extra stuff"}, metadata)
 
 	response.Header().Set("Content-Type", "application/json")
@@ -665,6 +686,7 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	)
 
 	suite.Equal(
+		// nolint:goconst
 		map[string]interface{}{"request": 123, "trust": 0},
 		actual,
 	)
@@ -843,9 +865,12 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 		DisableTime: true,
 		Claims: []Value{
 			{
-				Key:    "test",
+				// nolint:goconst
+				Key: "test",
+				// nolint:goconst
 				Header: "header1",
-				Value:  "value1",
+				// nolint:goconst
+				Value: "value1",
 			},
 		},
 	},
@@ -1008,15 +1033,19 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 		DisableTime: true,
 		Claims: []Value{
 			{
+				// nolint:goconst
 				Key:   "static1",
 				Value: -72.5,
 			},
 			{
+				// nolint:goconst
 				Key:   "static2",
 				Value: []string{"a", "b"},
 			},
 			{
-				Key:    "http1",
+				// nolint:goconst
+				Key: "http1",
+				// nolint:goconst
 				Header: "X-Ignore-Me",
 			},
 		},

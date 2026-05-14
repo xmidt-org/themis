@@ -128,6 +128,7 @@ func NewPair(kid string, key interface{}) (Pair, error) {
 			sign: key,
 			verifyPEM: pem.EncodeToMemory(
 				&pem.Block{
+					// nolint:goconst
 					Type:  "PUBLIC KEY",
 					Bytes: k,
 				},

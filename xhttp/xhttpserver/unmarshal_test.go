@@ -60,14 +60,17 @@ func testUnmarshalProvideFull(t *testing.T) {
 					return ChainFactoryFunc(func(name string, o Options) (alice.Chain, error) {
 						return alice.New(
 							ResponseHeaders{
+								// nolint:goconst
 								Header: http.Header{"X-Factory": []string{name}},
 							}.Then,
 						), nil
 					})
 				},
 				Unmarshal{
+					// nolint:goconst
 					Key: "server",
 					Chain: alice.New(ResponseHeaders{
+						// nolint:goconst
 						Header: http.Header{"X-Adhoc": []string{"adhoc value"}},
 					}.Then),
 				}.Provide,

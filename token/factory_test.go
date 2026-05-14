@@ -64,6 +64,7 @@ func testNewFactorySuccess(t *testing.T) {
 	factory, err := NewFactory(Options{
 		Alg: "RS256",
 		Key: key.Descriptor{
+			// nolint:goconst
 			Kid:  "test",
 			Bits: 1024,
 		},

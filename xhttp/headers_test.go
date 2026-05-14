@@ -23,7 +23,9 @@ func TestCanonicalizeHeaders(t *testing.T) {
 			expected: http.Header{},
 		},
 		{
-			source:   http.Header{"Content-Type": []string{"text/plain"}, "x-test": []string{"value1", "value2"}},
+			// nolint:goconst
+			source: http.Header{"Content-Type": []string{"text/plain"}, "x-test": []string{"value1", "value2"}},
+			// nolint:goconst
 			expected: http.Header{"Content-Type": []string{"text/plain"}, "X-Test": []string{"value1", "value2"}},
 		},
 	}
@@ -53,7 +55,9 @@ func TestCanonicalizeHeaderMap(t *testing.T) {
 			expected: http.Header{},
 		},
 		{
-			source:   map[string]string{"Content-Type": "text/plain", "x-test": "value"},
+			// nolint:goconst
+			source: map[string]string{"Content-Type": "text/plain", "x-test": "value"},
+			// nolint:goconst
 			expected: http.Header{"Content-Type": []string{"text/plain"}, "X-Test": []string{"value"}},
 		},
 	}
@@ -86,8 +90,11 @@ func TestAddHeaders(t *testing.T) {
 			expected: http.Header{},
 		},
 		{
-			source:   http.Header{"x-test-1": []string{"value"}, "X-eXIsting": []string{"new value"}},
-			target:   http.Header{"X-eXIsting": []string{"existing value"}},
+			// nolint:goconst
+			source: http.Header{"x-test-1": []string{"value"}, "X-eXIsting": []string{"new value"}},
+			// nolint:goconst
+			target: http.Header{"X-eXIsting": []string{"existing value"}},
+			// nolint:goconst
 			expected: http.Header{"x-test-1": []string{"value"}, "X-eXIsting": []string{"existing value", "new value"}},
 		},
 	}
