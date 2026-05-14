@@ -59,6 +59,10 @@ func (u Unmarshal) name() string {
 // Provide emits an HTTP client as an unnamed component.  If only (1) client is needed for the entire
 // application, this method is best.
 func (u Unmarshal) Provide(in ClientUnmarshalIn) (Interface, error) {
+	if !in.Unmarshaller.IsSet(u.Key) {
+		return nil, nil
+	}
+
 	var o Options
 	if err := in.Unmarshaller.UnmarshalKey(u.Key, &o); err != nil {
 		return nil, err
