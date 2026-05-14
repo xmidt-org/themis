@@ -4,6 +4,7 @@ package token
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -49,7 +50,7 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 		suite.Run(fmt.Sprintf("count=%d", count), func() {
 			var (
 				builder         ClaimBuilders
-				expectedRequest = &Request{Logger: sallust.Default()}
+				expectedRequest = &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}
 				expected        = make(map[string]interface{})
 				actual          = make(map[string]interface{})
 			)
@@ -78,7 +79,7 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 
 func (suite *ClaimBuildersTestSuite) TestError() {
 	var (
-		expectedRequest = &Request{Logger: sallust.Default()}
+		expectedRequest = &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}
 		expected        = map[string]interface{}{
 			"first": trueString,
 		}
@@ -125,11 +126,11 @@ func (suite *RequestClaimBuilderTestSuite) Test() {
 		expected map[string]interface{}
 	}{
 		{
-			request:  &Request{Logger: sallust.Default()},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
 			expected: map[string]interface{}{},
 		},
 		{
-			request: &Request{
+			request: &Request{TLS: &tls.ConnectionState{},
 				Logger: sallust.Default(),
 				// nolint:goconst
 				Claims: map[string]interface{}{"foo": 1, "bar": val},
@@ -180,7 +181,7 @@ func (suite *StaticClaimBuilderTestSuite) Test() {
 		suite.Run(strconv.Itoa(i), func() {
 			actual := make(map[string]interface{})
 			suite.NoError(
-				testCase.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
+				testCase.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 			)
 
 			suite.Equal(testCase.expected, actual)
@@ -267,7 +268,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 		suite.Run(strconv.Itoa(i), func() {
 			actual := make(map[string]interface{})
 			suite.NoError(
-				testCase.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
+				testCase.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 			)
 
 			suite.Equal(testCase.expected, actual)
@@ -303,7 +304,7 @@ func (suite *NonceClaimBuilderTestSuite) TestSuccess() {
 	actual := make(map[string]interface{})
 	suite.noncer.ExpectNonce().Return("test", error(nil)).Once()
 	suite.NoError(
-		suite.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
+		suite.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 	)
 
 	suite.Equal(
@@ -318,7 +319,7 @@ func (suite *NonceClaimBuilderTestSuite) TestError() {
 	suite.noncer.ExpectNonce().Return("", suite.expectedErr).Once()
 	suite.Equal(
 		suite.expectedErr,
-		suite.builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, actual),
+		suite.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 	)
 
 	suite.Empty(actual)
@@ -396,13 +397,13 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 		expected map[string]interface{}
 	}{
 		{
-			request: &Request{Logger: sallust.Default()},
+			request: &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
 			// nolint:goconst
 			expected: map[string]interface{}{"custom": val},
 		},
 		{
 			// nolint:goconst
-			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
 			expected: map[string]interface{}{"request": val, "custom": val},
 		},
 		{
@@ -410,7 +411,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 			client: new(http.Client),
 			// nolint:goconst
 			metadata: map[string]interface{}{"external": val},
-			request:  &Request{Logger: sallust.Default()},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
 			// nolint:goconst
 			expected: map[string]interface{}{"external": val, "custom": val},
 		},
@@ -419,7 +420,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 			client: new(http.Client),
 			// nolint:goconst
 			metadata: map[string]interface{}{"external": val},
-			request:  &Request{Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
 			// nolint:goconst
 			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
 		},
@@ -439,6 +440,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 			builder, err := newRemoteClaimBuilder(
 				endpoint,
 				testCase.metadata,
+				nil, nil, Trust{},
 				remoteClaims,
 				prometheus.NewCounterVec(
 					prometheus.CounterOpts{
@@ -484,7 +486,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 }
 
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
-	builder, err := newRemoteClaimBuilder(nil, nil, &RemoteClaims{URL: suite.badURL},
+	builder, err := newRemoteClaimBuilder(nil, nil, nil, nil, Trust{}, &RemoteClaims{URL: suite.badURL},
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -512,7 +514,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestError() {
 	suite.Require().NotNil(builder)
 
 	suite.Error(
-		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default()}, make(map[string]interface{})),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, make(map[string]interface{})),
 	)
 }
 
@@ -520,7 +522,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestNoURL() {
 	remoteClaims := new(RemoteClaims)
 	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
 	suite.Error(err)
-	builder, err := newRemoteClaimBuilder(endpoint, nil, remoteClaims,
+	builder, err := newRemoteClaimBuilder(endpoint, nil, nil, nil, Trust{}, remoteClaims,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -555,7 +557,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestBadURL() {
 	endpoint, err := newRemoteEndpoint(new(http.Client), remoteClaims)
 	suite.Error(err)
 
-	builder, err := newRemoteClaimBuilder(endpoint, nil, remoteClaims,
+	builder, err := newRemoteClaimBuilder(endpoint, nil, nil, nil, Trust{}, remoteClaims,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -685,7 +687,7 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -1082,7 +1084,7 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -1148,7 +1150,7 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
 	)
 
 	suite.Equal(
@@ -1278,7 +1280,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 
 	actual := make(map[string]interface{})
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
