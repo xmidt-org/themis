@@ -69,6 +69,7 @@ func testNewServerChainHeaders(t *testing.T) {
 		chain = NewServerChain(
 			Options{
 				Header: http.Header{
+					// nolint:goconst
 					"X-From-Configuration": []string{"value"},
 				},
 				DisableTracking:      true,

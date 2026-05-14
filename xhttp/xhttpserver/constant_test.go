@@ -31,16 +31,21 @@ func TestConstantHandler(t *testing.T) {
 			constant: Constant{
 				StatusCode: 516,
 				Header: http.Header{
+					// nolint:goconst
 					"X-Custom1": []string{"value1"},
+					// nolint:goconst
 					"x-CUStom2": []string{"value1", "value2"},
 				},
 				Body: []byte("hello, world"),
 			},
 			expectedStatusCode: 516,
 			expectedHeader: http.Header{
+				// nolint:goconst
 				"Content-Length": []string{strconv.Itoa(len("hello, world"))},
-				"X-Custom1":      []string{"value1"},
-				"X-Custom2":      []string{"value1", "value2"},
+				// nolint:goconst
+				"X-Custom1": []string{"value1"},
+				// nolint:goconst
+				"X-Custom2": []string{"value1", "value2"},
 			},
 			expectedBody: []byte("hello, world"),
 		},

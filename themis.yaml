@@ -13,9 +13,9 @@ servers:
   issuer:
     address: :6501
     disableHTTPKeepAlives: true
-#   tls:
-#     key: "/etc/themis/key.pem"
-#     certificateFile: "/etc/themis/cert.pem"
+    #   tls:
+    #     key: "/etc/themis/key.pem"
+    #     certificateFile: "/etc/themis/cert.pem"
     header:
       X-Midt-Server:
         - issuer
@@ -57,6 +57,7 @@ prometheus:
 
 client:
   httpClient:
+    # timeout: 5ns
     tls:
       minVersion: 771 # 0x0303, the TLS 1.2 version uint16
       # certificates:
@@ -100,10 +101,8 @@ token:
       value:
         - x1:issuer:test:.*:all
     - key: nestedClaims
-      json: '{
-          "casePreservedScalar": "true",
-          "casePreservedArray": ["casePreserved1", "casePreserved2"]
-      }'
+      json: '{"casePreservedScalar": "true",
+        "casePreservedArray": ["casePreserved1", "casePreserved2"]}'
   metadata:
     - key: mac
       header: X-Midt-Mac-Address
@@ -114,13 +113,25 @@ token:
     - key: uuid
       header: X-Midt-Uuid
       parameter: uuid
+  # Remote claims related, used to hydrate `token.remote.url`'s path wild cards and query parameters.
   pathWildCards:
+    # Set the url path wild card '{mac}' as an empty string by default.
+    - key: mac
+      value: ""
+    # Set the url path wild card '{mac}' to the value parsed form data, including both the URL
+    # field's query parameters and the PATCH, POST, or PUT form data.
+    - key: mac
+      parameter: mac
+    # Set the url path wild card '{mac}' to the header `X-Midt-Mac-Address`'s value.
     - key: mac
       header: X-Midt-Mac-Address
-      parameter: mac
+    # Set the url path wild card '{mac}' to the header `X-Webpa-Device-Name`'s value.
+    - key: mac
+      header: X-Webpa-Device-Name
+    # The last successful '{mac}' set will be used.
   remote:
     method: GET
-    url: https://localhost:443/device/{mac}/claims?format=json
+    url: http://localhost:6000/device/{mac}/claims?format=json
   partnerID:
     claim: partner-id
     metadata: pid

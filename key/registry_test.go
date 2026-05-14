@@ -76,11 +76,17 @@ func TestRegistry(t *testing.T) {
 	t.Run("Register", func(t *testing.T) {
 		t.Run("ValidDescriptor", func(t *testing.T) {
 			testData := []Descriptor{
+				// nolint:goconst
 				{Kid: "test"},
+				// nolint:goconst
 				{Kid: "test", Type: "rsa"},
+				// nolint:goconst
 				{Kid: "test", Type: "rsa", File: "test.pkcs1.pem"},
+				// nolint:goconst
 				{Kid: "test", Type: "rsa", File: "test.pkcs8.pem"},
+				// nolint:goconst
 				{Kid: "test", Type: "ecdsa"},
+				// nolint:goconst
 				{Kid: "test", Type: "secret"},
 			}
 

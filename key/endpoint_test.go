@@ -22,6 +22,7 @@ func TestNewEndpoint(t *testing.T) {
 		)
 
 		require.NotNil(endpoint)
+		// nolint:goconst
 		_, err := registry.Register(Descriptor{Kid: "test"})
 		require.NoError(err)
 

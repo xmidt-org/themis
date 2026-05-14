@@ -26,12 +26,16 @@ func TestMissingValueError(t *testing.T) {
 		var (
 			assert = assert.New(t)
 			mve    = MissingValueError{
-				Header:    "X-Stuff",
+				// nolint:goconst
+				Header: "X-Stuff",
+				// nolint:goconst
 				Parameter: "stuff",
 			}
 		)
 
+		// nolint:goconst
 		assert.Contains(mve.Error(), "X-Stuff")
+		// nolint:goconst
 		assert.Contains(mve.Error(), "stuff")
 		assert.Equal(http.StatusBadRequest, mve.StatusCode())
 	})

@@ -31,6 +31,7 @@ func TestNewHandler(t *testing.T) {
 			ctx     = sallust.With(context.Background(), sallust.Default())
 			request = mux.SetURLVars(
 				httptest.NewRequest("GET", "/", nil).WithContext(ctx),
+				// nolint:goconst
 				map[string]string{"kid": "test"},
 			)
 
