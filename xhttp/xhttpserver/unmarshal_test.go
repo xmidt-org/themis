@@ -46,16 +46,17 @@ func testUnmarshalProvideFull(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"server": {
 								"address": "127.0.0.1:0",
 								"disableHTTPKeepAlives": true
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() ChainFactory {
 					return ChainFactoryFunc(func(name string, o Options) (alice.Chain, error) {
 						return alice.New(
@@ -101,7 +102,7 @@ func testUnmarshalProvideOptional(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(),
+				config.ProvideViper,
 				Unmarshal{
 					Key:      "server",
 					Optional: true,
@@ -131,7 +132,7 @@ func testUnmarshalProvideRequired(t *testing.T) {
 			sallust.WithLogger(),
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(),
+				config.ProvideViper,
 				Unmarshal{Key: "server"}.Provide,
 			),
 			fx.Invoke(
@@ -152,15 +153,16 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 		app = fx.New(
 			sallust.WithLogger(),
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"server": {
 								"disableHTTPKeepAlives": "this is not a bool"
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				Unmarshal{Key: "server"}.Provide,
 			),
 			fx.Invoke(
@@ -182,16 +184,17 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 		app = fx.New(
 			sallust.WithLogger(),
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"server": {
 								"address": "127.0.0.1:0",
 								"disableHTTPKeepAlives": true
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() ChainFactory {
 					return ChainFactoryFunc(func(name string, o Options) (alice.Chain, error) {
 						return alice.Chain{}, expectedErr
@@ -233,16 +236,17 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"server": {
 								"address": "127.0.0.1:0",
 								"disableHTTPKeepAlives": true
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() ChainFactory {
 					return ChainFactoryFunc(func(name string, o Options) (alice.Chain, error) {
 						return alice.New(
@@ -300,16 +304,17 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"server": {
 								"address": "127.0.0.1:0",
 								"disableHTTPKeepAlives": true
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				Unmarshal{
 					Key:  "server",
 					Name: "componentName",

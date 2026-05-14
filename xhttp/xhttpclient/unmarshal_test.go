@@ -34,8 +34,9 @@ func testUnmarshalProvideFull(t *testing.T) {
 		c   Interface
 		app = fxtest.New(t,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"client": {
 								"httpClient": {
@@ -52,8 +53,8 @@ func testUnmarshalProvideFull(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() Chain {
 					return NewChain(
 						func(delegate http.RoundTripper) http.RoundTripper {
@@ -120,8 +121,9 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 		app = fx.New(
 			fx.NopLogger,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"client": {
 								"httpClient": {
@@ -129,8 +131,8 @@ func testUnmarshalProvideUnmarshalError(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				Unmarshal{Key: "client"}.Provide,
 			),
 			fx.Populate(&c),
@@ -150,8 +152,9 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				sallust.Default(),
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"client": {
 								"transport": {
@@ -159,8 +162,8 @@ func testUnmarshalProvideChainFactoryError(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() ChainFactory {
 					return ChainFactoryFunc(func(name string, o Options) (Chain, error) {
 						return Chain{}, expectedErr
@@ -201,8 +204,9 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 		c   Interface
 		app = fxtest.New(t,
 			fx.Provide(
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"client": {
 								"httpClient": {
@@ -219,8 +223,8 @@ func testUnmarshalAnnotatedFull(t *testing.T) {
 								}
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() Chain {
 					return NewChain(
 						func(delegate http.RoundTripper) http.RoundTripper {
@@ -295,8 +299,9 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 		app = fxtest.New(t,
 			fx.Provide(
 				sallust.Default,
-				config.ProvideViper(
-					config.Json(`
+				config.ProvideViper,
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"client": {
 								"transport": {
@@ -308,8 +313,8 @@ func testUnmarshalAnnotatedNamed(t *testing.T) {
 								"timeout": "10s"
 							}
 						}
-					`),
-				),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				Unmarshal{
 					Key:  "client",
 					Name: "componentName",

@@ -35,7 +35,7 @@ type RemoteClaimsEndpointOut struct {
 }
 
 func RemoteClaimsEndpoint(in RemoteClaimsEndpointIn) (RemoteClaimsEndpointOut, error) {
-	if in.Client != nil && in.Endpoint != nil {
+	if (in.Client != nil || in.Options.Remote != nil) && in.Endpoint != nil {
 		return RemoteClaimsEndpointOut{}, ErrRemoteClaimsEndpointConflict
 	}
 
