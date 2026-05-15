@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2017 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
-package main
+package themis
 
 import (
 	"errors"
