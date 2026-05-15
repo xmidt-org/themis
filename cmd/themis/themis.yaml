@@ -131,7 +131,7 @@ token:
     # The last successful '{mac}' set will be used.
   remote:
     method: GET
-    url: https://localhost:443/device/{mac}/claims?format=json
+    url: http://localhost:6000/device/{mac}/claims?format=json
   partnerID:
     claim: partner-id
     metadata: pid
