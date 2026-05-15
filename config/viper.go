@@ -32,6 +32,9 @@ type ViperIn struct {
 	//
 	// Note that spf13/viper provides a default set of options.  See https://godoc.org/github.com/spf13/viper#DecoderConfigOption
 	DecoderOptions []viper.DecoderConfigOption `optional:"true"`
+
+	// Builders, each builder is invoked in sequence, and any error will short-circuit construction.
+	Builders []ViperBuilder `group:"viperBuilders"`
 }
 
 // ViperOut lists the components emitted for a Viper instance
@@ -46,27 +49,24 @@ type ViperOut struct {
 // always have the Name field set, either as a component or by defaulting to DefaultApplicationName.
 type ViperBuilder func(ViperIn, *viper.Viper) error
 
-// ProvideViper produces components for the viper environment.  Each builder is invoked in sequence, and any error
-// will short-circuit construction.  This provider function does not itself read any configuration or otherwise
+// ProvideViper produces components for the viper environment. This provider function does not itself read any configuration or otherwise
 // modify the viper instance it creates.  At least one builder function must read configuration.
-func ProvideViper(builders ...ViperBuilder) func(ViperIn) (ViperOut, error) {
-	return func(in ViperIn) (ViperOut, error) {
-		if len(in.Name) == 0 {
-			in.Name = DefaultApplicationName()
-		}
-
-		viper := viper.New()
-		for _, f := range builders {
-			if err := f(in, viper); err != nil {
-				return ViperOut{}, err
-			}
-		}
-
-		return ViperOut{
-			Viper:        viper,
-			Unmarshaller: ViperUnmarshaller{Viper: viper, Options: in.DecoderOptions},
-		}, nil
+func ProvideViper(in ViperIn) (ViperOut, error) {
+	if len(in.Name) == 0 {
+		in.Name = DefaultApplicationName()
 	}
+
+	viper := viper.New()
+	for _, f := range in.Builders {
+		if err := f(in, viper); err != nil {
+			return ViperOut{}, err
+		}
+	}
+
+	return ViperOut{
+		Viper:        viper,
+		Unmarshaller: ViperUnmarshaller{Viper: viper, Options: in.DecoderOptions},
+	}, nil
 }
 
 // ReadConfig returns a ViperBuilder that reads in a configuration file from an arbitrary io.Reader.
