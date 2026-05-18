@@ -3,11 +3,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -16,23 +18,37 @@ import (
 	"go.uber.org/fx"
 )
 
-func main() {
+func app(ctx context.Context, opt ...fx.Option) syscall.Signal {
 	app, err := themis.New(
 		fx.Options(
-			config.CommandLine{Name: themis.ApplicationName}.Provide(setupFlagSet),
-			fx.Provide(
-				fx.Annotate(func() config.ViperBuilder { return setupViper }, fx.ResultTags(`group:"viperBuilders"`)),
-			),
+			append(opt,
+				config.CommandLine{Name: themis.ApplicationName}.Provide(setupFlagSet),
+				fx.Provide(
+					fx.Annotate(func() config.ViperBuilder { return setupViper }, fx.ResultTags(`group:"viperBuilders"`)),
+				),
+			)...,
 		),
 	)
 	if errors.Is(err, pflag.ErrHelp) {
-		return
-	} else if errors.Is(err, nil) {
-		app.Run()
-	} else {
+		return 0
+	} else if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return syscall.SIGINT
 	}
+
+	switch err := app.Start(ctx); {
+	case err == nil:
+	case errors.Is(err, context.Canceled):
+	default:
+		fmt.Fprintln(os.Stderr, err)
+		return syscall.SIGTRAP
+	}
+
+	return syscall.Signal((<-app.Wait()).ExitCode)
+}
+
+func main() {
+	os.Exit(int(app(context.Background())))
 }
 
 func setupFlagSet(fs *pflag.FlagSet) error {

@@ -40,6 +40,8 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 			)
 		)
 
+		// nolint: prealloc
+		var errs []error
 		requestCount, err := in.RequestCount.CurryWith(curryLabel)
 		if err != nil {
 			return alice.Chain{}, err
