@@ -43,19 +43,11 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 		// nolint: prealloc
 		var errs []error
 		requestCount, err := in.RequestCount.CurryWith(curryLabel)
-		if err != nil {
-			return alice.Chain{}, err
-		}
-
+		errs = append(errs, err)
 		requestDuration, err := in.RequestDuration.CurryWith(curryLabel)
-		if err != nil {
-			return alice.Chain{}, err
-		}
-
+		errs = append(errs, err)
 		requestsInFlight, err := in.RequestsInFlight.CurryWith(curryLabel)
-		if err != nil {
-			return alice.Chain{}, err
-		}
+		errs = append(errs, err)
 
 		return alice.New(
 			xmetricshttp.HandlerCounter{
@@ -69,7 +61,7 @@ func provideServerChainFactory(in ServerChainIn) xhttpserver.ChainFactory {
 			xmetricshttp.HandlerInFlight{
 				Metric: xmetrics.LabelledGaugeVec{GaugeVec: requestsInFlight},
 			}.Then,
-		), nil
+		), errors.Join(errs...)
 	})
 }
 

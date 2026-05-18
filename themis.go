@@ -56,7 +56,6 @@ func provideAppOptions(opts fx.Option) fx.Option {
 				token.RemoteClaimsEndpoint,
 				token.TokenFactory(),
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
-				provideClientChain,
 				provideServerChainFactory,
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				xhttpserver.Unmarshal{Key: "servers.key", Optional: true}.Annotated(),
@@ -69,11 +68,8 @@ func provideAppOptions(opts fx.Option) fx.Option {
 				func(u config.Unmarshaller) (candlelight.Config, error) {
 					var config candlelight.Config
 					err := u.UnmarshalKey("tracing", &config)
-					if err != nil {
-						return candlelight.Config{}, err
-					}
 					config.ApplicationName = ApplicationName
-					return config, nil
+					return config, err
 				},
 				fx.Private,
 			),
