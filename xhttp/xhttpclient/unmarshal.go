@@ -4,7 +4,7 @@ package xhttpclient
 
 import (
 	"github.com/xmidt-org/candlelight"
-	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/v2/config"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"go.uber.org/fx"

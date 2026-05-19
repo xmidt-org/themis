@@ -11,8 +11,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-	"github.com/xmidt-org/themis"
-	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/v2"
+	"github.com/xmidt-org/themis/v2/config"
 	"go.uber.org/fx"
 )
 

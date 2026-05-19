@@ -3,7 +3,7 @@
 package xmetrics
 
 import (
-	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/v2/config"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/fx"

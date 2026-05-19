@@ -3,7 +3,7 @@
 package xmetricshttp
 
 import (
-	"github.com/xmidt-org/themis/xmetrics"
+	"github.com/xmidt-org/themis/v2/xmetrics"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

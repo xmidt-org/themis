@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/xmidt-org/themis/xmetrics"
+	"github.com/xmidt-org/themis/v2/xmetrics"
 )
 
 const (

@@ -3,7 +3,7 @@
 package xhealth
 
 import (
-	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/v2/config"
 
 	health "github.com/InVisionApp/go-health"
 

@@ -1,4 +1,4 @@
-module github.com/xmidt-org/themis
+module github.com/xmidt-org/themis/v2
 
 go 1.25.0
 

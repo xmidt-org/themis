@@ -5,7 +5,7 @@ package xhttpserver
 import (
 	"net/http"
 
-	"github.com/xmidt-org/themis/xhttp"
+	"github.com/xmidt-org/themis/v2/xhttp"
 )
 
 type ResponseHeaders struct {

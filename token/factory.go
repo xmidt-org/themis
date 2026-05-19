@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/v2/key"
 	"go.uber.org/zap"
 
 	"github.com/golang-jwt/jwt"

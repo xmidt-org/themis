@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xmidt-org/themis/xhttp/xhttpclient"
-	"github.com/xmidt-org/themis/xmetrics"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpclient"
+	"github.com/xmidt-org/themis/v2/xmetrics"
 )
 
 // HandlerCounter provides a simple count metric of HTTP transactions

@@ -10,7 +10,7 @@ import (
 
 	"github.com/xmidt-org/sallust"
 	"github.com/xmidt-org/sallust/sallusthttp"
-	"github.com/xmidt-org/themis/xzap"
+	"github.com/xmidt-org/themis/v2/xzap"
 	"go.uber.org/zap"
 
 	"github.com/justinas/alice"

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/xmidt-org/themis/random"
+	"github.com/xmidt-org/themis/v2/random"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 )

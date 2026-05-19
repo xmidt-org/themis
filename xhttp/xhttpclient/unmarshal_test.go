@@ -10,7 +10,7 @@ import (
 
 	"github.com/xmidt-org/candlelight"
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/config"
+	"github.com/xmidt-org/themis/v2/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

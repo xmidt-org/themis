@@ -7,8 +7,8 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/xmidt-org/themis/key"
-	"github.com/xmidt-org/themis/random"
+	"github.com/xmidt-org/themis/v2/key"
+	"github.com/xmidt-org/themis/v2/random"
 	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
