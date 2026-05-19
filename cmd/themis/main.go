@@ -18,7 +18,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func app(ctx context.Context, opt ...fx.Option) syscall.Signal {
+func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option) (sig syscall.Signal) {
 	app, err := themis.New(
 		fx.Options(
 			append(opt,
@@ -36,19 +36,34 @@ func app(ctx context.Context, opt ...fx.Option) syscall.Signal {
 		return syscall.SIGINT
 	}
 
-	switch err := app.Start(ctx); {
-	case err == nil:
-	case errors.Is(err, context.Canceled):
-	default:
+	if err := app.Start(startCtx); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return syscall.SIGTRAP
 	}
 
-	return syscall.Signal((<-app.Wait()).ExitCode)
+	fxWait := app.Wait()
+	var fxSig fx.ShutdownSignal
+	select {
+	case <-done:
+		if err := stopCtx.Err(); err != nil {
+			fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
+			stopCtx = context.Background()
+		}
+
+		if err := app.Stop(stopCtx); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return syscall.SIGHUP
+		}
+
+		fxSig = <-fxWait
+	case fxSig = <-fxWait:
+	}
+
+	return syscall.Signal(fxSig.ExitCode)
 }
 
 func main() {
-	os.Exit(int(app(context.Background())))
+	os.Exit(int(app(nil, context.Background(), context.Background())))
 }
 
 func setupFlagSet(fs *pflag.FlagSet) error {
@@ -61,26 +76,24 @@ func setupFlagSet(fs *pflag.FlagSet) error {
 	return nil
 }
 
-func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
+func setupViper(in config.ViperIn, v *viper.Viper) error {
 	if printVersion, _ := in.FlagSet.GetBool("version"); printVersion {
-		printVersionInfo()
+		return printVersionInfo()
 	}
+
+	var errs []error
 	if dev, _ := in.FlagSet.GetBool("dev"); dev {
 		v.SetConfigType("yaml")
-		err = v.ReadConfig(strings.NewReader(devMode))
+		errs = append(errs, v.ReadConfig(strings.NewReader(devMode)))
 	} else if file, _ := in.FlagSet.GetString("file"); len(file) > 0 {
 		v.SetConfigFile(file)
-		err = v.ReadInConfig()
+		errs = append(errs, v.ReadInConfig())
 	} else {
 		v.SetConfigName(string(in.Name))
 		v.AddConfigPath(fmt.Sprintf("/etc/%s", in.Name))
 		v.AddConfigPath(".")
 		v.AddConfigPath(fmt.Sprintf("$HOME/.%s", in.Name))
-		err = v.ReadInConfig()
-	}
-
-	if err != nil {
-		return
+		errs = append(errs, v.ReadInConfig())
 	}
 
 	if iss, _ := in.FlagSet.GetString("iss"); len(iss) > 0 {
@@ -91,15 +104,16 @@ func setupViper(in config.ViperIn, v *viper.Viper) (err error) {
 		v.Set("log.level", "DEBUG")
 	}
 
-	return
+	return errors.Join(errs...)
 }
 
-func printVersionInfo() {
+func printVersionInfo() error {
 	fmt.Fprintf(os.Stdout, "%s:\n", themis.ApplicationName)
 	fmt.Fprintf(os.Stdout, "  version: \t%s\n", themis.Version)
 	fmt.Fprintf(os.Stdout, "  go version: \t%s\n", runtime.Version())
 	fmt.Fprintf(os.Stdout, "  built time: \t%s\n", themis.BuildTime)
 	fmt.Fprintf(os.Stdout, "  git commit: \t%s\n", themis.GitCommit)
 	fmt.Fprintf(os.Stdout, "  os/arch: \t%s/%s\n", runtime.GOOS, runtime.GOARCH)
-	os.Exit(0)
+
+	return pflag.ErrHelp
 }
