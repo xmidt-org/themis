@@ -5,13 +5,13 @@ package themis
 import (
 	"errors"
 
-	"github.com/xmidt-org/themis/key"
-	"github.com/xmidt-org/themis/token"
-	"github.com/xmidt-org/themis/xhealth"
-	"github.com/xmidt-org/themis/xhttp/xhttpserver"
-	"github.com/xmidt-org/themis/xhttp/xhttpserver/pprof"
-	"github.com/xmidt-org/themis/xmetrics"
-	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
+	"github.com/xmidt-org/themis/v2/key"
+	"github.com/xmidt-org/themis/v2/token"
+	"github.com/xmidt-org/themis/v2/xhealth"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpserver/pprof"
+	"github.com/xmidt-org/themis/v2/xmetrics"
+	"github.com/xmidt-org/themis/v2/xmetrics/xmetricshttp"
 
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"

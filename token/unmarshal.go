@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/xmidt-org/themis/config"
-	"github.com/xmidt-org/themis/key"
-	"github.com/xmidt-org/themis/random"
-	"github.com/xmidt-org/themis/xhttp/xhttpclient"
+	"github.com/xmidt-org/themis/v2/config"
+	"github.com/xmidt-org/themis/v2/key"
+	"github.com/xmidt-org/themis/v2/random"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpclient"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

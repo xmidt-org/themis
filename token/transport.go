@@ -17,7 +17,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpserver"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/multierr"

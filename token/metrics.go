@@ -4,7 +4,7 @@ package token
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/xmidt-org/themis/xmetrics"
+	"github.com/xmidt-org/themis/v2/xmetrics"
 	"go.uber.org/fx"
 )
 

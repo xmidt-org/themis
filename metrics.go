@@ -3,8 +3,8 @@
 package themis
 
 import (
-	"github.com/xmidt-org/themis/xmetrics"
-	"github.com/xmidt-org/themis/xmetrics/xmetricshttp"
+	"github.com/xmidt-org/themis/v2/xmetrics"
+	"github.com/xmidt-org/themis/v2/xmetrics/xmetricshttp"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/fx"

@@ -5,7 +5,7 @@ package xhttpclient
 import (
 	"net/http"
 
-	"github.com/xmidt-org/themis/xhttp"
+	"github.com/xmidt-org/themis/v2/xhttp"
 )
 
 // RequestHeaders provides a RoundTripper constructor that inserts a constant set of headers

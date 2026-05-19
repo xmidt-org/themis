@@ -15,10 +15,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/random"
-	"github.com/xmidt-org/themis/xhttp/xhttpclient"
-	"github.com/xmidt-org/themis/xhttp/xhttpserver"
-	"github.com/xmidt-org/themis/xzap"
+	"github.com/xmidt-org/themis/v2/random"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpclient"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpserver"
+	"github.com/xmidt-org/themis/v2/xzap"
 	"go.uber.org/zap"
 
 	"github.com/go-kit/kit/endpoint"

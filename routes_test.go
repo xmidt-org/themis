@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/v2/key"
 )
 
 func TestBuildKeyRoutes(t *testing.T) {

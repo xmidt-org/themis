@@ -18,8 +18,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/sallust"
-	"github.com/xmidt-org/themis/random/randomtest"
-	"github.com/xmidt-org/themis/xhttp/xhttpclient"
+	"github.com/xmidt-org/themis/v2/random/randomtest"
+	"github.com/xmidt-org/themis/v2/xhttp/xhttpclient"
 
 	"github.com/stretchr/testify/suite"
 )

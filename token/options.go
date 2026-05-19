@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xmidt-org/themis/key"
+	"github.com/xmidt-org/themis/v2/key"
 )
 
 const (
