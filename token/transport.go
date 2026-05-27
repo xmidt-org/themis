@@ -381,7 +381,7 @@ func (dce RemoteClaimsResponseError) Error() string {
 
 func (dce RemoteClaimsResponseError) MarshalJSON() ([]byte, error) {
 	var output bytes.Buffer
-	fmt.Fprintf(
+	_, _ = fmt.Fprintf(
 		&output,
 		`{"statusCode": %d, "err": "%s"}`,
 		dce.StatusCode,
