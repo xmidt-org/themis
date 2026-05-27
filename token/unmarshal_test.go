@@ -29,13 +29,15 @@ func testUnmarshalError(t *testing.T) {
 		fx.NopLogger,
 		fx.Provide(
 			config.ProvideViper,
-			fx.Annotate(config.Json(`
-					{
-						"token": {
-							"nonce": "this is not a valid bool"
+			fx.Annotate(func() config.ViperBuilder {
+				return config.Json(`
+						{
+							"token": {
+								"nonce": "this is not a valid bool"
+							}
 						}
-					}
-				`), fx.ResultTags(`group:"viperBuilders"`)),
+					`)
+			}, fx.ResultTags(`group:"viperBuilders"`)),
 			func() key.Registry { return key.NewRegistry(nil) },
 			Unmarshal("token"),
 		),
@@ -55,7 +57,8 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				config.ProvideViper,
-				fx.Annotate(config.Json(`
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"token": {
 								"metadata": [
@@ -68,7 +71,8 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 								}
 							}
 						}
-					`), fx.ResultTags(`group:"viperBuilders"`)),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -89,13 +93,15 @@ func testUnmarshalFactoryError(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				config.ProvideViper,
-				fx.Annotate(config.Json(`
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"token": {
 								"alg": "this is not a signing method"
 							}
 						}
-					`), fx.ResultTags(`group:"viperBuilders"`)),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -116,7 +122,8 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 			fx.NopLogger,
 			fx.Provide(
 				config.ProvideViper,
-				fx.Annotate(config.Json(`
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"token": {
 								"claims": [
@@ -129,7 +136,8 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 								]
 							}
 						}
-					`), fx.ResultTags(`group:"viperBuilders"`)),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 			),
@@ -158,7 +166,8 @@ func testUnmarshalRemoteEndpointMisconfigured(t *testing.T) {
 			fx.Provide(
 				sallust.Default,
 				config.ProvideViper,
-				fx.Annotate(config.Json(`
+				fx.Annotate(func() config.ViperBuilder {
+					return config.Json(`
 						{
 							"prometheus": {
 								"defaultNamespace": "xmidt",
@@ -174,15 +183,16 @@ func testUnmarshalRemoteEndpointMisconfigured(t *testing.T) {
 										"value": "foo"
 									}
 								]
-							},
+							}
 						}
-					`), fx.ResultTags(`group:"viperBuilders"`)),
+					`)
+				}, fx.ResultTags(`group:"viperBuilders"`)),
 				func() key.Registry { return key.NewRegistry(nil) },
 				Unmarshal("token"),
 				// nolint:goconst
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
-				RemoteClaimsEndpoint,
+				ConsumeRemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 				func() endpoint.Endpoint { return endpoint.Nop },
 			),
@@ -194,7 +204,7 @@ func testUnmarshalRemoteEndpointMisconfigured(t *testing.T) {
 		)
 	)
 
-	assert.Error(app.Err())
+	assert.ErrorIs(app.Err(), ErrRemoteClaimsEndpointMisconfigured)
 	assert.Nil(factory)
 }
 
@@ -241,7 +251,7 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
-				RemoteClaimsEndpoint,
+				ProvideRemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),
@@ -301,7 +311,7 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
-				RemoteClaimsEndpoint,
+				ConsumeRemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 				func() endpoint.Endpoint { return endpoint.Nop },
 			),
@@ -362,7 +372,7 @@ func testUnmarshalWithConfiguredRemoteEndpointSuccess(t *testing.T) {
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
-				RemoteClaimsEndpoint,
+				ProvideRemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),
@@ -423,7 +433,7 @@ func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
 				Unmarshal("token"),
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				TokenFactory(),
-				RemoteClaimsEndpoint,
+				ProvideRemoteClaimsEndpoint,
 				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			),
 			fx.Populate(&factory),

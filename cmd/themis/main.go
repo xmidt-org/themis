@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/xmidt-org/themis/v2"
 	"github.com/xmidt-org/themis/v2/config"
+	"github.com/xmidt-org/themis/v2/token"
 	"go.uber.org/fx"
 )
 
@@ -25,6 +26,7 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 				config.CommandLine{Name: themis.ApplicationName}.Provide(setupFlagSet),
 				fx.Provide(
 					fx.Annotate(func() config.ViperBuilder { return setupViper }, fx.ResultTags(`group:"viperBuilders"`)),
+					token.ProvideRemoteClaimsEndpoint,
 				),
 			)...,
 		),
@@ -42,22 +44,23 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 	}
 
 	fxWait := app.Wait()
-	var fxSig fx.ShutdownSignal
 	select {
 	case <-done:
-		if err := stopCtx.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
-			stopCtx = context.Background()
-		}
-
-		if err := app.Stop(stopCtx); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return syscall.SIGHUP
-		}
-
-		fxSig = <-fxWait
-	case fxSig = <-fxWait:
+	case fxSig := <-fxWait:
+		fmt.Fprintf(os.Stdout, "received syscall `%s`, starting graceful shutdown", syscall.Signal(fxSig.ExitCode))
 	}
+
+	if err := stopCtx.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
+		stopCtx = context.Background()
+	}
+
+	if err := app.Stop(stopCtx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return syscall.SIGHUP
+	}
+
+	fxSig := <-fxWait
 
 	return syscall.Signal(fxSig.ExitCode)
 }
