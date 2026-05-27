@@ -34,12 +34,14 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 	if errors.Is(err, pflag.ErrHelp) {
 		return 0
 	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+
 		return syscall.SIGINT
 	}
 
 	if err := app.Start(startCtx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+
 		return syscall.SIGTRAP
 	}
 
@@ -47,16 +49,17 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 	select {
 	case <-done:
 	case fxSig := <-fxWait:
-		fmt.Fprintf(os.Stdout, "received syscall `%s`, starting graceful shutdown", syscall.Signal(fxSig.ExitCode))
+		_, _ = fmt.Fprintf(os.Stdout, "received syscall `%s`, starting graceful shutdown", syscall.Signal(fxSig.ExitCode))
 	}
 
 	if err := stopCtx.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
+		_, _ = fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
 		stopCtx = context.Background()
 	}
 
 	if err := app.Stop(stopCtx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+
 		return syscall.SIGHUP
 	}
 
@@ -111,12 +114,12 @@ func setupViper(in config.ViperIn, v *viper.Viper) error {
 }
 
 func printVersionInfo() error {
-	fmt.Fprintf(os.Stdout, "%s:\n", themis.ApplicationName)
-	fmt.Fprintf(os.Stdout, "  version: \t%s\n", themis.Version)
-	fmt.Fprintf(os.Stdout, "  go version: \t%s\n", runtime.Version())
-	fmt.Fprintf(os.Stdout, "  built time: \t%s\n", themis.BuildTime)
-	fmt.Fprintf(os.Stdout, "  git commit: \t%s\n", themis.GitCommit)
-	fmt.Fprintf(os.Stdout, "  os/arch: \t%s/%s\n", runtime.GOOS, runtime.GOARCH)
+	_, _ = fmt.Fprintf(os.Stdout, "%s:\n", themis.ApplicationName)
+	_, _ = fmt.Fprintf(os.Stdout, "  version: \t%s\n", themis.Version)
+	_, _ = fmt.Fprintf(os.Stdout, "  go version: \t%s\n", runtime.Version())
+	_, _ = fmt.Fprintf(os.Stdout, "  built time: \t%s\n", themis.BuildTime)
+	_, _ = fmt.Fprintf(os.Stdout, "  git commit: \t%s\n", themis.GitCommit)
+	_, _ = fmt.Fprintf(os.Stdout, "  os/arch: \t%s/%s\n", runtime.GOOS, runtime.GOARCH)
 
 	return pflag.ErrHelp
 }
