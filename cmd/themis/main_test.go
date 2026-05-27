@@ -52,9 +52,19 @@ func TestMain(t *testing.T) {
 	// Trigger graceful shutdown attempts.
 	close(done)
 
+	// Graceful shotdown
+	sig = app(done, t.Context(), t.Context(), fx.Invoke(
+		func(lifecycle fx.Lifecycle, shutdown fx.Shutdowner) {
+			lifecycle.Append(fx.Hook{
+				OnStart: func(context.Context) error { return shutdown.Shutdown(fx.ExitCode(0)) },
+			})
+		},
+	))
+	cancel()
+	require.Zero(int(sig), sig)
+
 	// Bad Shutdown hook
-	ctx, cancel = context.WithTimeout(t.Context(), time.Nanosecond)
-	sig = app(done, t.Context(), ctx, fx.Invoke(
+	sig = app(done, t.Context(), t.Context(), fx.Invoke(
 		func(lifecycle fx.Lifecycle, shutdown fx.Shutdowner) {
 			lifecycle.Append(fx.Hook{
 				OnStop: func(context.Context) error {

@@ -42,22 +42,23 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 	}
 
 	fxWait := app.Wait()
-	var fxSig fx.ShutdownSignal
 	select {
 	case <-done:
-		if err := stopCtx.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
-			stopCtx = context.Background()
-		}
-
-		if err := app.Stop(stopCtx); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return syscall.SIGHUP
-		}
-
-		fxSig = <-fxWait
-	case fxSig = <-fxWait:
+	case fxSig := <-fxWait:
+		fmt.Fprintf(os.Stdout, "received syscall `%s`, starting graceful shutdown", syscall.Signal(fxSig.ExitCode))
 	}
+
+	if err := stopCtx.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "using a new background context in order to attempt a graceful shutdown, previous stop context error'ed out: %s", err)
+		stopCtx = context.Background()
+	}
+
+	if err := app.Stop(stopCtx); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return syscall.SIGHUP
+	}
+
+	fxSig := <-fxWait
 
 	return syscall.Signal(fxSig.ExitCode)
 }
