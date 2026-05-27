@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/themis/v2"
 	"github.com/xmidt-org/themis/v2/config"
+	"github.com/xmidt-org/themis/v2/token"
 	"go.uber.org/fx"
 )
 
@@ -24,6 +25,7 @@ func Test_themisApp(t *testing.T) {
 				config.CommandLine{Name: themis.ApplicationName}.Provide(),
 				fx.Provide(
 					fx.Annotate(func() config.ViperBuilder { return setupViper }, fx.ResultTags(`group:"viperBuilders"`)),
+					token.ProvideRemoteClaimsEndpoint,
 					func() endpoint.Endpoint { return endpoint.Nop },
 				),
 			),

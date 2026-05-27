@@ -20,32 +20,50 @@ var (
 	ErrRemoteClaimsEndpointMisconfigured = errors.New("remote claims builder must be configured if a remote claim builder endpoint was provided as an fx.Option")
 )
 
-type RemoteClaimsEndpointIn struct {
-	fx.In
+func ProvideRemoteClaimsEndpoint(in provideRemoteClaimsEndpointIn) (out provideRemoteClaimsEndpointOut, err error) {
+	if in.Options.Remote == nil {
+		return provideRemoteClaimsEndpointOut{}, nil
+	}
 
-	Endpoint endpoint.Endpoint     `optional:"true"`
-	Client   xhttpclient.Interface `optional:"true"`
-	Options  Options
+	out.Endpoint, err = newRemoteEndpoint(in.Client, in.Options.Remote)
+
+	return
 }
 
-type RemoteClaimsEndpointOut struct {
+type provideRemoteClaimsEndpointIn struct {
+	fx.In
+
+	Client  xhttpclient.Interface `optional:"true"`
+	Options Options
+}
+
+type provideRemoteClaimsEndpointOut struct {
 	fx.Out
 
 	Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
 }
 
-func RemoteClaimsEndpoint(in RemoteClaimsEndpointIn) (out RemoteClaimsEndpointOut, err error) {
+func ConsumeRemoteClaimsEndpoint(in consumeRemoteClaimsEndpointIn) (out consumeRemoteClaimsEndpointOut, err error) {
 	if in.Endpoint != nil && in.Options.Remote == nil {
-		return RemoteClaimsEndpointOut{}, ErrRemoteClaimsEndpointMisconfigured
+		return consumeRemoteClaimsEndpointOut{}, ErrRemoteClaimsEndpointMisconfigured
 	}
 
-	if in.Endpoint != nil {
-		out.Endpoint = EndpointWrapper(in.Endpoint, in.Options.Remote.URL)
-	} else if in.Options.Remote != nil {
-		out.Endpoint, err = newRemoteEndpoint(in.Client, in.Options.Remote)
-	}
+	out.Endpoint = EndpointWrapper(in.Endpoint, in.Options.Remote.URL)
 
 	return
+}
+
+type consumeRemoteClaimsEndpointIn struct {
+	fx.In
+
+	Endpoint endpoint.Endpoint
+	Options  Options
+}
+
+type consumeRemoteClaimsEndpointOut struct {
+	fx.Out
+
+	Endpoint endpoint.Endpoint `name:"remote_claims_endpoint"`
 }
 
 func Unmarshal(configKey string) func(config.Unmarshaller) (Options, error) {
@@ -61,7 +79,7 @@ type TokenIn struct {
 	Noncer         random.Noncer `optional:"true"`
 	Keys           key.Registry
 	Options        Options
-	RemoteEndpoint endpoint.Endpoint        `name:"remote_claims_endpoint" optional:"true"`
+	RemoteEndpoint endpoint.Endpoint        `name:"remote_claims_endpoint"`
 	RemoteResults  *prometheus.CounterVec   `name:"remote_claims_api_result_total"`
 	RemoteDuration *prometheus.HistogramVec `name:"remote_claims_api_request_duration_seconds"`
 }

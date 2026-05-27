@@ -45,6 +45,7 @@ func provideAppOptions(opts fx.Option) fx.Option {
 	return fx.Options(opts,
 		fx.Provide(
 			config.ProvideViper,
+			token.Unmarshal("token"),
 			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 			candlelight.New,
 			func(u config.Unmarshaller) (candlelight.Config, error) {
@@ -66,8 +67,6 @@ func provideAppOptions(opts fx.Option) fx.Option {
 				xhealth.Unmarshal("health"),
 				random.Provide,
 				key.Provide,
-				token.Unmarshal("token"),
-				token.RemoteClaimsEndpoint,
 				token.TokenFactory(),
 				provideServerChainFactory,
 				xhttpclient.Unmarshal{Key: "client"}.Provide,

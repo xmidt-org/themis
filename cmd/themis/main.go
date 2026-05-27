@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/xmidt-org/themis/v2"
 	"github.com/xmidt-org/themis/v2/config"
+	"github.com/xmidt-org/themis/v2/token"
 	"go.uber.org/fx"
 )
 
@@ -25,6 +26,7 @@ func app(done chan struct{}, startCtx, stopCtx context.Context, opt ...fx.Option
 				config.CommandLine{Name: themis.ApplicationName}.Provide(setupFlagSet),
 				fx.Provide(
 					fx.Annotate(func() config.ViperBuilder { return setupViper }, fx.ResultTags(`group:"viperBuilders"`)),
+					token.ProvideRemoteClaimsEndpoint,
 				),
 			)...,
 		),
