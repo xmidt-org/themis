@@ -32,8 +32,12 @@ var (
 )
 
 func New(opts fx.Option) (*fx.App, error) {
-	app := fx.New(provideAppOptions(opts))
+	opt := provideAppOptions(opts)
+	if err := fx.ValidateApp(opt); err != nil {
+		return nil, err
+	}
 
+	app := fx.New(opt)
 	return app, app.Err()
 }
 

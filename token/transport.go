@@ -480,7 +480,7 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 }
 
 func EndpointWrapper(remoteEndpoint endpoint.Endpoint, url string) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response any, err error) {
+	return func(ctx context.Context, request any) (response any, err error) {
 		req, err := http.NewRequestWithContext(ctx, "", url, nil)
 		if err != nil {
 			return nil, err
