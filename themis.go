@@ -43,12 +43,22 @@ func New(opts fx.Option) (*fx.App, error) {
 
 func provideAppOptions(opts fx.Option) fx.Option {
 	return fx.Options(opts,
+		fx.Provide(
+			config.ProvideViper,
+			xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
+			candlelight.New,
+			func(u config.Unmarshaller) (candlelight.Config, error) {
+				var config candlelight.Config
+				err := u.UnmarshalKey("tracing", &config)
+				config.ApplicationName = ApplicationName
+				return config, err
+			},
+		),
 		fx.Module(ApplicationName,
 			sallust.WithLogger(),
 			provideMetrics(),
 			token.ProvideMetrics(),
 			fx.Provide(
-				config.ProvideViper,
 				func(u config.Unmarshaller) (c sallust.Config, err error) {
 					err = u.UnmarshalKey("log", &c)
 					return
@@ -59,7 +69,6 @@ func provideAppOptions(opts fx.Option) fx.Option {
 				token.Unmarshal("token"),
 				token.RemoteClaimsEndpoint,
 				token.TokenFactory(),
-				xmetricshttp.Unmarshal("prometheus", promhttp.HandlerOpts{}),
 				provideServerChainFactory,
 				xhttpclient.Unmarshal{Key: "client"}.Provide,
 				xhttpserver.Unmarshal{Key: "servers.key", Optional: true}.Annotated(),
@@ -68,13 +77,6 @@ func provideAppOptions(opts fx.Option) fx.Option {
 				xhttpserver.Unmarshal{Key: "servers.metrics", Optional: true}.Annotated(),
 				xhttpserver.Unmarshal{Key: "servers.health", Optional: true}.Annotated(),
 				xhttpserver.Unmarshal{Key: "servers.pprof", Optional: true}.Annotated(),
-				candlelight.New,
-				func(u config.Unmarshaller) (candlelight.Config, error) {
-					var config candlelight.Config
-					err := u.UnmarshalKey("tracing", &config)
-					config.ApplicationName = ApplicationName
-					return config, err
-				},
 				fx.Private,
 			),
 			fx.Invoke(
