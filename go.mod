@@ -1,6 +1,6 @@
 module github.com/xmidt-org/themis/v2
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/xmidt-org/arrange v0.5.5
 	github.com/xmidt-org/candlelight v0.2.12
-	github.com/xmidt-org/sallust v0.2.6
+	github.com/xmidt-org/sallust v0.2.8
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.69.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
 	go.uber.org/fx v1.24.0
