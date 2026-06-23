@@ -331,11 +331,11 @@ func newRequestStaticBuilders(values []Value, setter func(string, any, *Request)
 // BuildRequest applies a sequence of RequestBuilder instances to produce a token factory Request
 func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) {
 	tr := NewRequest()
+	tr.Logger = sallust.Get(original.Context())
 	if err := rb.Build(original, tr); err != nil {
 		return nil, err
 	}
 
-	tr.Logger = sallust.Get(original.Context())
 	return tr, nil
 }
 
@@ -353,7 +353,6 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 			return nil, err
 		}
 
-		tr.Logger = sallust.Get(ctx)
 		return tr, nil
 	}
 }
