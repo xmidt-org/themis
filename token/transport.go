@@ -30,6 +30,10 @@ var (
 	ErrRemoteClaimsResponseDecodingFailure = errors.New("failed to decode response from remote claims endpoint")
 )
 
+const (
+	claimsloggerFieldPrefix = "raw_user_claims."
+)
+
 // InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise
 // invalid partner id is submitted
 type InvalidPartnerIDError struct{}
@@ -136,6 +140,7 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 	if len(hprb.header) > 0 {
 		value := original.Header[hprb.header]
 		if len(value) > 0 {
+			tr.Logger = tr.Logger.With(zap.Strings(claimsloggerFieldPrefix+hprb.key, value))
 			hprb.setter(hprb.key, value[0], tr)
 			return nil
 		}
@@ -144,6 +149,7 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 	if len(hprb.parameter) > 0 {
 		value := original.Form[hprb.parameter]
 		if len(value) > 0 {
+			tr.Logger = tr.Logger.With(zap.Strings(claimsloggerFieldPrefix+hprb.key, value))
 			hprb.setter(hprb.key, value[0], tr)
 			return nil
 		}
@@ -161,6 +167,7 @@ type variableRequestBuilder struct {
 func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) error {
 	value := mux.Vars(original)[vrb.variable]
 	if len(value) > 0 {
+		tr.Logger = tr.Logger.With(zap.String(claimsloggerFieldPrefix+vrb.key, value))
 		vrb.setter(vrb.key, value, tr)
 		return nil
 	}
@@ -176,6 +183,7 @@ type staticRequestBuilder struct {
 
 func (srb staticRequestBuilder) Build(original *http.Request, tr *Request) error {
 	srb.setter(srb.key, srb.value, tr)
+	tr.Logger = tr.Logger.With(zap.Any(claimsloggerFieldPrefix+srb.key, srb.value))
 
 	return nil
 }
@@ -184,14 +192,16 @@ type partnerIDRequestBuilder struct {
 	PartnerID
 }
 
-func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request) (string, error) {
+func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request, tr *Request) (string, error) {
 	var value string
 	if len(prb.Header) > 0 {
 		value = original.Header.Get(prb.Header)
+		tr.Logger = tr.Logger.With(zap.Strings(claimsloggerFieldPrefix+prb.Claim, []string{value}))
 	}
 
 	if len(value) == 0 && len(prb.Parameter) > 0 {
 		values := original.Form[prb.Parameter]
+		tr.Logger = tr.Logger.With(zap.Strings(claimsloggerFieldPrefix+prb.Claim, values))
 		if len(values) > 0 {
 			value = values[0]
 		}
@@ -217,7 +227,7 @@ func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request) (string,
 }
 
 func (prb partnerIDRequestBuilder) Build(original *http.Request, tr *Request) error {
-	partnerID, err := prb.getPartnerID(original)
+	partnerID, err := prb.getPartnerID(original, tr)
 	if err != nil {
 		return err
 	}
