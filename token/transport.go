@@ -33,7 +33,7 @@ var (
 const (
 	headerClaimsLoggerFieldPrefix    = "claims.header."
 	parameterClaimsLoggerFieldPrefix = "claims.parameter."
-	staticClaimsLoggerFieldPrefix    = "claims.static"
+	staticClaimsLoggerFieldPrefix    = "claims.static."
 )
 
 // InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise
