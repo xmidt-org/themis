@@ -136,7 +136,10 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.PathWildCards, r.PathWildCards)
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	startTime := time.Now()
-	ctx = SetConnectionDetails(ctx, tlsDetails{TLS: *r.TLS, Roots: rc.roots, Intermediates: rc.intermediates, Trust: rc.trust})
+	if r.TLS != nil {
+		ctx = SetConnectionDetails(ctx, tlsDetails{TLS: *r.TLS, Roots: rc.roots, Intermediates: rc.intermediates, Trust: rc.trust})
+	}
+
 	result, err := rc.endpoint(sallust.With(ctx, r.Logger), rCopy)
 	duration := time.Since(startTime).Seconds()
 	respErr := RemoteClaimsResponseError{}
