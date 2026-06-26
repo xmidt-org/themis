@@ -98,9 +98,9 @@ type TokenOut struct {
 func TokenFactory(b ...RequestBuilder) func(TokenIn) (TokenOut, error) {
 	return func(in TokenIn) (TokenOut, error) {
 		if in.Options.ClientCertificates != nil {
-			in.Logger.Info("trust settings", zap.Reflect("trust", in.Options.ClientCertificates.Trust))
+			in.Logger.Info("trust settings", zap.Any("trust_config", in.Options.ClientCertificates.Trust))
 		} else {
-			in.Logger.Info("trust settings", zap.Reflect("trust", Trust{}.enforceDefaults()))
+			in.Logger.Info("trust settings", zap.Any("trust_config", Trust{}.enforceDefaults()))
 		}
 
 		cb, err := NewClaimBuilders(in.Noncer, in.RemoteEndpoint, in.Options, in.RemoteResults, in.RemoteDuration)
