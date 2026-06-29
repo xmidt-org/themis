@@ -97,27 +97,25 @@ func BuildKeyRoutes(in KeyRoutesIn) {
 
 type IssuerRoutesIn struct {
 	fx.In
-	Logger  *zap.Logger
 	Router  *mux.Router `name:"servers.issuer"`
 	Handler token.IssueHandler
 }
 
 func BuildIssuerRoutes(in IssuerRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
-		in.Router.Handle("/issue", SetLogger(in.Logger)(in.Handler)).Methods("GET")
+		in.Router.Handle("/issue", SetLogger(in.Handler)).Methods("GET")
 	}
 }
 
 type ClaimsRoutesIn struct {
 	fx.In
-	Logger  *zap.Logger
 	Router  *mux.Router `name:"servers.claims"`
 	Handler token.ClaimsHandler
 }
 
 func BuildClaimsRoutes(in ClaimsRoutesIn) {
 	if in.Router != nil && in.Handler != nil {
-		in.Router.Handle("/claims", SetLogger(in.Logger)(in.Handler)).Methods("GET")
+		in.Router.Handle("/claims", SetLogger(in.Handler)).Methods("GET")
 	}
 }
 
@@ -189,48 +187,47 @@ func BuildPprofRoutes(in PprofRoutesIn) {
 	}
 }
 
-func SetLogger(logger *zap.Logger) alice.Constructor {
-	return func(delegate http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tid := r.Header.Get(candlelight.HeaderWPATIDKeyName)
-			if tid == "" {
-				tid = candlelight.GenTID()
-				r.Header.Set(candlelight.HeaderWPATIDKeyName, tid)
-			}
+func SetLogger(delegate http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tid := r.Header.Get(candlelight.HeaderWPATIDKeyName)
+		if tid == "" {
+			tid = candlelight.GenTID()
+			r.Header.Set(candlelight.HeaderWPATIDKeyName, tid)
+		}
 
-			w.Header().Set(candlelight.HeaderWPATIDKeyName, tid)
+		w.Header().Set(candlelight.HeaderWPATIDKeyName, tid)
 
-			var source string
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				source = r.RemoteAddr
-			} else {
-				source = host
-			}
+		var source string
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			source = r.RemoteAddr
+		} else {
+			source = host
+		}
 
-			l := logger.With(
-				zap.Any("request.Headers", sanitizeHeaders(r.Header)),
-				zap.String("request.URL", r.URL.EscapedPath()),
-				zap.String("request.Method", r.Method),
-				zap.String("request.address", source),
-				zap.String("request.path", r.URL.Path),
-				zap.String("request.query", r.URL.RawQuery),
-				zap.String("request.tid", tid),
+		ctx := r.Context()
+		l := sallust.Get(ctx).With(
+			zap.Any("request.Headers", sanitizeHeaders(r.Header)),
+			zap.String("request.URL", r.URL.EscapedPath()),
+			zap.String("request.Method", r.Method),
+			zap.String("request.address", source),
+			zap.String("request.path", r.URL.Path),
+			zap.String("request.query", r.URL.RawQuery),
+			zap.String("request.tid", tid),
+		)
+		traceID, spanID, ok := candlelight.ExtractTraceInfo(r.Context())
+		if ok {
+			w.Header().Set(TraceIDHeaderName, traceID)
+			w.Header().Set(SpanIDHeaderName, spanID)
+			l = l.With(
+				zap.String(candlelight.TraceIdLogKeyName, traceID),
+				zap.String(candlelight.SpanIDLogKeyName, spanID),
 			)
-			traceID, spanID, ok := candlelight.ExtractTraceInfo(r.Context())
-			if ok {
-				w.Header().Set(TraceIDHeaderName, traceID)
-				w.Header().Set(SpanIDHeaderName, spanID)
-				l = l.With(
-					zap.String(candlelight.TraceIdLogKeyName, traceID),
-					zap.String(candlelight.SpanIDLogKeyName, spanID),
-				)
-			}
+		}
 
-			r = r.WithContext(sallust.With(r.Context(), l))
-			delegate.ServeHTTP(w, r)
-		})
-	}
+		r = r.WithContext(sallust.With(ctx, l))
+		delegate.ServeHTTP(w, r)
+	})
 }
 
 func sanitizeHeaders(headers http.Header) (filtered http.Header) {
