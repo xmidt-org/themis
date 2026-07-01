@@ -356,8 +356,23 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		case !expired && verifyErr == nil:
 			// we assume Trusted is the highest trust level
-			target[ClaimTrust] = cb.trust.Trusted
-			return
+			trust = cb.trust.Trusted
+		}
+
+		// Configured overrides.
+		for _, acc := range cb.untrustedCertChecks {
+			// Continue if we don't get a cert match, otherwise perform additional cert checks.
+			if !acc.SubjectCN.MatchString(pc.Subject.CommonName) {
+				continue
+			}
+
+			// Cert checks.
+			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
+			if acc.IssuerCN.MatchString(pc.Issuer.CommonName) {
+				target[ClaimTrust] = cb.trust.Untrusted
+
+				return
+			}
 		}
 	}
 
