@@ -286,13 +286,18 @@ func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertific
 		cb.intermediates, err = xhttpserver.ReadCertPool(cc.IntermediatesFile)
 	}
 
+	for _, acc := range cc.UntrustedCertChecks {
+		cb.untrustedCertChecks = append(cb.untrustedCertChecks, acc.Build())
+	}
+
 	return
 }
 
 type clientCertificateClaimBuilder struct {
-	roots         *x509.CertPool
-	intermediates *x509.CertPool
-	trust         Trust
+	roots               *x509.CertPool
+	intermediates       *x509.CertPool
+	trust               Trust
+	untrustedCertChecks []CertChecks
 }
 
 func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
