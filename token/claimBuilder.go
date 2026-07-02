@@ -286,13 +286,18 @@ func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertific
 		cb.intermediates, err = xhttpserver.ReadCertPool(cc.IntermediatesFile)
 	}
 
+	for _, acc := range cc.UntrustedCertChecks {
+		cb.untrustedCertChecks = append(cb.untrustedCertChecks, acc.Build())
+	}
+
 	return
 }
 
 type clientCertificateClaimBuilder struct {
-	roots         *x509.CertPool
-	intermediates *x509.CertPool
-	trust         Trust
+	roots               *x509.CertPool
+	intermediates       *x509.CertPool
+	trust               Trust
+	untrustedCertChecks []CertChecks
 }
 
 func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
@@ -351,8 +356,18 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		case !expired && verifyErr == nil:
 			// we assume Trusted is the highest trust level
-			target[ClaimTrust] = cb.trust.Trusted
-			return
+			trust = cb.trust.Trusted
+		}
+
+		// Configured overrides.
+		for _, acc := range cb.untrustedCertChecks {
+			// Cert checks.
+			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
+			if acc.IssuerCN.MatchString(pc.Issuer.CommonName) {
+				target[ClaimTrust] = cb.trust.Untrusted
+
+				return
+			}
 		}
 	}
 

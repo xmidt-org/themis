@@ -5,6 +5,7 @@ package token
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/xmidt-org/themis/v2/key"
@@ -211,6 +212,28 @@ type ClientCertificates struct {
 	// Trust defines the trust levels to set for various situations involving
 	// client certificates.
 	Trust Trust
+
+	// UntrustedCertChecks is a list of additional cert checks to perform against for untrusted certs.
+	UntrustedCertChecks []UntrustedCertChecks
+}
+
+// UntrustedCertChecks describes additional cert checks to determine whether or not a cert should be considered untrusted.
+// If a cert fails all checks, then that it's untrusted.
+type UntrustedCertChecks struct {
+	// IssuerCNRegex is the regex of the certs' issuer common name to check for.
+	IssuerCNRegex string
+}
+
+func (acc UntrustedCertChecks) Build() CertChecks {
+	return CertChecks{
+		IssuerCN: regexp.MustCompile(acc.IssuerCNRegex),
+	}
+}
+
+// CertChecks is a collection of regexps to find certs of interest.
+type CertChecks struct {
+	// IssuerCNRegex is the regex of the certs' issuer common name to check for.
+	IssuerCN *regexp.Regexp
 }
 
 // Options holds the configurable information for a token Factory
