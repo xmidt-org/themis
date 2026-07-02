@@ -220,27 +220,18 @@ type ClientCertificates struct {
 // UntrustedCertChecks describes additional cert checks to determine whether or not a cert should be considered untrusted.
 // If a cert fails all checks, then that it's untrusted.
 type UntrustedCertChecks struct {
-	// SubjectCNRegex is the regex of the certs' subject common name to check for.
-	SubjectCNRegex string
-
-	// Cert checks.
 	// IssuerCNRegex is the regex of the certs' issuer common name to check for.
 	IssuerCNRegex string
 }
 
 func (acc UntrustedCertChecks) Build() CertChecks {
 	return CertChecks{
-		SubjectCN: regexp.MustCompile(acc.SubjectCNRegex),
-		IssuerCN:  regexp.MustCompile(acc.IssuerCNRegex),
+		IssuerCN: regexp.MustCompile(acc.IssuerCNRegex),
 	}
 }
 
 // CertChecks is a collection of regexps to find certs of interest.
 type CertChecks struct {
-	// SubjectCNRegex is the regex of the certs' subject common name to check for.
-	SubjectCN *regexp.Regexp
-
-	// Checks.
 	// IssuerCNRegex is the regex of the certs' issuer common name to check for.
 	IssuerCN *regexp.Regexp
 }
