@@ -363,7 +363,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			// Cert checks.
 			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
 			if acc.IssuerCN.MatchString(pc.Issuer.CommonName) {
-				target[ClaimTrust] = cb.trust.Untrusted
+				target[ClaimTrust] = cb.trust.UntrustedCertIssuerCN
 
 				return
 			}
