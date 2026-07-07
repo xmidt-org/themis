@@ -3,6 +3,7 @@
 package token
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -16,6 +17,9 @@ func NewIssueHandler(e endpoint.Endpoint, rb RequestBuilders) IssueHandler {
 		e,
 		DecodeServerRequest(rb),
 		EncodeIssueResponse,
+		kithttp.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+			return WithTracingHeaders(ctx, r)
+		}),
 	)
 }
 
@@ -26,5 +30,8 @@ func NewClaimsHandler(e endpoint.Endpoint, rb RequestBuilders) ClaimsHandler {
 		e,
 		DecodeServerRequest(rb),
 		kithttp.EncodeJSONResponse,
+		kithttp.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+			return WithTracingHeaders(ctx, r)
+		}),
 	)
 }
