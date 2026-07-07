@@ -80,6 +80,7 @@ token:
       expiredTrusted: 200
       untrusted: 900
       trusted: 1000
+      untrustedCertIssuerCN: 0
 
   claims:
     - key: mac

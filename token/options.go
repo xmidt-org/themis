@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	DefaultTrustLevelNoCertificates   = 0
-	DefaultTrustLevelExpiredUntrusted = 0
-	DefaultTrustLevelExpiredTrusted   = 500
-	DefaultTrustLevelUntrusted        = 0
-	DefaultTrustLevelTrusted          = 1000
+	DefaultTrustLevelNoCertificates        = 0
+	DefaultTrustLevelExpiredUntrusted      = 0
+	DefaultTrustLevelExpiredTrusted        = 500
+	DefaultTrustLevelUntrusted             = 0
+	DefaultTrustLevelTrusted               = 1000
+	DefaultTrustLevelUntrustedCertIssuerCN = 0
 )
 
 // RemoteClaims describes a remote HTTP endpoint that can produce claims given the
@@ -167,6 +168,12 @@ type Trust struct {
 	// If unset, DefaultTrustLevelTrusted is used.
 	// a trusted CA chain.
 	Trusted int
+
+	// UntrustedCertIssuerCN is the trust level to set when a client has an otherwise valid
+	// certificate, but the chain contains an Issuer.CN that Themis was configured to be seen as untrusted.
+	//
+	// If unset, DefaultTrustLevelUntrustedCertIssuerCN is used.
+	UntrustedCertIssuerCN int
 }
 
 // enforceDefaults returns a Trust that has ensures any unset values are
@@ -191,6 +198,10 @@ func (t Trust) enforceDefaults() (other Trust) {
 
 	if other.Trusted <= 0 {
 		other.Trusted = DefaultTrustLevelTrusted
+	}
+
+	if other.UntrustedCertIssuerCN <= 0 {
+		other.UntrustedCertIssuerCN = DefaultTrustLevelUntrustedCertIssuerCN
 	}
 
 	return

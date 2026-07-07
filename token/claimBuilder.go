@@ -314,8 +314,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
 			// the TLS layer already verified this certificate, so we're done
 			// we assume Trusted is the highest trust level
-			target[ClaimTrust] = cb.trust.Trusted
-			return
+			trust = cb.trust.Trusted
 		}
 
 		// special logic around expired certificates
@@ -364,7 +363,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			// Cert checks.
 			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
 			if acc.IssuerCN.MatchString(pc.Issuer.CommonName) {
-				target[ClaimTrust] = cb.trust.Untrusted
+				target[ClaimTrust] = cb.trust.UntrustedCertIssuerCN
 
 				return
 			}
