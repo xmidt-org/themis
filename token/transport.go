@@ -34,6 +34,7 @@ const (
 	headerClaimsLoggerFieldPrefix    = "claims.header."
 	parameterClaimsLoggerFieldPrefix = "claims.parameter."
 	staticClaimsLoggerFieldPrefix    = "claims.static."
+	defaultClaimsLoggerFieldPrefix   = "claims.default."
 )
 
 // InvalidPartnerIDError is the error object returned when a blank, wildcard, or otherwise
@@ -195,6 +196,8 @@ type partnerIDRequestBuilder struct {
 }
 
 func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request, tr *Request) (string, error) {
+	tr.Logger = tr.Logger.With(zap.String(defaultClaimsLoggerFieldPrefix+prb.Claim, prb.Default))
+
 	var value string
 	if len(prb.Header) > 0 {
 		value = original.Header.Get(prb.Header)
