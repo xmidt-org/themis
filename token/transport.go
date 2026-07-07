@@ -459,7 +459,7 @@ func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (i
 	return claims, nil
 }
 
-func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request interface{}) error {
+func EncodeRemoteClaimsRequest(ctx context.Context, r *http.Request, request interface{}) error {
 	if headerer, ok := request.(kithttp.Headerer); ok {
 		for k := range headerer.Headers() {
 			r.Header.Set(k, headerer.Headers().Get(k))
@@ -489,6 +489,13 @@ func EncodeRemoteClaimsRequest(c context.Context, r *http.Request, request inter
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(b))
+
+	// Set trace headers for the request, if any
+	for key, values := range TracingHeadersFromContext(ctx) {
+		for _, v := range values {
+			r.Header.Add(key, v)
+		}
+	}
 
 	return nil
 }

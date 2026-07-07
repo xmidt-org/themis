@@ -6,7 +6,11 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
+	"strings"
 )
+
+type tracingHeadersKey struct{}
 
 type tlsDetailsKey struct{}
 
@@ -31,4 +35,24 @@ func SetConnectionDetails(ctx context.Context, tls tlsDetails) context.Context {
 		tlsDetailsKey{},
 		tls,
 	)
+}
+
+func WithTracingHeaders(ctx context.Context, r *http.Request) context.Context {
+	headers := make(http.Header)
+	for key, values := range r.Header {
+		lowerKey := strings.ToLower(key)
+		if lowerKey == "traceparent" || lowerKey == "tracestate" {
+			headers[key] = values
+		}
+	}
+
+	return context.WithValue(ctx, tracingHeadersKey{}, headers)
+}
+
+func TracingHeadersFromContext(ctx context.Context) http.Header {
+	if headers, ok := ctx.Value(tracingHeadersKey{}).(http.Header); ok {
+		return headers
+	}
+
+	return nil
 }
