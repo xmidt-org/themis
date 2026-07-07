@@ -442,7 +442,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 			builder, err := newRemoteClaimBuilder(
 				endpoint,
 				testCase.metadata,
-				nil, nil, Trust{},
+				nil, nil, Trust{}, nil,
 				remoteClaims,
 				prometheus.NewCounterVec(
 					prometheus.CounterOpts{
@@ -490,7 +490,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
 	builder, err := newRemoteClaimBuilder(
 		func(context.Context, interface{}) (interface{}, error) { return nil, errors.New("") },
-		nil, nil, nil, Trust{}, &RemoteClaims{URL: suite.badURL},
+		nil, nil, nil, Trust{}, nil, &RemoteClaims{URL: suite.badURL},
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",

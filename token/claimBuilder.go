@@ -120,13 +120,14 @@ func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[
 
 // remoteClaimBuilder invokes a remote system to obtain claims.
 type remoteClaimBuilder struct {
-	endpoint      endpoint.Endpoint
-	roots         *x509.CertPool
-	intermediates *x509.CertPool
-	trust         Trust
-	extra         map[string]interface{}
-	apiResults    *prometheus.CounterVec
-	apiDuration   prometheus.ObserverVec
+	endpoint            endpoint.Endpoint
+	roots               *x509.CertPool
+	intermediates       *x509.CertPool
+	trust               Trust
+	untrustedCertChecks []CertChecks
+	extra               map[string]interface{}
+	apiResults          *prometheus.CounterVec
+	apiDuration         prometheus.ObserverVec
 }
 
 func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
@@ -137,7 +138,7 @@ func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target 
 	maps.Copy(rCopy.QueryParameters, r.QueryParameters)
 	startTime := time.Now()
 	if r.TLS != nil {
-		ctx = SetConnectionDetails(ctx, tlsDetails{TLS: *r.TLS, Roots: rc.roots, Intermediates: rc.intermediates, Trust: rc.trust})
+		ctx = SetConnectionDetails(ctx, tlsDetails{TLS: *r.TLS, Roots: rc.roots, Intermediates: rc.intermediates, Trust: rc.trust, UntrustedCertChecks: rc.untrustedCertChecks})
 	}
 
 	result, err := rc.endpoint(sallust.With(ctx, r.Logger), rCopy)
@@ -255,7 +256,7 @@ func newRemoteEndpoint(client xhttpclient.Interface, r *RemoteClaims) (endpoint.
 	).Endpoint(), nil
 }
 
-func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, roots *x509.CertPool, intermediates *x509.CertPool, trust Trust, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
+func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, roots *x509.CertPool, intermediates *x509.CertPool, trust Trust, untrustedCertChecks []CertChecks, r *RemoteClaims, apiResults *prometheus.CounterVec, duration prometheus.ObserverVec) (*remoteClaimBuilder, error) {
 	method := r.Method
 	if len(method) == 0 {
 		method = http.MethodPost
@@ -263,7 +264,7 @@ func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, 
 
 	ls := prometheus.Labels{EndpointLabelKey: r.URL, MethodLabelKey: method}
 
-	return &remoteClaimBuilder{endpoint: endpoint, roots: roots, intermediates: intermediates, trust: trust, extra: metadata, apiResults: apiResults.MustCurryWith(ls), apiDuration: duration.MustCurryWith(ls)}, nil
+	return &remoteClaimBuilder{endpoint: endpoint, roots: roots, intermediates: intermediates, trust: trust, untrustedCertChecks: untrustedCertChecks, extra: metadata, apiResults: apiResults.MustCurryWith(ls), apiDuration: duration.MustCurryWith(ls)}, nil
 }
 
 // newClientCertificateClaimBuiler creates a claim builder that sets trust based
@@ -486,7 +487,7 @@ func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Optio
 			return nil, fmt.Errorf("remote claim builder configuration failure: metadata error: %w", err)
 		}
 
-		remoteClaimBuilder, err := newRemoteClaimBuilder(remoteEndpoint, metadata, cb.roots, cb.intermediates, cb.trust, o.Remote, remoteResults, remoteDuration)
+		remoteClaimBuilder, err := newRemoteClaimBuilder(remoteEndpoint, metadata, cb.roots, cb.intermediates, cb.trust, cb.untrustedCertChecks, o.Remote, remoteResults, remoteDuration)
 		if err != nil {
 			return nil, err
 		}

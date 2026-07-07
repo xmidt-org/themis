@@ -15,10 +15,11 @@ type tracingHeadersKey struct{}
 type tlsDetailsKey struct{}
 
 type tlsDetails struct {
-	TLS           tls.ConnectionState
-	Roots         *x509.CertPool
-	Intermediates *x509.CertPool
-	Trust         Trust
+	TLS                 tls.ConnectionState
+	Roots               *x509.CertPool
+	Intermediates       *x509.CertPool
+	Trust               Trust
+	UntrustedCertChecks []CertChecks
 }
 
 // ConnectionDetails returns everything themis knows about the device tls connection and the required details to compute its associated trust value.
