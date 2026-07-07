@@ -371,6 +371,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 				trust = cb.trust.ExpiredUntrusted
 				trustReason = ExpiredUntrustedReason
 			}
+
 			// ExpiredUntrusted could be set to `0`, check if this is the first cert.
 			if first {
 				// Get the Issuer CN of the leaf cert.
@@ -378,12 +379,12 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 				trustReason = ExpiredUntrustedReason
 				first = false
 			}
-
 		case !expired && verifyErr != nil:
 			if trust < cb.trust.Untrusted {
 				trust = cb.trust.Untrusted
 				trustReason = UntrustedReason
 			}
+
 			// Untrusted could be set to `0`, check if this is the first cert.
 			if first {
 				// Get the Issuer CN of the leaf cert.
@@ -391,12 +392,12 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 				trustReason = UntrustedReason
 				first = false
 			}
-
 		case expired && verifyErr == nil:
 			if trust < cb.trust.ExpiredTrusted {
 				trust = cb.trust.ExpiredTrusted
 				trustReason = ExpiredTrustedReason
 			}
+
 			// ExpiredTrusted could be set to `0`, check if this is the first cert.
 			if first {
 				// Get the Issuer CN of the leaf cert.
@@ -404,7 +405,6 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 				trustReason = ExpiredTrustedReason
 				first = false
 			}
-
 		case !expired && verifyErr == nil:
 			// we assume Trusted is the highest trust level
 			trust = cb.trust.Trusted
