@@ -38,6 +38,7 @@ const (
 	contextKeyRequestID contextKey = "foo"
 	val                 string     = "value"
 	trueString          string     = "true"
+	trustMetricName     string     = "testTotalTrust"
 )
 
 func (suite *ClaimBuildersTestSuite) SetupSuite() {
@@ -607,7 +608,19 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -656,10 +669,22 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingKey() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Claims: []Value{
 			{}, // the value should have something configured
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -692,11 +717,23 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingKey() {
 	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Metadata: []Value{
 			{}, // the value should have something configured
 		},
 		Remote: &RemoteClaims{},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -734,6 +771,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Claims: []Value{
 			{
 				Key: "test",
@@ -741,6 +779,17 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 			},
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -773,6 +822,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Metadata: []Value{
 			{
 				Key: "test",
@@ -781,6 +831,17 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -818,6 +879,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Claims: []Value{
 			{
 				// nolint:goconst
@@ -829,6 +891,17 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 			},
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -861,6 +934,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Metadata: []Value{
 			{
 				Key:    "test",
@@ -870,6 +944,17 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -907,6 +992,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Claims: []Value{
 			{
 				Key:  "test",
@@ -914,6 +1000,17 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 			},
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -946,6 +1043,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
 	builder, err := NewClaimBuilders(suite.noncer, endpoint.Nop, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Metadata: []Value{
 			{
 				Key:  "test",
@@ -954,6 +1052,17 @@ func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -986,6 +1095,7 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 	builder, err := NewClaimBuilders(suite.noncer, nil, Options{
 		Nonce:       false,
 		DisableTime: true,
+		PartnerID:   &PartnerID{},
 		Claims: []Value{
 			{
 				// nolint:goconst
@@ -1005,6 +1115,17 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 			},
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -1053,6 +1174,7 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 		Nonce:          true,
 		Duration:       24 * time.Hour,
 		NotBeforeDelta: 15 * time.Second,
+		PartnerID:      &PartnerID{},
 		Claims: []Value{
 			{
 				Key:   "static1",
@@ -1068,6 +1190,17 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 			},
 		},
 	},
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
@@ -1129,6 +1262,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 		Nonce:          true,
 		Duration:       24 * time.Hour,
 		NotBeforeDelta: 15 * time.Second,
+		PartnerID:      &PartnerID{},
 		Claims: []Value{
 			{
 				Key:   "static1",
@@ -1160,6 +1294,17 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 	endpoint, err := newRemoteEndpoint(nil, options.Remote)
 	suite.Require().NoError(err)
 	builder, err := NewClaimBuilders(suite.noncer, endpoint, options,
+		prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: trustMetricName,
+				Help: trustMetricName,
+			},
+			[]string{
+				TrustLabelKey,
+				IssuerCNLabelKey,
+				PartnerIDLabelKey,
+				ReasonLabelKey},
+		),
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "testAPIResultsCounter",
