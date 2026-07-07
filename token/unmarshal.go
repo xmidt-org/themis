@@ -80,6 +80,7 @@ type TokenIn struct {
 	Keys           key.Registry
 	Options        Options
 	RemoteEndpoint endpoint.Endpoint        `name:"remote_claims_endpoint"`
+	TrustCounter   *prometheus.CounterVec   `name:"trust_total"`
 	RemoteResults  *prometheus.CounterVec   `name:"remote_claims_api_result_total"`
 	RemoteDuration *prometheus.HistogramVec `name:"remote_claims_api_request_duration_seconds"`
 }
@@ -103,7 +104,7 @@ func TokenFactory(b ...RequestBuilder) func(TokenIn) (TokenOut, error) {
 			in.Logger.Info("trust settings", zap.Any("trust_config", Trust{}.enforceDefaults()))
 		}
 
-		cb, err := NewClaimBuilders(in.Noncer, in.RemoteEndpoint, in.Options, in.RemoteResults, in.RemoteDuration)
+		cb, err := NewClaimBuilders(in.Noncer, in.RemoteEndpoint, in.Options, in.TrustCounter, in.RemoteResults, in.RemoteDuration)
 		if err != nil {
 			return TokenOut{}, err
 		}

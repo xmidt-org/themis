@@ -10,17 +10,21 @@ import (
 
 // Metric names.
 const (
+	TrustCounter                            = "trust_total"
 	RemoteClaimsAPIResultCounter            = "remote_claims_api_result_total"
 	RemoteClaimsAPIRequestDurationHistogram = "remote_claims_api_request_duration_seconds"
 )
 
 // Metric label keys for API Result counter.
 const (
-	EndpointLabelKey = "endpoint"
-	MethodLabelKey   = "method"
-	CodeLabelKey     = "code"
-	OutcomeLabelKey  = "outcome"
-	ReasonLabelKey   = "reason"
+	EndpointLabelKey  = "endpoint"
+	MethodLabelKey    = "method"
+	CodeLabelKey      = "code"
+	OutcomeLabelKey   = "outcome"
+	ReasonLabelKey    = "reason"
+	TrustLabelKey     = "trust"
+	IssuerCNLabelKey  = "issuer_cn"
+	PartnerIDLabelKey = "partner_id"
 )
 
 // Metric label values for outcomes.
@@ -48,6 +52,14 @@ const (
 	ConnectionUnexpectedlyClosedEOFReason = "connection_unexpectedly_closed_eof"
 	NoErrReason                           = "no_error"
 
+	// Trust reasons.
+	NoCertificatesReason        = "no_certificates"
+	ExpiredUntrustedReason      = "expired_untrusted"
+	ExpiredTrustedReason        = "expired_trusted"
+	UntrustedReason             = "untrusted"
+	TrustedReason               = "trusted"
+	UntrustedCertIssuerCNReason = "untrusted_cert_issuer_cn"
+
 	// Custom failure reasons
 	RemoteClaimsResponseDecodingErrReason = "response_decoding_error"
 	RemoteClaimsRequestEncodingErrReason  = "request_encoding_error"
@@ -57,6 +69,16 @@ const (
 // ProvideMetrics returns the Metrics for the App.
 func ProvideMetrics() fx.Option {
 	return fx.Provide(
+		xmetrics.ProvideCounterVec(
+			prometheus.CounterOpts{
+				Name: TrustCounter,
+				Help: "The total trust.",
+			},
+			TrustLabelKey,
+			IssuerCNLabelKey,
+			PartnerIDLabelKey,
+			ReasonLabelKey,
+		),
 		xmetrics.ProvideCounterVec(
 			prometheus.CounterOpts{
 				Name: RemoteClaimsAPIResultCounter,

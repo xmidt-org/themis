@@ -32,8 +32,9 @@ func testUnmarshalError(t *testing.T) {
 			fx.Annotate(func() config.ViperBuilder {
 				return config.Json(`
 						{
+
 							"token": {
-								"nonce": "this is not a valid bool"
+								"partnerID": {},								"nonce": "this is not a valid bool"
 							}
 						}
 					`)
@@ -60,8 +61,9 @@ func testUnmarshalClaimBuilderError(t *testing.T) {
 				fx.Annotate(func() config.ViperBuilder {
 					return config.Json(`
 						{
+
 							"token": {
-								"metadata": [
+								"partnerID": {},								"metadata": [
 									{
 										"key": "bad"
 									}
@@ -96,8 +98,9 @@ func testUnmarshalFactoryError(t *testing.T) {
 				fx.Annotate(func() config.ViperBuilder {
 					return config.Json(`
 						{
+
 							"token": {
-								"alg": "this is not a signing method"
+								"partnerID": {},								"alg": "this is not a signing method"
 							}
 						}
 					`)
@@ -125,8 +128,9 @@ func testUnmarshalRequestBuilderError(t *testing.T) {
 				fx.Annotate(func() config.ViperBuilder {
 					return config.Json(`
 						{
+
 							"token": {
-								"claims": [
+								"partnerID": {},								"claims": [
 									{
 										"key": "bad",
 										"header": "X-Bad",
@@ -176,8 +180,9 @@ func testUnmarshalRemoteEndpointMisconfigured(t *testing.T) {
 									"development": "true"
 								}
 							},
+
 							"token": {
-								"claims": [
+								"partnerID": {},								"claims": [
 									{
 										"key": "static",
 										"value": "foo"
@@ -236,7 +241,9 @@ func testUnmarshalWithoutRemoteEndpointSuccess(t *testing.T) {
 									"development": "true"
 								}
 							},
+
 							"token": {
+								"partnerID": {},
 								"claims": [
 									{
 										"key": "static",
@@ -292,8 +299,9 @@ func testUnmarshalWithProvidedRemoteEndpointSuccess(t *testing.T) {
 									"development": "true"
 								}
 							},
+
 							"token": {
-								"claims": [
+								"partnerID": {},								"claims": [
 									{
 										"key": "static",
 										"value": "foo"
@@ -353,8 +361,9 @@ func testUnmarshalWithConfiguredRemoteEndpointSuccess(t *testing.T) {
 									"development": "true"
 								}
 							},
+
 							"token": {
-								"claims": [
+								"partnerID": {},								"claims": [
 									{
 										"key": "static",
 										"value": "foo"
@@ -413,8 +422,9 @@ func testUnmarshalWithConfiguredRemoteEndpointAndClientSuccess(t *testing.T) {
 									"development": "true"
 								}
 							},
+
 							"token": {
-								"claims": [
+								"partnerID": {},								"claims": [
 									{
 										"key": "static",
 										"value": "foo"

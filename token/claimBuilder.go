@@ -269,8 +269,11 @@ func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, 
 // newClientCertificateClaimBuiler creates a claim builder that sets trust based
 // on client certificates.  This functional always returns a non-nil claimbuilder.
 // Regular HTTP always results in a NoCertificates trust level.
-func newClientCertificateClaimBuiler(cc *ClientCertificates) (cb *clientCertificateClaimBuilder, err error) {
-	cb = new(clientCertificateClaimBuilder)
+func newClientCertificateClaimBuiler(cc *ClientCertificates, partnerID string, trustCounter *prometheus.CounterVec) (cb *clientCertificateClaimBuilder, err error) {
+	cb = &clientCertificateClaimBuilder{
+		trustCounter: trustCounter,
+		partnerID:    partnerID,
+	}
 	if cc == nil {
 		cb.trust = Trust{}.enforceDefaults()
 		return
@@ -298,23 +301,47 @@ type clientCertificateClaimBuilder struct {
 	intermediates       *x509.CertPool
 	trust               Trust
 	untrustedCertChecks []CertChecks
+	trustCounter        *prometheus.CounterVec
+	partnerID           string
 }
 
 func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
+	partnerID, ok := target[cb.partnerID].(string)
+	if !ok {
+		partnerID = "non_string_partnerID"
+	}
+
+	trust := 0
+	trustReason := UntrustedReason
+	issuerName := ""
+	first := true
+	trustCounter := cb.trustCounter.MustCurryWith(prometheus.Labels{PartnerIDLabelKey: partnerID})
 	// simplest case: this request either (1) didn't come from a TLS connection,
 	// or (2) the client sent no certificates
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
-		target[ClaimTrust] = cb.trust.NoCertificates
+		trust = cb.trust.NoCertificates
+		target[ClaimTrust] = trust
+		trustCounter.With(prometheus.Labels{
+			TrustLabelKey:    strconv.Itoa(trust),
+			ReasonLabelKey:   NoCertificatesReason,
+			IssuerCNLabelKey: issuerName,
+		}).Add(1)
+
 		return
 	}
 
 	now := time.Now()
-	var trust int
 	for i, pc := range r.TLS.PeerCertificates {
 		if i < len(r.TLS.VerifiedChains) && len(r.TLS.VerifiedChains[i]) > 0 {
 			// the TLS layer already verified this certificate, so we're done
 			// we assume Trusted is the highest trust level
 			trust = cb.trust.Trusted
+			trustReason = TrustedReason
+			// Get the Issuer CN of the leaf cert.
+			if first {
+				issuerName = r.TLS.VerifiedChains[i][0].Issuer.CommonName
+				first = false
+			}
 		}
 
 		// special logic around expired certificates
@@ -341,21 +368,51 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		case expired && verifyErr != nil:
 			if trust < cb.trust.ExpiredUntrusted {
 				trust = cb.trust.ExpiredUntrusted
+				trustReason = ExpiredUntrustedReason
+			}
+			// ExpiredUntrusted could be set to `0`, check if this is the first cert.
+			if first {
+				// Get the Issuer CN of the leaf cert.
+				issuerName = pc.Issuer.CommonName
+				trustReason = ExpiredUntrustedReason
+				first = false
 			}
 
 		case !expired && verifyErr != nil:
 			if trust < cb.trust.Untrusted {
 				trust = cb.trust.Untrusted
+				trustReason = UntrustedReason
+			}
+			// Untrusted could be set to `0`, check if this is the first cert.
+			if first {
+				// Get the Issuer CN of the leaf cert.
+				issuerName = pc.Issuer.CommonName
+				trustReason = UntrustedReason
+				first = false
 			}
 
 		case expired && verifyErr == nil:
 			if trust < cb.trust.ExpiredTrusted {
 				trust = cb.trust.ExpiredTrusted
+				trustReason = ExpiredTrustedReason
+			}
+			// ExpiredTrusted could be set to `0`, check if this is the first cert.
+			if first {
+				// Get the Issuer CN of the leaf cert.
+				issuerName = pc.Issuer.CommonName
+				trustReason = ExpiredTrustedReason
+				first = false
 			}
 
 		case !expired && verifyErr == nil:
 			// we assume Trusted is the highest trust level
 			trust = cb.trust.Trusted
+			trustReason = TrustedReason
+			if first {
+				// Get the Issuer CN of the leaf cert.
+				issuerName = pc.Issuer.CommonName
+				first = false
+			}
 		}
 
 		// Configured overrides.
@@ -363,7 +420,13 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			// Cert checks.
 			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
 			if acc.IssuerCN.MatchString(pc.Issuer.CommonName) {
-				target[ClaimTrust] = cb.trust.UntrustedCertIssuerCN
+				trust = cb.trust.UntrustedCertIssuerCN
+				target[ClaimTrust] = trust
+				trustCounter.With(prometheus.Labels{
+					TrustLabelKey:    strconv.Itoa(trust),
+					IssuerCNLabelKey: pc.Issuer.CommonName,
+					ReasonLabelKey:   UntrustedCertIssuerCNReason,
+				}).Add(1)
 
 				return
 			}
@@ -372,6 +435,12 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 	// take the highest, non-Trusted level
 	target[ClaimTrust] = trust
+	trustCounter.With(prometheus.Labels{
+		TrustLabelKey:    strconv.Itoa(trust),
+		IssuerCNLabelKey: issuerName,
+		ReasonLabelKey:   trustReason,
+	}).Add(1)
+
 	return
 }
 
@@ -380,7 +449,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 //
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
-func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Options, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
+func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Options, trustCounter *prometheus.CounterVec, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
@@ -403,7 +472,7 @@ func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Optio
 			})
 	}
 
-	cb, err := newClientCertificateClaimBuiler(o.ClientCertificates)
+	cb, err := newClientCertificateClaimBuiler(o.ClientCertificates, o.PartnerID.Claim, trustCounter)
 	if err == nil {
 		builders = append(
 			builders,
