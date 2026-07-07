@@ -315,6 +315,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 	trust := cb.trust.Untrusted
 	trustReason := UntrustedReason
 	issuerCN := ""
+	subjectCN := ""
 	first := true
 	trustCounter := cb.trustCounter.MustCurryWith(prometheus.Labels{PartnerIDLabelKey: partnerID})
 	// simplest case: this request either (1) didn't come from a TLS connection,
@@ -322,11 +323,13 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		trust = cb.trust.NoCertificates
 		target[ClaimTrust] = trust
+		trustReason = NoCertificatesReason
 		trustCounter.With(prometheus.Labels{
 			TrustLabelKey:    strconv.Itoa(trust),
-			ReasonLabelKey:   NoCertificatesReason,
+			ReasonLabelKey:   trustReason,
 			IssuerCNLabelKey: "",
 		}).Add(1)
+		r.Logger = r.Logger.With(zap.Int(ConnectionTrustValue, trust), zap.String(ConnectionTrustReason, trustReason), zap.String(ConnectionTrustIssuerCN, ""), zap.String(ConnectionTrustSubjectCN, ""))
 
 		return
 	}
@@ -341,6 +344,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			// Get the Issuer CN of the leaf cert.
 			if first {
 				issuerCN = r.TLS.VerifiedChains[i][0].Issuer.CommonName
+				subjectCN = pc.Subject.CommonName
 				first = false
 			}
 		}
@@ -376,12 +380,14 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			if first {
 				// Get the Issuer CN of the leaf cert.
 				issuerCN = pc.Issuer.CommonName
+				subjectCN = pc.Subject.CommonName
 				trustReason = ExpiredUntrustedReason
 				first = false
 			}
 		case !expired && verifyErr != nil:
 			if trust < cb.trust.Untrusted {
 				trust = cb.trust.Untrusted
+				subjectCN = pc.Subject.CommonName
 				trustReason = UntrustedReason
 			}
 
@@ -389,6 +395,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			if first {
 				// Get the Issuer CN of the leaf cert.
 				issuerCN = pc.Issuer.CommonName
+				subjectCN = pc.Subject.CommonName
 				trustReason = UntrustedReason
 				first = false
 			}
@@ -402,6 +409,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			if first {
 				// Get the Issuer CN of the leaf cert.
 				issuerCN = pc.Issuer.CommonName
+				subjectCN = pc.Subject.CommonName
 				trustReason = ExpiredTrustedReason
 				first = false
 			}
@@ -412,6 +420,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 			if first {
 				// Get the Issuer CN of the leaf cert.
 				issuerCN = pc.Issuer.CommonName
+				subjectCN = pc.Subject.CommonName
 				first = false
 			}
 		}
@@ -430,12 +439,14 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 					IssuerCNLabelKey: issuerCN,
 					ReasonLabelKey:   trustReason,
 				}).Add(1)
+				r.Logger = r.Logger.With(zap.Int(ConnectionTrustValue, trust), zap.String(ConnectionTrustReason, trustReason), zap.String(ConnectionTrustIssuerCN, issuerCN), zap.String(ConnectionTrustSubjectCN, subjectCN))
 
 				return
 			}
 		}
 	}
 
+	r.Logger = r.Logger.With(zap.Int(ConnectionTrustValue, trust), zap.String(ConnectionTrustReason, trustReason), zap.String(ConnectionTrustIssuerCN, issuerCN), zap.String(ConnectionTrustSubjectCN, subjectCN))
 	// Only use the leaf cert's Issuer CN when it's from a trusted chain,
 	// including  trusted chains that were ultimately labeled as untrusted due to UntrustedCertIssuerCN.
 	switch trustReason {
