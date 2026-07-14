@@ -610,6 +610,7 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 		DisableTime: true,
 		PartnerID:   &PartnerID{},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -674,6 +675,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingKey() {
 			{}, // the value should have something configured
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -723,6 +725,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingKey() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -779,6 +782,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsMissingValue() {
 			},
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -831,6 +835,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataMissingValue() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -891,6 +896,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsInvalidValueType() {
 			},
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -944,6 +950,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataInvalidValueType() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -1000,6 +1007,7 @@ func (suite *NewClaimBuildersTestSuite) testClaimsBadJSONValue() {
 			},
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -1052,6 +1060,7 @@ func (suite *NewClaimBuildersTestSuite) testMetadataBadJSONValue() {
 		},
 		Remote: &RemoteClaims{},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -1115,6 +1124,7 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 			},
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -1190,6 +1200,7 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 			},
 		},
 	},
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,
@@ -1294,6 +1305,7 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 	endpoint, err := newRemoteEndpoint(nil, options.Remote)
 	suite.Require().NoError(err)
 	builder, err := NewClaimBuilders(suite.noncer, endpoint, options,
+		false,
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: trustMetricName,

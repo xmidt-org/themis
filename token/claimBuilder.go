@@ -267,10 +267,10 @@ func newRemoteClaimBuilder(endpoint endpoint.Endpoint, metadata map[string]any, 
 	return &remoteClaimBuilder{endpoint: endpoint, roots: roots, intermediates: intermediates, trust: trust, untrustedCertChecks: untrustedCertChecks, extra: metadata, apiResults: apiResults.MustCurryWith(ls), apiDuration: duration.MustCurryWith(ls)}, nil
 }
 
-// newClientCertificateClaimBuiler creates a claim builder that sets trust based
+// newClientCertificateClaimBuilder creates a claim builder that sets trust based
 // on client certificates.  This functional always returns a non-nil claimbuilder.
 // Regular HTTP always results in a NoCertificates trust level.
-func newClientCertificateClaimBuiler(cc *ClientCertificates, partnerID string, trustCounter *prometheus.CounterVec) (cb *clientCertificateClaimBuilder, err error) {
+func newClientCertificateClaimBuilder(cc *ClientCertificates, partnerID string, trustCounter *prometheus.CounterVec) (cb *clientCertificateClaimBuilder, err error) {
 	cb = &clientCertificateClaimBuilder{
 		trustCounter: trustCounter,
 		partnerID:    partnerID,
@@ -471,7 +471,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 //
 // The returned builders do not include those claims derived from HTTP requests.  Claims derived from HTTP
 // requests are handled by NewRequestBuilders and DecodeServerRequest.
-func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Options, trustCounter *prometheus.CounterVec, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
+func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Options, disableCertClaimBuilder bool, trustCounter *prometheus.CounterVec, remoteResults *prometheus.CounterVec, remoteDuration prometheus.ObserverVec) (ClaimBuilders, error) {
 	builders := ClaimBuilders{requestClaimBuilder{}}
 	staticClaims, err := getStaticValues(o.Claims)
 	if err != nil {
@@ -494,8 +494,12 @@ func NewClaimBuilders(n random.Noncer, remoteEndpoint endpoint.Endpoint, o Optio
 			})
 	}
 
-	cb, err := newClientCertificateClaimBuiler(o.ClientCertificates, o.PartnerID.Claim, trustCounter)
-	if err == nil {
+	cb, err := newClientCertificateClaimBuilder(o.ClientCertificates, o.PartnerID.Claim, trustCounter)
+	if err != nil {
+		return nil, err
+	}
+
+	if !disableCertClaimBuilder {
 		builders = append(
 			builders,
 			cb,
