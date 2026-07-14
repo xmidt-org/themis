@@ -75,14 +75,15 @@ func Unmarshal(configKey string) func(config.Unmarshaller) (Options, error) {
 type TokenIn struct {
 	fx.In
 
-	Logger         *zap.Logger
-	Noncer         random.Noncer `optional:"true"`
-	Keys           key.Registry
-	Options        Options
-	RemoteEndpoint endpoint.Endpoint        `name:"remote_claims_endpoint"`
-	TrustCounter   *prometheus.CounterVec   `name:"trust_total"`
-	RemoteResults  *prometheus.CounterVec   `name:"remote_claims_api_result_total"`
-	RemoteDuration *prometheus.HistogramVec `name:"remote_claims_api_request_duration_seconds"`
+	Logger                  *zap.Logger
+	Noncer                  random.Noncer `optional:"true"`
+	Keys                    key.Registry
+	Options                 Options
+	DisableCertClaimBuilder bool                     `optional:"true" name:"disable_themis_cert_claim_builder"`
+	RemoteEndpoint          endpoint.Endpoint        `name:"remote_claims_endpoint"`
+	TrustCounter            *prometheus.CounterVec   `name:"trust_total"`
+	RemoteResults           *prometheus.CounterVec   `name:"remote_claims_api_result_total"`
+	RemoteDuration          *prometheus.HistogramVec `name:"remote_claims_api_request_duration_seconds"`
 }
 
 type TokenOut struct {
@@ -104,7 +105,7 @@ func TokenFactory(b ...RequestBuilder) func(TokenIn) (TokenOut, error) {
 			in.Logger.Info("trust settings", zap.Any("trust_config", Trust{}.enforceDefaults()))
 		}
 
-		cb, err := NewClaimBuilders(in.Noncer, in.RemoteEndpoint, in.Options, in.TrustCounter, in.RemoteResults, in.RemoteDuration)
+		cb, err := NewClaimBuilders(in.Noncer, in.RemoteEndpoint, in.Options, in.DisableCertClaimBuilder, in.TrustCounter, in.RemoteResults, in.RemoteDuration)
 		if err != nil {
 			return TokenOut{}, err
 		}
