@@ -25,7 +25,8 @@ func testChainThenConstructors(t *testing.T, constructorCount int) {
 		expectedResponse = new(http.Response)
 		expectedErr      = errors.New("expected")
 
-		actualOrder  []int
+		actualOrder []int
+		// nolint: prealloc
 		constructors []Constructor
 	)
 
@@ -41,6 +42,7 @@ func testChainThenConstructors(t *testing.T, constructorCount int) {
 		}(i))
 	}
 
+	// nolint: prealloc
 	var expectedOrder []int
 	for i := range constructorCount {
 		expectedOrder = append(expectedOrder, i)
@@ -80,7 +82,8 @@ func testChainThenFuncConstructors(t *testing.T, constructorCount int) {
 		expectedResponse = new(http.Response)
 		expectedErr      = errors.New("expected")
 
-		actualOrder  []int
+		actualOrder []int
+		// nolint: prealloc
 		constructors []Constructor
 	)
 
@@ -96,6 +99,7 @@ func testChainThenFuncConstructors(t *testing.T, constructorCount int) {
 		}(i))
 	}
 
+	// nolint: prealloc
 	var expectedOrder []int
 	for i := range constructorCount {
 		expectedOrder = append(expectedOrder, i)
@@ -135,8 +139,10 @@ func testChainAppend(t *testing.T) {
 						expectedErr      = errors.New("expected")
 
 						actualOrder []int
-						initial     []Constructor
-						more        []Constructor
+						// nolint: prealloc
+						initial []Constructor
+						// nolint: prealloc
+						more []Constructor
 					)
 
 					for i := range initialCount {
@@ -194,8 +200,10 @@ func testChainExtend(t *testing.T) {
 						expectedErr      = errors.New("expected")
 
 						actualOrder []int
-						initial     []Constructor
-						more        []Constructor
+						// nolint: prealloc
+						initial []Constructor
+						// nolint: prealloc
+						more []Constructor
 					)
 
 					for i := range initialCount {
