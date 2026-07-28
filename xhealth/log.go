@@ -13,53 +13,53 @@ type loggerAdapter struct {
 	Logger *zap.Logger
 }
 
-func (la loggerAdapter) Debug(msg ...interface{}) {
+func (la loggerAdapter) Debug(msg ...any) {
 	la.Logger.Debug(fmt.Sprint(msg...))
 }
 
-func (la loggerAdapter) Info(msg ...interface{}) {
+func (la loggerAdapter) Info(msg ...any) {
 	la.Logger.Info(fmt.Sprint(msg...))
 }
 
-func (la loggerAdapter) Warn(msg ...interface{}) {
+func (la loggerAdapter) Warn(msg ...any) {
 	la.Logger.Warn(fmt.Sprint(msg...))
 }
 
-func (la loggerAdapter) Error(msg ...interface{}) {
+func (la loggerAdapter) Error(msg ...any) {
 	la.Logger.Error(fmt.Sprint(msg...))
 }
 
-func (la loggerAdapter) Debugln(msg ...interface{}) {
+func (la loggerAdapter) Debugln(msg ...any) {
 	la.Logger.Sugar().Debugln(msg...)
 }
 
-func (la loggerAdapter) Infoln(msg ...interface{}) {
+func (la loggerAdapter) Infoln(msg ...any) {
 	la.Logger.Sugar().Infoln(msg...)
 }
 
-func (la loggerAdapter) Warnln(msg ...interface{}) {
+func (la loggerAdapter) Warnln(msg ...any) {
 	la.Logger.Sugar().Warnln(msg...)
 }
 
-func (la loggerAdapter) Errorln(msg ...interface{}) {
+func (la loggerAdapter) Errorln(msg ...any) {
 	la.Logger.Sugar().Errorln(msg...)
 }
 
-func (la loggerAdapter) Debugf(format string, args ...interface{}) {
+func (la loggerAdapter) Debugf(format string, args ...any) {
 	la.Logger.Sugar().Debugf(format, args...)
 
 }
 
-func (la loggerAdapter) Infof(format string, args ...interface{}) {
+func (la loggerAdapter) Infof(format string, args ...any) {
 	la.Logger.Sugar().Infof(format, args...)
 
 }
 
-func (la loggerAdapter) Warnf(format string, args ...interface{}) {
+func (la loggerAdapter) Warnf(format string, args ...any) {
 	la.Logger.Sugar().Warnf(format, args...)
 }
 
-func (la loggerAdapter) Errorf(format string, args ...interface{}) {
+func (la loggerAdapter) Errorf(format string, args ...any) {
 	la.Logger.Sugar().Errorf(format, args...)
 }
 

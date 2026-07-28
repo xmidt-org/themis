@@ -18,13 +18,13 @@ type KeyUnmarshaller interface {
 	// No attempt is made to verify the existence of the configuration key.  If no such key exists,
 	// unmarshalling will still happen against a default set of options.
 	// See https://godoc.org/github.com/spf13/viper#UnmarshalKey
-	UnmarshalKey(string, interface{}) error
+	UnmarshalKey(string, any) error
 }
 
 // Unmarshaller is a strategy for unmarshalling configuration, mostly in the form of structs.
 type Unmarshaller interface {
 	KeyUnmarshaller
-	Unmarshal(interface{}) error
+	Unmarshal(any) error
 }
 
 // ViperUnmarshaller is an Unmarshaller backed by Viper.
@@ -40,11 +40,11 @@ func (vu ViperUnmarshaller) IsSet(k string) bool {
 	return vu.Viper.IsSet(k)
 }
 
-func (vu ViperUnmarshaller) Unmarshal(v interface{}) error {
+func (vu ViperUnmarshaller) Unmarshal(v any) error {
 	return vu.Viper.Unmarshal(v, vu.Options...)
 }
 
-func (vu ViperUnmarshaller) UnmarshalKey(k string, v interface{}) error {
+func (vu ViperUnmarshaller) UnmarshalKey(k string, v any) error {
 	return vu.Viper.UnmarshalKey(k, v, vu.Options...)
 }
 

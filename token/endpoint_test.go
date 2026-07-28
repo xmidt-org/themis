@@ -63,16 +63,16 @@ func testNewClaimsEndpointSuccess(t *testing.T) {
 
 		builder = new(mockClaimBuilder)
 		// nolint:goconst
-		expectedClaims = map[string]interface{}{"key": "value"}
+		expectedClaims = map[string]any{"key": "value"}
 		request        = NewRequest()
 		endpoint       = NewClaimsEndpoint(builder)
 	)
 
 	require.NotNil(endpoint)
-	builder.ExpectAddClaims(context.Background(), request, map[string]interface{}{}).Once().Return(error(nil)).
+	builder.ExpectAddClaims(context.Background(), request, map[string]any{}).Once().Return(error(nil)).
 		Run(func(arguments mock.Arguments) {
 			// nolint:goconst
-			arguments.Get(2).(map[string]interface{})["key"] = "value"
+			arguments.Get(2).(map[string]any)["key"] = "value"
 		})
 
 	actualClaims, err := endpoint(context.Background(), request)
@@ -94,7 +94,7 @@ func testNewClaimsEndpointFailure(t *testing.T) {
 	)
 
 	require.NotNil(endpoint)
-	builder.ExpectAddClaims(context.Background(), request, map[string]interface{}{}).Once().Return(expectedErr)
+	builder.ExpectAddClaims(context.Background(), request, map[string]any{}).Once().Return(expectedErr)
 	claims, actualErr := endpoint(context.Background(), request)
 	assert.Empty(claims)
 	assert.Equal(expectedErr, actualErr)

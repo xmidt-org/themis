@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +21,7 @@ func TestNewIssueHandler(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		endpoint = endpoint.Endpoint(func(_ context.Context, v interface{}) (interface{}, error) {
+		endpoint = endpoint.Endpoint(func(_ context.Context, v any) (any, error) {
 			var output bytes.Buffer
 			output.WriteString("endpoint=run")
 			for key, value := range v.(*Request).Claims {
@@ -55,14 +56,12 @@ func TestNewClaimsHandler(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		endpoint = endpoint.Endpoint(func(_ context.Context, v interface{}) (interface{}, error) {
-			claims := map[string]interface{}{
+		endpoint = endpoint.Endpoint(func(_ context.Context, v any) (any, error) {
+			claims := map[string]any{
 				"endpoint": "run",
 			}
 
-			for key, value := range v.(*Request).Claims {
-				claims[key] = value
-			}
+			maps.Copy(claims, v.(*Request).Claims)
 
 			return claims, nil
 		})

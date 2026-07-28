@@ -116,19 +116,19 @@ func (rbs RequestBuilders) Build(original *http.Request, tr *Request) error {
 	return nil
 }
 
-func claimsSetter(key string, value interface{}, tr *Request) {
+func claimsSetter(key string, value any, tr *Request) {
 	tr.Claims[key] = value
 }
 
-func metadataSetter(key string, value interface{}, tr *Request) {
+func metadataSetter(key string, value any, tr *Request) {
 	tr.Metadata[key] = value
 }
 
-func pathWildCardsSetter(key string, value interface{}, tr *Request) {
+func pathWildCardsSetter(key string, value any, tr *Request) {
 	tr.PathWildCards[key] = value
 }
 
-func queryParametersSetter(key string, value interface{}, tr *Request) {
+func queryParametersSetter(key string, value any, tr *Request) {
 	tr.QueryParameters[key] = value
 }
 
@@ -136,7 +136,7 @@ type headerParameterRequestBuilder struct {
 	key       string
 	header    string
 	parameter string
-	setter    func(string, interface{}, *Request)
+	setter    func(string, any, *Request)
 }
 
 func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Request) error {
@@ -164,7 +164,7 @@ func (hprb headerParameterRequestBuilder) Build(original *http.Request, tr *Requ
 type variableRequestBuilder struct {
 	key      string
 	variable string
-	setter   func(string, interface{}, *Request)
+	setter   func(string, any, *Request)
 }
 
 func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) error {
@@ -181,7 +181,7 @@ func (vrb variableRequestBuilder) Build(original *http.Request, tr *Request) err
 type staticRequestBuilder struct {
 	key    string
 	value  any
-	setter func(string, interface{}, *Request)
+	setter func(string, any, *Request)
 }
 
 func (srb staticRequestBuilder) Build(original *http.Request, tr *Request) error {
@@ -216,7 +216,7 @@ func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request, tr *Requ
 		// some post-processing on the partner id value:
 		// don't allow multiple values separated by ","
 		// don't allow the "*" partner id
-		for _, v := range strings.Split(value, ",") {
+		for v := range strings.SplitSeq(value, ",") {
 			v = strings.TrimSpace(v)
 			if len(v) > 0 && v != "*" {
 				return v, nil // the cleaned partner id
@@ -344,8 +344,8 @@ func BuildRequest(original *http.Request, rb RequestBuilders) (*Request, error) 
 	return tr, nil
 }
 
-func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (interface{}, error) {
-	return func(ctx context.Context, hr *http.Request) (interface{}, error) {
+func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request) (any, error) {
+	return func(ctx context.Context, hr *http.Request) (any, error) {
 		if err := hr.ParseForm(); err != nil {
 			return nil, httpError{
 				err:  err,
@@ -362,7 +362,7 @@ func DecodeServerRequest(rb RequestBuilders) func(context.Context, *http.Request
 	}
 }
 
-func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value interface{}) error {
+func EncodeIssueResponse(_ context.Context, response http.ResponseWriter, value any) error {
 	response.Header().Set("Content-Type", "application/jose")
 	_, err := response.Write([]byte(value.(string)))
 	return err
@@ -405,7 +405,7 @@ func (dce RemoteClaimsResponseError) MarshalJSON() ([]byte, error) {
 	return output.Bytes(), nil
 }
 
-func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (interface{}, error) {
+func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (any, error) {
 	l := sallust.Get(ctx)
 	code := response.StatusCode
 	body, err := io.ReadAll(response.Body)
@@ -442,7 +442,7 @@ func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (i
 	}
 
 	// allow empty bodies
-	var claims map[string]interface{}
+	var claims map[string]any
 	if len(body) > 0 {
 		if err := json.Unmarshal(body, &claims); err != nil {
 			err := RemoteClaimsResponseError{
@@ -459,7 +459,7 @@ func DecodeRemoteClaimsResponse(ctx context.Context, response *http.Response) (i
 	return claims, nil
 }
 
-func EncodeRemoteClaimsRequest(ctx context.Context, r *http.Request, request interface{}) error {
+func EncodeRemoteClaimsRequest(ctx context.Context, r *http.Request, request any) error {
 	if headerer, ok := request.(kithttp.Headerer); ok {
 		for k := range headerer.Headers() {
 			r.Header.Set(k, headerer.Headers().Get(k))

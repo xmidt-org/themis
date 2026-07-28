@@ -41,10 +41,8 @@ func testNewListenerNonTLS(t *testing.T) {
 	require.NotNil(l)
 
 	defer l.Close()
-	acceptWait.Add(1)
 
-	go func() {
-		defer acceptWait.Done()
+	acceptWait.Go(func() {
 		c, err := l.Accept()
 		if !assert.NoError(err) {
 			if c != nil {
@@ -57,7 +55,7 @@ func testNewListenerNonTLS(t *testing.T) {
 		defer c.Close()
 		assert.IsType((*net.TCPConn)(nil), c)
 		c.Write(expectedMessage)
-	}()
+	})
 
 	c, err := net.DialTimeout("tcp", l.Addr().String(), 5*time.Second)
 	require.NoError(err)
@@ -91,10 +89,8 @@ func testNewListenerTLS(t *testing.T) {
 	require.NotNil(l)
 
 	defer l.Close()
-	acceptWait.Add(1)
 
-	go func() {
-		defer acceptWait.Done()
+	acceptWait.Go(func() {
 		c, err := l.Accept()
 		if !assert.NoError(err) {
 			if c != nil {
@@ -108,7 +104,7 @@ func testNewListenerTLS(t *testing.T) {
 		assert.IsType((*tls.Conn)(nil), c)
 		assert.Implements((*TlsConn)(nil), c)
 		c.Write(expectedMessage)
-	}()
+	})
 
 	c, err := tls.Dial("tcp", l.Addr().String(), &tls.Config{InsecureSkipVerify: true}) // nolint: gosec
 	require.NoError(err)

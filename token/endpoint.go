@@ -10,15 +10,15 @@ import (
 
 // NewIssueEndpoint returns a go-kit endpoint for a token factory's NewToken method
 func NewIssueEndpoint(f Factory) endpoint.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
+	return func(ctx context.Context, v any) (any, error) {
 		return f.NewToken(ctx, v.(*Request))
 	}
 }
 
 // NewClaimsEndpoint returns a go-kit endpoint that returns just the claims
 func NewClaimsEndpoint(cb ClaimBuilder) endpoint.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		merged := make(map[string]interface{})
+	return func(ctx context.Context, v any) (any, error) {
+		merged := make(map[string]any)
 		if err := cb.AddClaims(ctx, v.(*Request), merged); err != nil {
 			return nil, err
 		}

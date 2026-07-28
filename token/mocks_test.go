@@ -25,10 +25,10 @@ type mockClaimBuilder struct {
 	mock.Mock
 }
 
-func (m *mockClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
+func (m *mockClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]any) error {
 	return m.Called(ctx, r, target).Error(0)
 }
 
-func (m *mockClaimBuilder) ExpectAddClaims(ctx context.Context, r *Request, target map[string]interface{}) *mock.Call {
+func (m *mockClaimBuilder) ExpectAddClaims(ctx context.Context, r *Request, target map[string]any) *mock.Call {
 	return m.On("AddClaims", ctx, r, target)
 }
