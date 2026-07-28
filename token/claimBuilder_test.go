@@ -51,6 +51,7 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 	for _, count := range []int{0, 1, 2, 5} {
 		suite.Run(fmt.Sprintf("count=%d", count), func() {
 			var (
+				// nolint: prealloc
 				builder         ClaimBuilders
 				expectedRequest = &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}
 				expected        = make(map[string]any)
