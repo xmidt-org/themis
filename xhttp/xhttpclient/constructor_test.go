@@ -29,7 +29,7 @@ func testChainThenConstructors(t *testing.T, constructorCount int) {
 		constructors []Constructor
 	)
 
-	for i := 0; i < constructorCount; i++ {
+	for i := range constructorCount {
 		constructors = append(constructors, func(i int) Constructor {
 			return func(next http.RoundTripper) http.RoundTripper {
 				return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -42,7 +42,7 @@ func testChainThenConstructors(t *testing.T, constructorCount int) {
 	}
 
 	var expectedOrder []int
-	for i := 0; i < constructorCount; i++ {
+	for i := range constructorCount {
 		expectedOrder = append(expectedOrder, i)
 	}
 
@@ -84,7 +84,7 @@ func testChainThenFuncConstructors(t *testing.T, constructorCount int) {
 		constructors []Constructor
 	)
 
-	for i := 0; i < constructorCount; i++ {
+	for i := range constructorCount {
 		constructors = append(constructors, func(i int) Constructor {
 			return func(next http.RoundTripper) http.RoundTripper {
 				return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -97,7 +97,7 @@ func testChainThenFuncConstructors(t *testing.T, constructorCount int) {
 	}
 
 	var expectedOrder []int
-	for i := 0; i < constructorCount; i++ {
+	for i := range constructorCount {
 		expectedOrder = append(expectedOrder, i)
 	}
 
@@ -139,7 +139,7 @@ func testChainAppend(t *testing.T) {
 						more        []Constructor
 					)
 
-					for i := 0; i < initialCount; i++ {
+					for i := range initialCount {
 						initial = append(initial, func(i int) Constructor {
 							return func(next http.RoundTripper) http.RoundTripper {
 								return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -151,7 +151,7 @@ func testChainAppend(t *testing.T) {
 						}(i))
 					}
 
-					for i := 0; i < appendCount; i++ {
+					for i := range appendCount {
 						more = append(more, func(i int) Constructor {
 							return func(next http.RoundTripper) http.RoundTripper {
 								return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -198,7 +198,7 @@ func testChainExtend(t *testing.T) {
 						more        []Constructor
 					)
 
-					for i := 0; i < initialCount; i++ {
+					for i := range initialCount {
 						initial = append(initial, func(i int) Constructor {
 							return func(next http.RoundTripper) http.RoundTripper {
 								return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -210,7 +210,7 @@ func testChainExtend(t *testing.T) {
 						}(i))
 					}
 
-					for i := 0; i < appendCount; i++ {
+					for i := range appendCount {
 						more = append(more, func(i int) Constructor {
 							return func(next http.RoundTripper) http.RoundTripper {
 								return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {

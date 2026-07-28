@@ -23,7 +23,7 @@ func (knfe KeyNotFoundError) StatusCode() int {
 }
 
 func NewEndpoint(r Registry) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request any) (any, error) {
 		kid := request.(string)
 		pair, ok := r.Get(request.(string))
 		if !ok {

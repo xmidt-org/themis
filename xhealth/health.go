@@ -17,7 +17,7 @@ type Options struct {
 	DisableLogging bool
 
 	// Custom is an optional map passed to NewHandler that is included in all responses to health checks
-	Custom map[string]interface{}
+	Custom map[string]any
 }
 
 // New constructs an IHealth instance for the given environment.  If either the DisableLogging option field

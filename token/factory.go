@@ -28,7 +28,7 @@ type Request struct {
 
 	// Claims holds the extra claims to add to tokens.  These claims will override any configured claims in a Factory,
 	// but will not override time-based claims such as nbf or exp.
-	Claims map[string]interface{}
+	Claims map[string]any
 
 	// TLS represents the state of any underlying TLS connection.
 	// For non-tls connections, this field is unset.
@@ -44,10 +44,10 @@ type Request struct {
 func NewRequest() *Request {
 	return &Request{
 		Logger:          sallust.Default(),
-		Claims:          make(map[string]interface{}),
-		Metadata:        make(map[string]interface{}),
-		PathWildCards:   make(map[string]interface{}),
-		QueryParameters: make(map[string]interface{}),
+		Claims:          make(map[string]any),
+		Metadata:        make(map[string]any),
+		PathWildCards:   make(map[string]any),
+		QueryParameters: make(map[string]any),
 	}
 }
 
@@ -66,7 +66,7 @@ type factory struct {
 }
 
 func (f *factory) NewToken(ctx context.Context, r *Request) (string, error) {
-	merged := make(map[string]interface{}, len(r.Claims))
+	merged := make(map[string]any, len(r.Claims))
 	if err := f.claimBuilder.AddClaims(ctx, r, merged); err != nil {
 		return "", err
 	}

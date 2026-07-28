@@ -191,13 +191,13 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
-				Claims: map[string]interface{}{
+				Claims: map[string]any{
 					// nolint:goconst
 					"fromHeader": "foo",
 					// nolint:goconst
 					"partner-id-claim": "test",
 				},
-				Metadata: map[string]interface{}{
+				Metadata: map[string]any{
 					// nolint:goconst
 					"fromHeader": "bar",
 					// nolint:goconst
@@ -280,13 +280,13 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			uri: "/test?pid=test&claim=foo&metadata=bar&pathWildCard=foobar&queryParameter=json",
 			expected: &Request{
 				Logger: sallust.Default(),
-				Claims: map[string]interface{}{
+				Claims: map[string]any{
 					// nolint:goconst
 					"fromParameter": "foo",
 					// nolint:goconst
 					"partner-id-claim": "test",
 				},
-				Metadata: map[string]interface{}{
+				Metadata: map[string]any{
 					// nolint:goconst
 					"fromParameter": "bar",
 					// nolint:goconst
@@ -358,11 +358,11 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
-				Claims: map[string]interface{}{
+				Claims: map[string]any{
 					"fromVariable":     "foo",
 					"partner-id-claim": "test",
 				},
-				Metadata: map[string]interface{}{
+				Metadata: map[string]any{
 					"fromVariable":        "bar",
 					"partner-id-metadata": "test",
 				},
@@ -416,10 +416,10 @@ func testNewRequestBuildersSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger: sallust.Default(),
-				Claims: map[string]interface{}{
+				Claims: map[string]any{
 					"fromVariable": "foo",
 				},
-				Metadata: map[string]interface{}{
+				Metadata: map[string]any{
 					"fromVariable": "bar",
 				},
 				PathWildCards: map[string]any{
@@ -553,9 +553,9 @@ func testBuildRequestSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger:          sallust.Default(),
-				Claims:          map[string]interface{}{"claim": []int{1, 2, 3}},
-				Metadata:        make(map[string]interface{}),
-				PathWildCards:   make(map[string]interface{}),
+				Claims:          map[string]any{"claim": []int{1, 2, 3}},
+				Metadata:        make(map[string]any),
+				PathWildCards:   make(map[string]any),
 				QueryParameters: make(map[string]any),
 			},
 		},
@@ -568,9 +568,9 @@ func testBuildRequestSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger:          sallust.Default(),
-				Claims:          make(map[string]interface{}),
-				Metadata:        map[string]interface{}{"metadata": -75.8},
-				PathWildCards:   make(map[string]interface{}),
+				Claims:          make(map[string]any),
+				Metadata:        map[string]any{"metadata": -75.8},
+				PathWildCards:   make(map[string]any),
 				QueryParameters: make(map[string]any),
 			},
 		},
@@ -596,9 +596,9 @@ func testBuildRequestSuccess(t *testing.T) {
 			},
 			expected: &Request{
 				Logger:          sallust.Default(),
-				Claims:          map[string]interface{}{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
-				Metadata:        map[string]interface{}{"metadata1": "value1", "metadata2": 15.7},
-				PathWildCards:   make(map[string]interface{}),
+				Claims:          map[string]any{"claim1": 238947123, "claim2": []byte{1, 2, 3}},
+				Metadata:        map[string]any{"metadata1": "value1", "metadata2": 15.7},
+				PathWildCards:   make(map[string]any),
 				QueryParameters: make(map[string]any),
 			},
 		},
@@ -784,9 +784,9 @@ func testDecodeServerRequestSuccess(t *testing.T) {
 	assert.Equal(
 		Request{
 			Logger:          sallust.Default(),
-			Claims:          map[string]interface{}{"claim": "value"},
-			Metadata:        make(map[string]interface{}),
-			PathWildCards:   make(map[string]interface{}),
+			Claims:          map[string]any{"claim": "value"},
+			Metadata:        make(map[string]any),
+			PathWildCards:   make(map[string]any),
 			QueryParameters: make(map[string]any),
 		},
 		*v.(*Request),
@@ -843,18 +843,18 @@ func TestEncodeIssueResponse(t *testing.T) {
 func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 	testData := []struct {
 		body     string
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		{
 			body: "",
 		},
 		{
 			body:     "{}",
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 		},
 		{
 			body:     `{"key1": "value1"}`,
-			expected: map[string]interface{}{"key1": "value1"},
+			expected: map[string]any{"key1": "value1"},
 		},
 	}
 
@@ -872,7 +872,7 @@ func testDecodeRemoteClaimsResponseSuccess(t *testing.T) {
 
 			v, err := DecodeRemoteClaimsResponse(context.Background(), response)
 			require.NoError(err)
-			require.IsType(map[string]interface{}{}, v)
+			require.IsType(map[string]any{}, v)
 			assert.Equal(record.expected, v)
 		})
 	}

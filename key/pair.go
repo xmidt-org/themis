@@ -34,7 +34,7 @@ type Pair interface {
 	KID() string
 
 	// Sign returns the signing key for generating signed JWT tokens.
-	Sign() interface{}
+	Sign() any
 
 	// WriteVerifyPEMto writes the PEM-encoded verify key to an arbitrary output sink.
 	WriteVerifyPEMTo(io.Writer) (int64, error)
@@ -44,7 +44,7 @@ type Pair interface {
 
 type pair struct {
 	kid        string
-	sign       interface{}
+	sign       any
 	verifyPEM  []byte
 	jsonWebKey []byte
 }
@@ -53,7 +53,7 @@ func (p pair) KID() string {
 	return p.kid
 }
 
-func (p pair) Sign() interface{} {
+func (p pair) Sign() any {
 	return p.sign
 }
 
@@ -67,7 +67,7 @@ func (p pair) WriteJWK(w io.Writer) (int64, error) {
 	return int64(c), err
 }
 
-func NewPair(kid string, key interface{}) (Pair, error) {
+func NewPair(kid string, key any) (Pair, error) {
 	switch k := key.(type) {
 	case *rsa.PrivateKey:
 		verifyPEM, err := MarshalPKIXPublicKeyToPEM(&k.PublicKey)
@@ -246,7 +246,7 @@ func GenerateSecretPair(kid string, random io.Reader, bits int) (Pair, error) {
 
 // MarshalPKIXPublicKeyToPEM handles marshaling a public key in PKIX format which is
 // then encoded as a PEM block
-func MarshalPKIXPublicKeyToPEM(key interface{}) ([]byte, error) {
+func MarshalPKIXPublicKeyToPEM(key any) ([]byte, error) {
 	pkix, err := x509.MarshalPKIXPublicKey(key)
 	if err != nil {
 		return nil, err

@@ -29,7 +29,7 @@ type Handler http.Handler
 func NewHandler(e endpoint.Endpoint) Handler {
 	return kithttp.NewServer(
 		e,
-		func(ctx context.Context, request *http.Request) (interface{}, error) {
+		func(ctx context.Context, request *http.Request) (any, error) {
 			kid, ok := mux.Vars(request)["kid"]
 			if !ok {
 				return nil, ErrNoKidVariable
@@ -40,7 +40,7 @@ func NewHandler(e endpoint.Endpoint) Handler {
 			)
 			return kid, nil
 		},
-		func(_ context.Context, response http.ResponseWriter, value interface{}) error {
+		func(_ context.Context, response http.ResponseWriter, value any) error {
 			response.Header().Set("Content-Type", ContentTypePEM)
 			_, err := value.(Pair).WriteVerifyPEMTo(response)
 			return err
@@ -53,7 +53,7 @@ type HandlerJWK http.Handler
 func NewHandlerJWK(e endpoint.Endpoint) Handler {
 	return kithttp.NewServer(
 		e,
-		func(ctx context.Context, request *http.Request) (interface{}, error) {
+		func(ctx context.Context, request *http.Request) (any, error) {
 			kid, ok := mux.Vars(request)["kid"]
 			if !ok {
 				return nil, ErrNoKidVariable
@@ -65,7 +65,7 @@ func NewHandlerJWK(e endpoint.Endpoint) Handler {
 
 			return kid, nil
 		},
-		func(_ context.Context, response http.ResponseWriter, value interface{}) error {
+		func(_ context.Context, response http.ResponseWriter, value any) error {
 			response.Header().Set("Content-Type", ContentTypeJWK)
 			_, err := value.(Pair).WriteJWK(response)
 			return err

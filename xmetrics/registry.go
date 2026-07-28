@@ -3,6 +3,8 @@
 package xmetrics
 
 import (
+	"maps"
+
 	"github.com/go-kit/kit/metrics"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -121,13 +123,9 @@ func (r *registry) subsystem(v string) string {
 
 func (r *registry) mergeConstLabels(original prometheus.Labels) prometheus.Labels {
 	copy := make(prometheus.Labels, len(original)+len(r.constLabels))
-	for k, v := range original {
-		copy[k] = v
-	}
+	maps.Copy(copy, original)
 
-	for k, v := range r.constLabels {
-		copy[k] = v
-	}
+	maps.Copy(copy, r.constLabels)
 
 	return copy
 }

@@ -4,6 +4,7 @@ package xhttpserver
 
 import (
 	"html"
+	"maps"
 	"net/http"
 	"strconv"
 )
@@ -57,9 +58,7 @@ type ConstantHandler struct {
 }
 
 func (ch *ConstantHandler) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
-	for name, values := range ch.header {
-		response.Header()[name] = values
-	}
+	maps.Copy(response.Header(), ch.header)
 
 	response.WriteHeader(ch.statusCode)
 	if len(ch.body) > 0 {

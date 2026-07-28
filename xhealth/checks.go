@@ -10,10 +10,10 @@ import (
 // NopCheckable is an ICheckable that always returns success.  This type is useful when an app only
 // wants a health endpoint to indicate its own liveness, rather than checking any external dependencies.
 type NopCheckable struct {
-	Details interface{}
+	Details any
 }
 
-func (nc NopCheckable) Status() (interface{}, error) {
+func (nc NopCheckable) Status() (any, error) {
 	return nc.Details, nil
 }
 

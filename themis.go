@@ -84,7 +84,7 @@ func provideAppOptions(opts fx.Option) fx.Option {
 						Name:     ApplicationName,
 						Interval: 24 * time.Hour,
 						Checker: xhealth.NopCheckable{
-							Details: map[string]interface{}{
+							Details: map[string]any{
 								"StartTime": time.Now().UTC().Format(time.RFC3339),
 							},
 						},

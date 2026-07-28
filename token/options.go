@@ -51,7 +51,7 @@ type Value struct {
 	JSON string
 
 	// Value is the statically assigned value from configuration
-	Value interface{}
+	Value any
 }
 
 // IsFromHTTP tests if this value is extracted from an HTTP request
@@ -97,7 +97,7 @@ func (v Value) RawMessage() (json.RawMessage, error) {
 	switch {
 	case len(v.JSON) > 0:
 		raw := []byte(v.JSON)
-		var m map[string]interface{}
+		var m map[string]any
 		err := json.Unmarshal(raw, &m)
 		return json.RawMessage(raw), err
 

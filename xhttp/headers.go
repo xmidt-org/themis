@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package xhttp
 
+import "maps"
+
 import "net/http"
 
 // CanonicalizeHeaders returns a copy of the source with each key canonicalized via http.CanonicalHeaderKey.
@@ -44,7 +46,5 @@ func AddHeaders(target, source http.Header) {
 //
 // This function assumes that the source is already canonicalized.
 func SetHeaders(target, source http.Header) {
-	for key, values := range source {
-		target[key] = values
-	}
+	maps.Copy(target, source)
 }

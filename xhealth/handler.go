@@ -11,6 +11,6 @@ import (
 
 type Handler http.Handler
 
-func NewHandler(h health.IHealth, custom map[string]interface{}) Handler {
+func NewHandler(h health.IHealth, custom map[string]any) Handler {
 	return handlers.NewJSONHandlerFunc(h, custom)
 }

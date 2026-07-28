@@ -39,14 +39,11 @@ func testBusyDefaultOnBusy(t *testing.T) {
 		busy = Busy{MaxConcurrentRequests: 1}.ThenFunc(next)
 	)
 
-	nextFinish.Add(1)
-
-	go func() {
-		defer nextFinish.Done()
+	nextFinish.Go(func() {
 		response := httptest.NewRecorder()
 		busy.ServeHTTP(response, httptest.NewRequest("GET", "/", nil))
 		assert.Equal(288, response.Code)
-	}()
+	})
 
 	select {
 	case <-nextInServeHTTP:
@@ -82,14 +79,11 @@ func testBusyCustomOnBusy(t *testing.T) {
 		}.ThenFunc(next)
 	)
 
-	nextFinish.Add(1)
-
-	go func() {
-		defer nextFinish.Done()
+	nextFinish.Go(func() {
 		response := httptest.NewRecorder()
 		busy.ServeHTTP(response, httptest.NewRequest("GET", "/", nil))
 		assert.Equal(288, response.Code)
-	}()
+	})
 
 	select {
 	case <-nextInServeHTTP:

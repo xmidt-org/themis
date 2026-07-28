@@ -53,15 +53,15 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 			var (
 				builder         ClaimBuilders
 				expectedRequest = &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}
-				expected        = make(map[string]interface{})
-				actual          = make(map[string]interface{})
+				expected        = make(map[string]any)
+				actual          = make(map[string]any)
 			)
 
-			for i := 0; i < count; i++ {
+			for i := range count {
 				i := i
 				expected[strconv.Itoa(i)] = trueString
 				builder = append(builder,
-					ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+					ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]any) error {
 						suite.Equal(suite.expectedCtx, actualCtx)
 						suite.True(expectedRequest == actualRequest)
 						target[strconv.Itoa(i)] = trueString
@@ -82,25 +82,25 @@ func (suite *ClaimBuildersTestSuite) TestSuccess() {
 func (suite *ClaimBuildersTestSuite) TestError() {
 	var (
 		expectedRequest = &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}
-		expected        = map[string]interface{}{
+		expected        = map[string]any{
 			"first": trueString,
 		}
 
-		actual = make(map[string]interface{})
+		actual = make(map[string]any)
 
 		builder = ClaimBuilders{
-			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]any) error {
 				suite.Equal(suite.expectedCtx, actualCtx)
 				suite.True(expectedRequest == actualRequest)
 				target["first"] = trueString
 				return nil
 			}),
-			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]any) error {
 				suite.Equal(suite.expectedCtx, actualCtx)
 				suite.True(expectedRequest == actualRequest)
 				return suite.expectedErr
 			}),
-			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]interface{}) error {
+			ClaimBuilderFunc(func(actualCtx context.Context, actualRequest *Request, target map[string]any) error {
 				suite.Fail("This claim builder should not have been called")
 				return nil
 			}),
@@ -125,25 +125,25 @@ type RequestClaimBuilderTestSuite struct {
 func (suite *RequestClaimBuilderTestSuite) Test() {
 	cases := []struct {
 		request  *Request
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		{
 			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 		},
 		{
 			request: &Request{TLS: &tls.ConnectionState{},
 				Logger: sallust.Default(),
 				// nolint:goconst
-				Claims: map[string]interface{}{"foo": 1, "bar": val},
+				Claims: map[string]any{"foo": 1, "bar": val},
 			},
-			expected: map[string]interface{}{"foo": 1, "bar": val},
+			expected: map[string]any{"foo": 1, "bar": val},
 		},
 	}
 
 	for i, testCase := range cases {
 		suite.Run(strconv.Itoa(i), func() {
-			actual := make(map[string]interface{})
+			actual := make(map[string]any)
 			suite.NoError(
 				requestClaimBuilder{}.AddClaims(context.Background(), testCase.request, actual),
 			)
@@ -164,24 +164,24 @@ type StaticClaimBuilderTestSuite struct {
 func (suite *StaticClaimBuilderTestSuite) Test() {
 	cases := []struct {
 		builder  staticClaimBuilder
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		{
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 		},
 		{
 			builder:  staticClaimBuilder{},
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 		},
 		{
 			builder:  staticClaimBuilder{"foo": 1, "bar": val},
-			expected: map[string]interface{}{"foo": 1, "bar": val},
+			expected: map[string]any{"foo": 1, "bar": val},
 		},
 	}
 
 	for i, testCase := range cases {
 		suite.Run(strconv.Itoa(i), func() {
-			actual := make(map[string]interface{})
+			actual := make(map[string]any)
 			suite.NoError(
 				testCase.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 			)
@@ -213,14 +213,14 @@ func (suite *TimeClaimBuilderTestSuite) now() time.Time {
 func (suite *TimeClaimBuilderTestSuite) TestX() {
 	cases := []struct {
 		builder  timeClaimBuilder
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		{
 			builder: timeClaimBuilder{
 				now:              suite.now,
 				disableNotBefore: true,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
 			},
@@ -229,7 +229,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 			builder: timeClaimBuilder{
 				now: suite.now,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
 				// nolint:goconst
@@ -242,7 +242,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				duration:       24 * time.Hour,
 				notBeforeDelta: 5 * time.Minute,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
 				// nolint:goconst
@@ -257,7 +257,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 				duration:         30 * time.Minute,
 				disableNotBefore: true,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				// nolint:goconst
 				"iat": suite.expectedNow.UTC().Unix(),
 				// nolint:goconst
@@ -268,7 +268,7 @@ func (suite *TimeClaimBuilderTestSuite) TestX() {
 
 	for i, testCase := range cases {
 		suite.Run(strconv.Itoa(i), func() {
-			actual := make(map[string]interface{})
+			actual := make(map[string]any)
 			suite.NoError(
 				testCase.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
 			)
@@ -303,7 +303,7 @@ func (suite *NonceClaimBuilderTestSuite) TearDownTest() {
 }
 
 func (suite *NonceClaimBuilderTestSuite) TestSuccess() {
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.noncer.ExpectNonce().Return("test", error(nil)).Once()
 	suite.NoError(
 		suite.builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, actual),
@@ -311,13 +311,13 @@ func (suite *NonceClaimBuilderTestSuite) TestSuccess() {
 
 	suite.Equal(
 		// nolint:goconst
-		map[string]interface{}{"jti": "test"},
+		map[string]any{"jti": "test"},
 		actual,
 	)
 }
 
 func (suite *NonceClaimBuilderTestSuite) TestError() {
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.noncer.ExpectNonce().Return("", suite.expectedErr).Once()
 	suite.Equal(
 		suite.expectedErr,
@@ -371,10 +371,10 @@ func (suite *RemoteClaimBuilderTestSuite) goodHandler(response http.ResponseWrit
 	b, err := io.ReadAll(request.Body)
 	suite.NoError(err)
 
-	var input map[string]interface{}
+	var input map[string]any
 	suite.NoError(json.Unmarshal(b, &input))
 	if input == nil {
-		input = make(map[string]interface{})
+		input = make(map[string]any)
 	}
 
 	input["custom"] = val
@@ -394,37 +394,37 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 	cases := []struct {
 		method   string
 		client   xhttpclient.Interface
-		metadata map[string]interface{}
+		metadata map[string]any
 		request  *Request
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		{
 			request: &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
 			// nolint:goconst
-			expected: map[string]interface{}{"custom": val},
+			expected: map[string]any{"custom": val},
 		},
 		{
 			// nolint:goconst
-			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
-			expected: map[string]interface{}{"request": val, "custom": val},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]any{"request": val}},
+			expected: map[string]any{"request": val, "custom": val},
 		},
 		{
 			method: http.MethodPut,
 			client: new(http.Client),
 			// nolint:goconst
-			metadata: map[string]interface{}{"external": val},
+			metadata: map[string]any{"external": val},
 			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()},
 			// nolint:goconst
-			expected: map[string]interface{}{"external": val, "custom": val},
+			expected: map[string]any{"external": val, "custom": val},
 		},
 		{
 			method: http.MethodPatch,
 			client: new(http.Client),
 			// nolint:goconst
-			metadata: map[string]interface{}{"external": val},
-			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]interface{}{"request": val}},
+			metadata: map[string]any{"external": val},
+			request:  &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Metadata: map[string]any{"request": val}},
 			// nolint:goconst
-			expected: map[string]interface{}{"external": val, "request": val, "custom": val},
+			expected: map[string]any{"external": val, "request": val, "custom": val},
 		},
 	}
 
@@ -438,7 +438,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 			endpoint, err := newRemoteEndpoint(testCase.client, remoteClaims)
 			suite.Require().NoError(err)
 
-			actual := make(map[string]interface{})
+			actual := make(map[string]any)
 			builder, err := newRemoteClaimBuilder(
 				endpoint,
 				testCase.metadata,
@@ -489,7 +489,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestAddClaims() {
 
 func (suite *RemoteClaimBuilderTestSuite) TestError() {
 	builder, err := newRemoteClaimBuilder(
-		func(context.Context, interface{}) (interface{}, error) { return nil, errors.New("") },
+		func(context.Context, any) (any, error) { return nil, errors.New("") },
 		nil, nil, nil, Trust{}, nil, &RemoteClaims{URL: suite.badURL},
 		prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -518,7 +518,7 @@ func (suite *RemoteClaimBuilderTestSuite) TestError() {
 	suite.Require().NotNil(builder)
 
 	suite.Error(
-		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, make(map[string]interface{})),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default()}, make(map[string]any)),
 	)
 }
 
@@ -585,7 +585,7 @@ func (suite *NewClaimBuildersTestSuite) replaceNow(cb ClaimBuilders) {
 	}
 }
 
-func (suite *NewClaimBuildersTestSuite) rawMessage(v interface{}) json.RawMessage {
+func (suite *NewClaimBuildersTestSuite) rawMessage(v any) json.RawMessage {
 	raw, err := json.Marshal(v)
 	suite.Require().NoError(err)
 	return json.RawMessage(raw)
@@ -595,10 +595,10 @@ func (suite *NewClaimBuildersTestSuite) handleRemoteClaims(response http.Respons
 	body, err := io.ReadAll(request.Body)
 	suite.Require().NoError(err)
 
-	var metadata map[string]interface{}
+	var metadata map[string]any
 	suite.Require().NoError(json.Unmarshal(body, &metadata))
 	// nolint:goconst
-	suite.Equal(map[string]interface{}{"extra": "extra stuff"}, metadata)
+	suite.Equal(map[string]any{"extra": "extra stuff"}, metadata)
 
 	response.Header().Set("Content-Type", "application/json")
 	response.Write([]byte(`{"remote": "value"}`))
@@ -649,14 +649,14 @@ func (suite *NewClaimBuildersTestSuite) TestMinimum() {
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]any{"request": 123}}, actual),
 	)
 
 	suite.Equal(
 		// nolint:goconst
-		map[string]interface{}{"request": 123, "trust": 0},
+		map[string]any{"request": 123, "trust": 0},
 		actual,
 	)
 }
@@ -1163,13 +1163,13 @@ func (suite *NewClaimBuildersTestSuite) TestStatic() {
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(builder)
 
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]any{"request": 123}}, actual),
 	)
 
 	suite.Equal(
-		map[string]interface{}{
+		map[string]any{
 			"static1": suite.rawMessage(-72.5),
 			"static2": suite.rawMessage([]string{"a", "b"}),
 			"request": 123,
@@ -1242,13 +1242,13 @@ func (suite *NewClaimBuildersTestSuite) TestNoRemote() {
 	suite.replaceNow(builder)
 	suite.noncer.ExpectNonce().Return("test", error(nil)).Once()
 
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]any{"request": 123}}, actual),
 	)
 
 	suite.Equal(
-		map[string]interface{}{
+		map[string]any{
 			"static1": suite.rawMessage(-72.5),
 			"static2": suite.rawMessage([]string{"a", "b"}),
 			"request": 123,
@@ -1346,13 +1346,13 @@ func (suite *NewClaimBuildersTestSuite) TestFull() {
 	suite.replaceNow(builder)
 	suite.noncer.ExpectNonce().Return("test", error(nil)).Once()
 
-	actual := make(map[string]interface{})
+	actual := make(map[string]any)
 	suite.NoError(
-		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]interface{}{"request": 123}, PathWildCards: make(map[string]interface{}), QueryParameters: make(map[string]any)}, actual),
+		builder.AddClaims(context.Background(), &Request{TLS: &tls.ConnectionState{}, Logger: sallust.Default(), Claims: map[string]any{"request": 123}, PathWildCards: make(map[string]any), QueryParameters: make(map[string]any)}, actual),
 	)
 
 	suite.Equal(
-		map[string]interface{}{
+		map[string]any{
 			"static1": suite.rawMessage(-72.5),
 			"static2": suite.rawMessage([]string{"a", "b"}),
 			"request": 123,

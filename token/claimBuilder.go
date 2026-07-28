@@ -40,19 +40,19 @@ var (
 
 // ClaimBuilder is a strategy for building token claims, given a token Request
 type ClaimBuilder interface {
-	AddClaims(context.Context, *Request, map[string]interface{}) error
+	AddClaims(context.Context, *Request, map[string]any) error
 }
 
-type ClaimBuilderFunc func(context.Context, *Request, map[string]interface{}) error
+type ClaimBuilderFunc func(context.Context, *Request, map[string]any) error
 
-func (cbf ClaimBuilderFunc) AddClaims(ctx context.Context, tr *Request, target map[string]interface{}) error {
+func (cbf ClaimBuilderFunc) AddClaims(ctx context.Context, tr *Request, target map[string]any) error {
 	return cbf(ctx, tr, target)
 }
 
 // ClaimBuilders implements a pipeline of ClaimBuilder instances, invoked in sequence.
 type ClaimBuilders []ClaimBuilder
 
-func (cbs ClaimBuilders) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
+func (cbs ClaimBuilders) AddClaims(ctx context.Context, r *Request, target map[string]any) error {
 	for _, e := range cbs {
 		if err := e.AddClaims(ctx, r, target); err != nil {
 			return err
@@ -65,16 +65,16 @@ func (cbs ClaimBuilders) AddClaims(ctx context.Context, r *Request, target map[s
 // requestClaimBuilder is a ClaimBuilder that copies the Request.Claims
 type requestClaimBuilder struct{}
 
-func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
+func (rc requestClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
 	maps.Copy(target, r.Claims)
 
 	return nil
 }
 
 // staticClaimBuilder is a ClaimBuilder that simply appends a constant set of claims
-type staticClaimBuilder map[string]interface{}
+type staticClaimBuilder map[string]any
 
-func (sc staticClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
+func (sc staticClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
 	maps.Copy(target, sc)
 
 	return nil
@@ -88,7 +88,7 @@ type timeClaimBuilder struct {
 	notBeforeDelta   time.Duration
 }
 
-func (tc *timeClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
+func (tc *timeClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
 	now := tc.now().UTC()
 	target["iat"] = now.Unix()
 
@@ -108,7 +108,7 @@ type nonceClaimBuilder struct {
 	n random.Noncer
 }
 
-func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) error {
+func (nc nonceClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) error {
 	nonce, err := nc.n.Nonce()
 	if err != nil {
 		return err
@@ -125,12 +125,12 @@ type remoteClaimBuilder struct {
 	intermediates       *x509.CertPool
 	trust               Trust
 	untrustedCertChecks []CertChecks
-	extra               map[string]interface{}
+	extra               map[string]any
 	apiResults          *prometheus.CounterVec
 	apiDuration         prometheus.ObserverVec
 }
 
-func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]interface{}) error {
+func (rc *remoteClaimBuilder) AddClaims(ctx context.Context, r *Request, target map[string]any) error {
 	rCopy := NewRequest()
 	maps.Copy(rCopy.Metadata, r.Metadata)
 	maps.Copy(rCopy.Metadata, rc.extra)
@@ -306,7 +306,7 @@ type clientCertificateClaimBuilder struct {
 	partnerID           string
 }
 
-func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]interface{}) (err error) {
+func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request, target map[string]any) (err error) {
 	partnerID, ok := target[cb.partnerID].(string)
 	if !ok {
 		partnerID = "non_string_partnerID"
