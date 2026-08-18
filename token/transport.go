@@ -217,7 +217,7 @@ func (prb partnerIDRequestBuilder) getPartnerID(original *http.Request, tr *Requ
 		// don't allow multiple values separated by ","
 		// don't allow the "*" partner id
 		for v := range strings.SplitSeq(value, ",") {
-			v = strings.TrimSpace(v)
+			v = strings.ToValidUTF8(strings.TrimSpace(v), "")
 			if len(v) > 0 && v != "*" {
 				return v, nil // the cleaned partner id
 			}

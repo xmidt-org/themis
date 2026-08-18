@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -427,7 +428,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 
 		// Configured overrides.
 		for _, acc := range cb.untrustedCertChecks {
-			issuerCN := pc.Issuer.CommonName
+			issuerCN := strings.ToValidUTF8(pc.Issuer.CommonName, "")
 			// Cert checks.
 			// If the cert's issuer common name matches the expected value, then the cert/device is untrusted – stop here.
 			if acc.IssuerCN.MatchString(issuerCN) {
@@ -455,6 +456,7 @@ func (cb *clientCertificateClaimBuilder) AddClaims(_ context.Context, r *Request
 		issuerCN = ""
 	}
 
+	issuerCN = strings.ToValidUTF8(issuerCN, "")
 	// take the highest, non-Trusted level
 	target[ClaimTrust] = trust
 	trustCounter.With(prometheus.Labels{
