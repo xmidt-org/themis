@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/xmidt-org/arrange v0.5.6
 	github.com/xmidt-org/candlelight v0.2.16
-	github.com/xmidt-org/sallust v0.2.8
+	github.com/xmidt-org/sallust v0.2.9
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.70.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0
 	go.uber.org/fx v1.24.0
