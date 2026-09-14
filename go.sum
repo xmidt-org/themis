@@ -145,8 +145,8 @@ github.com/ugorji/go/codec v1.2.14 h1:yOQvXCBc3Ij46LRkRoh4Yd5qK6LVOgi0bYOXfb7ifj
 github.com/ugorji/go/codec v1.2.14/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/xmidt-org/arrange v0.5.10 h1:nB3ufAq8wzZhD7CvJCJWDQ1v+AwMo7TFlR9v7azUQQM=
 github.com/xmidt-org/arrange v0.5.10/go.mod h1:c4aEwqmzU2UaJ8wJ4vW0cV3MWwxwtzvNpss12KN8tkA=
-github.com/xmidt-org/candlelight v0.2.19 h1:qrWuRcBR34gKHv5fxNVY6MxlSx3OWqgC2o07oBfcADw=
-github.com/xmidt-org/candlelight v0.2.19/go.mod h1:tew+Wlj7voFxr4b9WXjaN2DkdQqnQ3eNnFwAQBcNw9I=
+github.com/xmidt-org/candlelight v0.2.20 h1:0axAtTwyMwJucoCWG4uB+vl2DQDapJFLgCmfX/boZf8=
+github.com/xmidt-org/candlelight v0.2.20/go.mod h1:8Cn+UxIVMwqf7kBF4NbsOPK9hqXsd67CrmVP2FDcvss=
 github.com/xmidt-org/httpaux v0.4.5 h1:+/YVnfWlUn7FJJbNguYgBPxzih32lPGEt30sSSPN2F0=
 github.com/xmidt-org/httpaux v0.4.5/go.mod h1:t+5YuVNn1vWYVVS30MbdprFEkSL+wWCrJWti+7LP+ls=
 github.com/xmidt-org/sallust v0.2.10 h1:q5RR3zZ22+FHIGGLNTlARdSqGKYVIQeWL320NybHhxk=
