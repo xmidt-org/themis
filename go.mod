@@ -15,7 +15,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	github.com/xmidt-org/arrange v0.5.10
-	github.com/xmidt-org/candlelight v0.4.1
+	github.com/xmidt-org/candlelight v0.4.2
 	github.com/xmidt-org/sallust v0.2.10
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.72.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
@@ -62,7 +62,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.5 // indirect
 	github.com/xmidt-org/httpaux v0.4.5 // indirect
-	github.com/xmidt-org/wrp-go/v5 v5.4.6 // indirect
+	github.com/xmidt-org/wrp-go/v5 v5.4.7 // indirect
 	github.com/xmidt-org/wrphttp v0.4.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
