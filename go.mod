@@ -1,6 +1,6 @@
 module github.com/xmidt-org/themis/v2
 
-go 1.26.5
+go 1.27.3
 
 require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
